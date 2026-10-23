@@ -11,9 +11,11 @@ const groupThousands = (digits: string) =>
 export function EditForm({
   transaction,
   categories,
+  returnTo,
 }: {
   transaction: Transaction;
   categories: Category[];
+  returnTo: string;
 }) {
   const router = useRouter();
   const [state, formAction, saving] = useActionState<EditState, FormData>(updateTransaction, {});
@@ -34,7 +36,7 @@ export function EditForm({
     if (!confirm("¿Eliminar este movimiento?")) return;
     startDelete(async () => {
       await deleteTransaction(transaction.id);
-      router.replace("/");
+      router.replace(returnTo);
     });
   }
 
@@ -43,6 +45,7 @@ export function EditForm({
   return (
     <form action={formAction} className="mt-2 space-y-6">
       <input type="hidden" name="id" value={transaction.id} />
+      <input type="hidden" name="volver" value={returnTo} />
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="category_id" value={selected ?? ""} />
 

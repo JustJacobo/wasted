@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { safeReturnPath } from "@/lib/search";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
 import { getSummary } from "@/lib/data";
 import type { Totals, Transaction } from "@/lib/types";
@@ -18,6 +19,7 @@ export async function quickAdd(text: string): Promise<QuickAddState> {
   const result = await recordQuickEntry(supabase, text.slice(0, 200));
   if (!result.ok) return { status: "error", error: result.error, at: Date.now() };
   revalidatePath("/");
+  revalidatePath("/movimientos");
   const { week } = await getSummary();
   return { status: "ok", transaction: result.transaction, week, at: Date.now() };
 }
@@ -61,6 +63,7 @@ export async function addTransaction(
   if (description) await learnCategory(supabase, description, categoryId);
 
   revalidatePath("/");
+  revalidatePath("/movimientos");
   const { week } = await getSummary();
   return { status: "ok", transaction: data, week, at: Date.now() };
 }
@@ -69,6 +72,7 @@ export async function deleteTransaction(id: string): Promise<void> {
   const { supabase } = await requireUser();
   await supabase.from("transactions").delete().eq("id", z.uuid().parse(id));
   revalidatePath("/");
+  revalidatePath("/movimientos");
 }
 
 /** Cambio rápido de categoría desde la confirmación; aprende la regla. */
@@ -82,6 +86,7 @@ export async function setCategory(id: string, categoryId: string): Promise<void>
     .single();
   if (data) await learnCategory(supabase, data.description, categoryId);
   revalidatePath("/");
+  revalidatePath("/movimientos");
 }
 
 const TransactionForm = z.object({
@@ -121,5 +126,6 @@ export async function updateTransaction(
   }
 
   revalidatePath("/");
-  redirect("/");
+  revalidatePath("/movimientos");
+  redirect(safeReturnPath(formData.get("volver")));
 }

@@ -36,7 +36,11 @@ export function ReportView({
             today={today}
           />
           {report.byCategory.length > 0 && (
-            <CategoryBars slices={report.byCategory} periodName={periodName} />
+            <CategoryBars
+              slices={report.byCategory}
+              periodName={periodName}
+              month={report.range.start.slice(0, 7)}
+            />
           )}
         </>
       )}

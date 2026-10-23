@@ -2,10 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { getCategories, getTransaction } from "@/lib/data";
+import { safeReturnPath } from "@/lib/search";
 import { EditForm } from "./edit-form";
 
-export default async function EditTransactionPage({ params }: PageProps<"/movimientos/[id]">) {
+export default async function EditTransactionPage({
+  params,
+  searchParams,
+}: PageProps<"/movimientos/[id]">) {
   const { id } = await params;
+  const returnTo = safeReturnPath((await searchParams).volver);
   if (!z.uuid().safeParse(id).success) notFound();
 
   const [transaction, categories] = await Promise.all([getTransaction(id), getCategories()]);
@@ -14,11 +19,11 @@ export default async function EditTransactionPage({ params }: PageProps<"/movimi
   return (
     <main className="mx-auto max-w-lg px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <header className="flex items-center gap-2 py-2">
-        <Link href="/" className="rounded-lg px-2 py-1 text-sm text-muted active:scale-[0.97]">
+        <Link href={returnTo} className="rounded-lg px-2 py-1 text-sm text-muted active:scale-[0.97]">
           ← Volver
         </Link>
       </header>
-      <EditForm transaction={transaction} categories={categories} />
+      <EditForm transaction={transaction} categories={categories} returnTo={returnTo} />
     </main>
   );
 }

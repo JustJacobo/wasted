@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import {
@@ -45,6 +46,14 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </p>
             <SummaryCard summary={summary} today={today} />
             <TransactionList transactions={transactions} categories={categories} today={today} />
+            {transactions.length > 0 && (
+              <Link
+                href="/movimientos"
+                className="mt-4 block rounded-2xl py-3 text-center text-sm font-medium text-muted active:scale-[0.98]"
+              >
+                Ver historial completo →
+              </Link>
+            )}
           </>
         }
         dashboard={<ReportView kind={kind} report={report} today={today} />}

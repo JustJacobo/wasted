@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatCOP } from "@/lib/money";
 import type { CategorySlice } from "@/lib/report";
 import { Delta } from "./delta";
@@ -11,9 +12,12 @@ const percent = new Intl.NumberFormat("es-CO", { style: "percent", maximumFracti
 export function CategoryBars({
   slices,
   periodName,
+  month,
 }: {
   slices: CategorySlice[];
   periodName: string;
+  /** "YYYY-MM": cada fila abre el historial de ese mes filtrado por la categoría. */
+  month: string;
 }) {
   const max = slices[0]?.amount ?? 1;
 
@@ -23,30 +27,47 @@ export function CategoryBars({
       <ul className="mt-4 space-y-4">
         {slices.map((s) => (
           <li key={s.category?.id ?? "sin-categoria"}>
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 truncate">
-                <span aria-hidden className="mr-1.5">
-                  {s.category?.emoji ?? "❔"}
+            <Row
+              href={
+                s.category
+                  ? `/movimientos?mes=${month}&tipo=gasto&cat=${s.category.id}`
+                  : null
+              }
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="min-w-0 truncate">
+                  <span aria-hidden className="mr-1.5">
+                    {s.category?.emoji ?? "❔"}
+                  </span>
+                  {s.category?.name ?? "Sin categoría"}
                 </span>
-                {s.category?.name ?? "Sin categoría"}
-              </span>
-              <span className="shrink-0 font-medium tabular">{formatCOP(s.amount)}</span>
-            </div>
-            <div className="mt-1.5 h-2 bg-border/60">
-              <div
-                className="h-full rounded-r-[4px] bg-viz"
-                style={{ width: `${Math.max((s.amount / max) * 100, 2)}%` }}
-              />
-            </div>
-            <div className="mt-1 flex items-center justify-between gap-3">
-              <span className="text-xs text-muted tabular">
-                {s.share > 0 && s.share < 0.01 ? "<1%" : percent.format(s.share)} del gasto
-              </span>
-              <Delta current={s.amount} previous={s.previous} upIsGood={false} periodName={periodName} />
-            </div>
+                <span className="shrink-0 font-medium tabular">{formatCOP(s.amount)}</span>
+              </div>
+              <div className="mt-1.5 h-2 bg-border/60">
+                <div
+                  className="h-full rounded-r-[4px] bg-viz"
+                  style={{ width: `${Math.max((s.amount / max) * 100, 2)}%` }}
+                />
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-3">
+                <span className="text-xs text-muted tabular">
+                  {s.share > 0 && s.share < 0.01 ? "<1%" : percent.format(s.share)} del gasto
+                </span>
+                <Delta current={s.amount} previous={s.previous} upIsGood={false} periodName={periodName} />
+              </div>
+            </Row>
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+function Row({ href, children }: { href: string | null; children: React.ReactNode }) {
+  if (!href) return <div>{children}</div>;
+  return (
+    <Link href={href} className="-mx-2 block rounded-xl px-2 py-1 active:bg-border/40">
+      {children}
+    </Link>
   );
 }

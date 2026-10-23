@@ -7,18 +7,31 @@ export function TransactionList({
   transactions,
   categories,
   today,
+  returnTo = "/",
+  empty,
 }: {
   transactions: Transaction[];
   categories: Category[];
   today: string;
+  /** A dónde volver después de editar un movimiento. */
+  returnTo?: string;
+  empty?: React.ReactNode;
 }) {
   if (transactions.length === 0) {
     return (
       <p className="mt-10 text-center text-sm text-muted">
-        Toca <strong>− Gasto</strong> o <strong>+ Ingreso</strong> para registrar tu primer movimiento.
+        {empty ?? (
+          <>
+            Toca <strong>− Gasto</strong> o <strong>+ Ingreso</strong> para registrar tu primer
+            movimiento.
+          </>
+        )}
       </p>
     );
   }
+
+  const editHref = (id: string) =>
+    returnTo === "/" ? `/movimientos/${id}` : `/movimientos/${id}?volver=${encodeURIComponent(returnTo)}`;
 
   const byId = new Map(categories.map((c) => [c.id, c]));
   const days = new Map<string, Transaction[]>();
@@ -44,7 +57,7 @@ export function TransactionList({
                 return (
                   <li key={tx.id} data-tx-id={tx.id}>
                     <Link
-                      href={`/movimientos/${tx.id}`}
+                      href={editHref(tx.id)}
                       className="flex items-center gap-3 px-4 py-3 active:bg-border/40"
                     >
                       <span className="text-xl" aria-hidden>
