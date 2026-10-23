@@ -20,13 +20,15 @@ export function AddLauncher({
   rules,
   usage,
   initialType,
+  startOpen = true,
 }: {
   categories: Category[];
   rules: CategoryRule[];
   usage: { category_id: string | null }[];
   initialType: TxType;
+  startOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(startOpen);
   const [type, setType] = useState<TxType>(initialType);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [, startTransition] = useTransition();

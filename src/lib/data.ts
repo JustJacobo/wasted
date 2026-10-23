@@ -3,6 +3,13 @@ import "server-only";
 import { requireUser } from "@/lib/auth";
 import { startOfMonth, startOfWeek, todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
+import {
+  buildReport,
+  periodRange,
+  previousRange,
+  type PeriodKind,
+  type Report,
+} from "@/lib/report";
 import type { Category, Summary, Totals, Transaction } from "@/lib/types";
 
 const TX_COLUMNS =
@@ -48,6 +55,24 @@ export async function getTransaction(id: string): Promise<Transaction | null> {
     .maybeSingle();
   if (error) throw error;
   return data;
+}
+
+/** Reporte del periodo que contiene `anchor`, comparado con el anterior. */
+export async function getReport(kind: PeriodKind, anchor: string, today: string): Promise<Report> {
+  const { supabase } = await requireUser();
+  const range = periodRange(kind, anchor);
+  const prev = previousRange(kind, range);
+  const [{ data, error }, categories] = await Promise.all([
+    supabase
+      .from("transactions")
+      .select("type, amount, category_id, occurred_on")
+      .eq("status", "confirmed")
+      .gte("occurred_on", prev.start)
+      .lte("occurred_on", range.end),
+    getCategories(),
+  ]);
+  if (error) throw error;
+  return buildReport(kind, anchor, today, data, categories);
 }
 
 function sumSince(rows: Pick<Transaction, "type" | "amount" | "occurred_on">[], since: string): Totals {

@@ -1,70 +1,61 @@
-import Link from "next/link";
+import { z } from "zod";
 import { requireUser } from "@/lib/auth";
-import { getCategories, getRecentTransactions, getRules, getSummary } from "@/lib/data";
+import {
+  getCategories,
+  getRecentTransactions,
+  getReport,
+  getRules,
+  getSummary,
+} from "@/lib/data";
 import { todayIn } from "@/lib/dates";
+import type { PeriodKind } from "@/lib/report";
 import { AddLauncher } from "./add/add-launcher";
+import { HomePager } from "./home-pager";
+import { ReportView } from "./reportes/report-view";
 import { SummaryCard } from "./summary-card";
 import { TransactionList } from "./transaction-list";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
+  const params = await searchParams;
   const today = todayIn();
-  const [{ nuevo }, { name }, summary, categories, rules, transactions] = await Promise.all([
-    searchParams,
+
+  // Dashboard: ?vista=dashboard&periodo=semana|mes&fecha=YYYY-MM-DD
+  const kind: PeriodKind = params.periodo === "mes" ? "mes" : "semana";
+  const requested = z.iso.date().safeParse(params.fecha);
+  const anchor = requested.success && requested.data <= today ? requested.data : today;
+  const onDashboard = params.vista === "dashboard";
+
+  const [{ name }, summary, categories, rules, transactions, report] = await Promise.all([
     requireUser(),
     getSummary(today),
     getCategories(),
     getRules(),
     getRecentTransactions(),
+    getReport(kind, anchor, today),
   ]);
 
   return (
-    <div className="mx-auto max-w-lg px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-40">
-      <header className="flex items-center justify-between py-2">
-        <h1 className="text-lg font-bold tracking-tight">
-          Wasted
-          <span className="ml-2 text-sm font-normal text-muted capitalize">
-            Hola, {name.split(" ")[0]}
-          </span>
-        </h1>
-        <Link
-          href="/reportes"
-          aria-label="Reportes"
-          className="ml-auto grid size-9 place-items-center rounded-xl text-muted active:scale-[0.97]"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M4 20V10M10 20V4M16 20v-7M22 20H2"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </Link>
-        <Link
-          href="/ajustes"
-          aria-label="Ajustes"
-          className="grid size-9 place-items-center rounded-xl text-muted active:scale-[0.97]"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-            <path
-              d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </Link>
-      </header>
-
-      <SummaryCard summary={summary} today={today} />
-      <TransactionList transactions={transactions} categories={categories} today={today} />
+    <>
+      <HomePager
+        initialPanel={onDashboard ? 1 : 0}
+        home={
+          <>
+            <p className="mb-2 px-1 text-sm text-muted capitalize">
+              Hola, {name.split(" ")[0]}
+            </p>
+            <SummaryCard summary={summary} today={today} />
+            <TransactionList transactions={transactions} categories={categories} today={today} />
+          </>
+        }
+        dashboard={<ReportView kind={kind} report={report} today={today} />}
+      />
       <AddLauncher
         categories={categories}
         rules={rules}
         usage={transactions}
-        initialType={nuevo === "ingreso" ? "income" : "expense"}
+        initialType={params.nuevo === "ingreso" ? "income" : "expense"}
+        startOpen={!onDashboard}
       />
-    </div>
+    </>
   );
 }

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { formatCOP, sizeForLength } from "@/lib/money";
 import type { Summary } from "@/lib/types";
+import { GoToPanel } from "./home-pager";
 
 const monthName = new Intl.DateTimeFormat("es-CO", { month: "long", timeZone: "UTC" });
 
@@ -33,9 +33,9 @@ export function SummaryCard({ summary, today }: { summary: Summary; today: strin
         <span className="text-foreground">{formatCOP(week.expense)}</span>
       </p>
 
-      <Link
-        href="/reportes"
-        className="tabular mt-4 flex items-center justify-between gap-2 border-t border-border pt-3 text-sm active:opacity-70"
+      <GoToPanel
+        index={1}
+        className="tabular mt-4 flex w-full items-center justify-between gap-2 border-t border-border pt-3 text-sm active:opacity-70"
       >
         <span className="text-muted capitalize">{month_}</span>
         <span className="flex items-center gap-2">
@@ -47,9 +47,9 @@ export function SummaryCard({ summary, today }: { summary: Summary; today: strin
           <span aria-hidden className="text-muted">
             ›
           </span>
-          <span className="sr-only">Ver reportes</span>
+          <span className="sr-only">Ver dashboard</span>
         </span>
-      </Link>
+      </GoToPanel>
     </section>
   );
 }

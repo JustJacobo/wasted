@@ -2,7 +2,9 @@ import Link from "next/link";
 import { formatDayRange, formatMonth } from "@/lib/dates";
 import { nextRange, previousRange, type PeriodKind, type Range } from "@/lib/report";
 
-const href = (kind: PeriodKind, day: string) => `/reportes?periodo=${kind}&fecha=${day}`;
+/** Enlace al dashboard (panel derecho del inicio) en un periodo dado. */
+export const dashboardHref = (kind: PeriodKind, day: string) =>
+  `/?vista=dashboard&periodo=${kind}&fecha=${day}`;
 
 export function PeriodNav({
   kind,
@@ -13,6 +15,7 @@ export function PeriodNav({
   range: Range;
   today: string;
 }) {
+  const href = dashboardHref;
   const prev = previousRange(kind, range);
   const next = nextRange(kind, range);
   const isCurrent = range.end >= today;
@@ -30,6 +33,7 @@ export function PeriodNav({
             key={k}
             href={href(k, today)}
             replace
+            scroll={false}
             aria-current={k === kind ? "page" : undefined}
             className={`grid h-10 place-items-center rounded-xl text-sm font-medium transition-colors duration-150 ${
               k === kind ? "bg-foreground text-background" : "text-muted"
@@ -41,7 +45,7 @@ export function PeriodNav({
       </div>
 
       <div className="flex items-center justify-between">
-        <Link href={href(kind, prev.start)} replace aria-label="Periodo anterior" className={arrow}>
+        <Link href={href(kind, prev.start)} replace scroll={false} aria-label="Periodo anterior" className={arrow}>
           ‹
         </Link>
         <h2 className="text-center font-semibold">
@@ -57,7 +61,7 @@ export function PeriodNav({
             ›
           </span>
         ) : (
-          <Link href={href(kind, next.start)} replace aria-label="Periodo siguiente" className={arrow}>
+          <Link href={href(kind, next.start)} replace scroll={false} aria-label="Periodo siguiente" className={arrow}>
             ›
           </Link>
         )}

@@ -57,7 +57,11 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   2. `matchCategory` busca en las reglas aprendidas (`category_rules`) y luego en las palabras clave integradas (`keywords.ts`, indexadas por `categories.key`).
   3. Si nada coincide, `suggestCategory` le pregunta a Claude Haiku (`src/lib/ai/categorize.ts`, se omite sin `ANTHROPIC_API_KEY`).
   4. Si tampoco hay respuesta, usa "Varios" u "Otros".
-- **Reportes** (`/reportes?periodo=semana|mes&fecha=YYYY-MM-DD`):
+- **Inicio y Dashboard**: `src/app/home-pager.tsx` pone ambos paneles lado a lado. Se cambia deslizando (scroll-snap nativo) o con las pestañas.
+  - El paginador y los paneles deben ser `relative`: si no, los elementos absolutos (`sr-only`) escapan del recorte y ensanchan la página en el celular.
+  - `?vista=dashboard` abre directo en el dashboard, y en ese caso no se abre la ventana de registro.
+  - `/reportes` redirige ahí.
+- **Dashboard / reportes** (`/?vista=dashboard&periodo=semana|mes&fecha=YYYY-MM-DD`, contenido en `src/app/reportes/report-view.tsx`, datos con `getReport`):
   - Toda la agregación es pura y está testeada en `src/lib/report.ts` (`buildReport`, rangos lunes–domingo y mes calendario, comparación con el periodo anterior).
   - Los gráficos son HTML/CSS a mano, en un solo tono `--viz`, validado con la skill `dataviz` para modo claro y oscuro.
   - Las variaciones llevan ▲▼ coloreado y el texto en tinta neutra.
