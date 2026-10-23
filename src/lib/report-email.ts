@@ -70,7 +70,7 @@ export function renderReportEmail({
       const width = Math.max(Math.round((s.amount / max) * 100), 2);
       const catName = escape(s.category?.name ?? "Sin categoría");
       return `
-        <tr><td style="padding:10px 0 2px;font-size:15px;color:${C.ink}">${s.category?.emoji ?? "❔"}&nbsp; ${catName}</td>
+        <tr><td style="padding:10px 0 2px;font-size:15px;color:${C.ink}">${escape(s.category?.emoji ?? "❔")}&nbsp; ${catName}</td>
             <td align="right" style="padding:10px 0 2px;font-size:15px;color:${C.ink};white-space:nowrap">${formatCOP(s.amount)}</td></tr>
         <tr><td colspan="2" style="padding:0 0 2px">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.track}"><tr>
