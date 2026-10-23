@@ -14,7 +14,7 @@ export const DEFAULT_KEYWORDS: Record<string, string[]> = {
   ],
   transporte: [
     "uber", "didi", "diddi", "yango", "cabify", "indrive", "picap", "taxi", "bus",
-    "buseta", "transmilenio", "sitp", "metro", "mio", "pasaje", "pasajes", "gasolina",
+    "buseta", "transmilenio", "sitp", "metro", "civica", "recarga civica", "mio", "pasaje", "pasajes", "gasolina",
     "tanqueada", "parqueadero", "peaje", "soat", "tecnomecanica", "moto", "scooter",
     "vuelo", "avianca", "latam", "wingo", "terminal",
   ],

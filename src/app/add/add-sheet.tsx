@@ -34,7 +34,7 @@ export function AddSheet({
   rules: CategoryRule[];
   usage: { category_id: string | null }[];
   onClose: () => void;
-  onSaved: (transaction: Transaction, week: Totals) => void;
+  onSaved: (transaction: Transaction, week: Totals, similar?: string | null) => void;
 }) {
   const [view, setView] = useState<View>("amount");
   const [direction, setDirection] = useState<keyof typeof ENTER_FROM>("forward");
@@ -92,7 +92,7 @@ export function AddSheet({
         occurredOn: date,
       });
       setPending(false);
-      if (result.status === "ok") onSaved(result.transaction, result.week);
+      if (result.status === "ok") onSaved(result.transaction, result.week, result.similar);
       else if (result.status === "error") setError(result.error);
     });
   }

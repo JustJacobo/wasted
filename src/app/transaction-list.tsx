@@ -67,9 +67,11 @@ export function TransactionList({
                         <span className="block truncate">
                           {tx.description || category?.name || "Sin categoría"}
                         </span>
-                        {tx.description && (
+                        {(tx.description || tx.source.startsWith("email_")) && (
                           <span className="block truncate text-xs text-muted">
-                            {category?.name ?? "Sin categoría"}
+                            {tx.description && (category?.name ?? "Sin categoría")}
+                            {tx.description && tx.source.startsWith("email_") && " · "}
+                            {tx.source.startsWith("email_") && "del correo"}
                           </span>
                         )}
                       </span>

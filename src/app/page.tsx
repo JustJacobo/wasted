@@ -1,15 +1,18 @@
 import Link from "next/link";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import {
   active,
   getCategories,
+  getPendingCount,
   getRecentTransactions,
   getReport,
   getRules,
   getSummary,
 } from "@/lib/data";
 import { todayIn } from "@/lib/dates";
+import { shouldAutoSync, syncMail } from "@/lib/mail-import/sync";
 import type { PeriodKind } from "@/lib/report";
 import { AddLauncher } from "./add/add-launcher";
 import { HomePager } from "./home-pager";
@@ -27,14 +30,25 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const anchor = requested.success && requested.data <= today ? requested.data : today;
   const onDashboard = params.vista === "dashboard";
 
-  const [{ name }, summary, categories, rules, transactions, report] = await Promise.all([
-    requireUser(),
-    getSummary(today),
-    getCategories(),
-    getRules(),
-    getRecentTransactions(),
-    getReport(kind, anchor, today),
-  ]);
+  const [{ name, userId, email }, summary, categories, rules, transactions, report, pendingCount] =
+    await Promise.all([
+      requireUser(),
+      getSummary(today),
+      getCategories(),
+      getRules(),
+      getRecentTransactions(),
+      getReport(kind, anchor, today),
+      getPendingCount(),
+    ]);
+
+  // Revisa el correo después de responder, sin frenar la carga (máximo cada 10 min).
+  after(async () => {
+    try {
+      if (await shouldAutoSync(userId, email)) await syncMail(userId, email);
+    } catch (error) {
+      console.error("correo: fallo la revisión automática", error);
+    }
+  });
 
   return (
     <>
@@ -46,6 +60,24 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               Hola, {name.split(" ")[0]}
             </p>
             <SummaryCard summary={summary} today={today} />
+            {pendingCount > 0 && (
+              <Link
+                href="/bandeja"
+                className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3 text-sm ring-1 ring-border active:scale-[0.99]"
+              >
+                <span>
+                  <span aria-hidden className="mr-2">
+                    📧
+                  </span>
+                  {pendingCount === 1
+                    ? "1 movimiento por revisar"
+                    : `${pendingCount} movimientos por revisar`}
+                </span>
+                <span aria-hidden className="text-muted">
+                  ›
+                </span>
+              </Link>
+            )}
             <TransactionList transactions={transactions} categories={categories} today={today} />
             {transactions.length > 0 && (
               <Link

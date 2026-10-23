@@ -7,6 +7,7 @@ const categories: CategoryOption[] = [
   { id: "c-compras", key: "compras", name: "Compras", type: "expense" },
   { id: "c-transporte", key: "transporte", name: "Transporte", type: "expense" },
   { id: "c-salud", key: "salud", name: "Salud", type: "expense" },
+  { id: "c-servicios", key: "servicios", name: "Servicios", type: "expense" },
   { id: "c-mascotas", key: null, name: "Mascotas", type: "expense" },
   { id: "c-varios", key: "otros_gasto", name: "Varios", type: "expense" },
   { id: "c-cuota", key: "cuota_semanal", name: "Cuota semanal", type: "income" },
@@ -36,6 +37,11 @@ describe("matchCategory", () => {
   it("reconoce ingresos de cuota semanal y regalos", () => {
     expect(matchCategory("Cuota semanal", "income", categories, [])).toBe("c-cuota");
     expect(matchCategory("Regalo papá", "income", categories, [])).toBe("c-regalos");
+  });
+
+  it("una recarga de Cívica es transporte, no una recarga de celular", () => {
+    expect(matchCategory("Recarga Cívica", "expense", categories, [])).toBe("c-transporte");
+    expect(matchCategory("Recarga Claro", "expense", categories, [])).toBe("c-servicios");
   });
 
   it("prefiere la frase más larga", () => {

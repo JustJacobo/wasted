@@ -59,7 +59,8 @@ Si la categoría no es la correcta, tócala en la confirmación y la app la reco
 5. **Telegram (opcional):**
    - Crea el bot con @BotFather y guarda su token en Vercel como `TELEGRAM_BOT_TOKEN`.
    - Cada persona lo conecta desde Ajustes → Conectar Telegram. La primera vez, eso también registra el webhook del bot (o a mano: `curl -H "Authorization: Bearer $CRON_SECRET" https://<tu-app>.vercel.app/api/telegram/setup`).
-6. **En el celular:** abre la URL.
+6. **Correo (opcional):** con `GMAIL_USER` y `GMAIL_APP_PASSWORD` definidos, Wasted lee ese buzón por IMAP e importa avisos de Nequi, Uber, Rappi y facturas. Solo para el usuario que entra con ese mismo correo; se pausa desde Ajustes.
+7. **En el celular:** abre la URL.
    - En Android, menú → "Instalar app".
    - En iPhone, Compartir → "Agregar a inicio".
 

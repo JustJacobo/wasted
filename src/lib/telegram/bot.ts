@@ -3,6 +3,8 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { todayIn } from "@/lib/dates";
+import { appUrl } from "@/lib/app-url";
+import { canImportMail, syncMail, syncSummary } from "@/lib/mail-import/sync";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
 import { fetchReport, fetchSummary } from "@/lib/report-data";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -92,6 +94,8 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
     }
     case "deshacer":
       return undoLast(admin, user.userId, chatId);
+    case "correo":
+      return checkMail(user.userId, user.email, chatId);
     default:
       await sendMessage(chatId, `No conozco ese comando.\n\n${helpText()}`);
   }
@@ -116,7 +120,7 @@ async function memberInfo(admin: SupabaseClient, userId: string) {
   if (!member) return null;
   const meta = data.user!.user_metadata ?? {};
   const name = String(meta.full_name ?? meta.name ?? "");
-  return { userId, firstName: name.split(" ")[0] || undefined };
+  return { userId, email, firstName: name.split(" ")[0] || undefined };
 }
 
 async function linkChat(
@@ -190,6 +194,24 @@ async function record(
   ]);
   const category = categories.find((c) => c.id === tx.category_id);
   await sendMessage(chatId, savedText(tx, category, today, summary.week), savedKeyboard(tx.id));
+}
+
+/** /correo: revisa el correo ahora y cuenta qué entró. */
+async function checkMail(userId: string, email: string, chatId: number) {
+  if (!canImportMail(email)) {
+    await sendMessage(chatId, "El correo no está conectado para tu cuenta.");
+    return;
+  }
+  await sendMessage(chatId, "📧 Revisando tu correo…");
+  try {
+    const result = await syncMail(userId, email);
+    const review =
+      result.status === "done" && result.counts.pending ? `\nRevísalos en ${appUrl()}/bandeja` : "";
+    await sendMessage(chatId, `${syncSummary(result)}${review}`);
+  } catch (error) {
+    console.error("telegram: fallo /correo", error);
+    await sendMessage(chatId, "No pude revisar el correo. Intenta de nuevo en un momento.");
+  }
 }
 
 async function sendToday(admin: SupabaseClient, userId: string, chatId: number, today: string) {

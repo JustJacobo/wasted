@@ -1,15 +1,37 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { canImportMail } from "@/lib/mail-import/sync";
+import { SyncButton } from "../bandeja/sync-button";
+import { MailToggle } from "./mail-toggle";
 import { InviteForm } from "./invite-form";
 import { ReportToggles } from "./report-toggles";
 import { RemoveButton } from "./remove-button";
 import { TelegramConnect } from "./telegram-connect";
 
+const time = new Intl.DateTimeFormat("es-CO", {
+  timeZone: "America/Bogota",
+  day: "numeric",
+  month: "short",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+function lastSync(iso: string): string {
+  const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (minutes < 1) return "hace un momento";
+  if (minutes < 60) return `hace ${minutes} min`;
+  return time.format(new Date(iso));
+}
+
 export default async function SettingsPage() {
   const { supabase, email, name, role } = await requireUser();
-  const [{ data: settings }, { data: telegram }] = await Promise.all([
+  const mail = canImportMail(email);
+  const [{ data: settings }, { data: telegram }, { data: mailSync }] = await Promise.all([
     supabase.from("user_settings").select("report_weekly, report_monthly").maybeSingle(),
     supabase.from("telegram_links").select("username").maybeSingle(),
+    mail
+      ? supabase.from("mail_sync").select("enabled, since, last_synced_at").maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   const members =
     role === "owner"
@@ -53,6 +75,24 @@ export default async function SettingsPage() {
           </span>
         </Link>
       </section>
+
+      {mail && (
+        <section className="space-y-2">
+          <h2 className="px-1 text-sm text-muted">Correo</h2>
+          <div className="overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
+            <MailToggle enabled={mailSync?.enabled ?? true} />
+          </div>
+          <p className="px-1 text-xs text-muted">
+            Lee {email}: avisos de Nequi, viajes de Uber, pedidos de Rappi y facturas. Lo claro se
+            registra solo y lo dudoso queda en{" "}
+            <Link href="/bandeja" className="underline">
+              Por revisar
+            </Link>
+            . {mailSync?.last_synced_at ? `Última revisión: ${lastSync(mailSync.last_synced_at)}.` : "Aún no se ha revisado."}
+          </p>
+          <SyncButton />
+        </section>
+      )}
 
       <section className="space-y-2">
         <h2 className="px-1 text-sm text-muted">Telegram</h2>

@@ -4,6 +4,9 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireOwner, requireUser } from "@/lib/auth";
+import { startOfWeek, todayIn } from "@/lib/dates";
+import { canImportMail } from "@/lib/mail-import/sync";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { appUrl } from "@/lib/app-url";
 import { ensureWebhook, telegramConfigured, tg } from "@/lib/telegram/api";
 import { hashLinkCode } from "@/lib/telegram/bot";
@@ -76,5 +79,23 @@ export async function createTelegramLink(): Promise<{ url?: string; error?: stri
 export async function unlinkTelegram(): Promise<void> {
   const { supabase, userId } = await requireUser();
   await supabase.from("telegram_links").delete().eq("user_id", userId);
+  revalidatePath("/ajustes");
+}
+
+/** Pausa o reanuda la importación del correo. */
+export async function setMailImport(enabled: boolean): Promise<void> {
+  const { supabase, userId, email } = await requireUser();
+  const value = z.boolean().parse(enabled);
+  const { data } = await supabase
+    .from("mail_sync")
+    .update({ enabled: value })
+    .eq("user_id", userId)
+    .select("user_id");
+  // Sin fila todavía (nunca se revisó): la crea el servidor, solo para el dueño del buzón.
+  if (!data?.length && canImportMail(email)) {
+    await createAdminClient()
+      .from("mail_sync")
+      .insert({ user_id: userId, enabled: value, since: startOfWeek(todayIn()) });
+  }
   revalidatePath("/ajustes");
 }

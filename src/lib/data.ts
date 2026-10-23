@@ -59,6 +59,55 @@ export async function getTransaction(id: string): Promise<Transaction | null> {
   return data;
 }
 
+/** Un pendiente de la bandeja, con el movimiento al que se parece (si hay). */
+export interface PendingItem extends Transaction {
+  provider: string | null;
+  similar: Pick<Transaction, "id" | "description" | "amount" | "occurred_on" | "category_id"> | null;
+}
+
+/** Movimientos importados que esperan confirmación, del más reciente al más antiguo. */
+export async function getPending(): Promise<PendingItem[]> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("transactions")
+    .select(`${TX_COLUMNS}, raw`)
+    .eq("status", "pending")
+    .order("occurred_on", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+
+  const similarIds = data
+    .map((t) => (t.raw as { possibleDuplicateOf?: string } | null)?.possibleDuplicateOf)
+    .filter((id): id is string => Boolean(id));
+  const { data: similar } = similarIds.length
+    ? await supabase
+        .from("transactions")
+        .select("id, description, amount, occurred_on, category_id")
+        .in("id", similarIds)
+    : { data: [] };
+  const byId = new Map((similar ?? []).map((t) => [t.id, t]));
+
+  return data.map(({ raw, ...tx }) => {
+    const meta = (raw ?? {}) as { provider?: string; possibleDuplicateOf?: string };
+    return {
+      ...tx,
+      provider: meta.provider ?? null,
+      similar: meta.possibleDuplicateOf ? (byId.get(meta.possibleDuplicateOf) ?? null) : null,
+    };
+  });
+}
+
+export async function getPendingCount(): Promise<number> {
+  const { supabase } = await requireUser();
+  const { count, error } = await supabase
+    .from("transactions")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export interface HistoryFilters {
   /** "YYYY-MM" */
   month: string;

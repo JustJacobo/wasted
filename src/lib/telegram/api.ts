@@ -80,6 +80,7 @@ const COMMANDS = [
   { command: "semana", description: "Cómo vas esta semana" },
   { command: "mes", description: "Resumen del mes" },
   { command: "deshacer", description: "Borra el último registro" },
+  { command: "correo", description: "Revisa tu correo ahora" },
   { command: "ayuda", description: "Cómo registrar" },
 ];
 

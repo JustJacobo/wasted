@@ -74,3 +74,9 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - Mensajes y botones puros y testeados en `format.ts` (HTML de Telegram escapado; los uuid van en base64url para caber en `callback_data`).
   - Los reportes programados salen por correo y por Telegram; registrar desde la web avisa por Telegram al cruzar el 80% o el 100% de lo que entró en la semana (`notify.ts`, dentro de `after()`).
   - En local: `TELEGRAM_API_URL` apunta a un servidor falso del Bot API.
+- **Importar del correo** (`src/lib/mail-import/`; solo el buzón de `GMAIL_USER`, por IMAP con la contraseña de aplicación):
+  - `source.ts` busca en Gmail (`X-GM-RAW`) desde el lunes en que se activó, salta los Message-ID ya procesados y convierte el HTML a texto con `html.ts` (separa las celdas de las tablas).
+  - `parsers.ts` (puro y testeado con textos reales): Nequi (Bre-B, PSE, Cívica), Uber, Rappi, facturas DIAN (XML dentro del ZIP, con límite de tamaño) y un genérico por "Total". Las transferencias propias (tu nombre o el pago a la tarjeta Nu) no cuentan.
+  - `ingest.ts`: lo claro queda `confirmed`; lo de baja confianza o parecido a algo ya registrado (mismo tipo y monto, ±1 día) queda `pending` en `/bandeja`. Descartar lo deja `discarded` (conserva su `external_id`, así no vuelve). `mail_messages` registra cada correo procesado.
+  - Se revisa al abrir la app (`after()`, cada 10 min como máximo), con "Revisar correo ahora", con el cron diario `/api/correo/sincronizar` y con `/correo` en Telegram.
+  - En local: `MAIL_FIXTURES_DIR` (carpeta de `.eml`) y `MAIL_FIXTURES_USER` reemplazan a Gmail.

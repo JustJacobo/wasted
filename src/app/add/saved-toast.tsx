@@ -5,7 +5,13 @@ import { budgetMessage, budgetStatus } from "@/lib/budget";
 import type { Category, Totals, Transaction } from "@/lib/types";
 
 export type Feedback =
-  | { kind: "saved"; transaction: Transaction; week?: Totals }
+  | {
+      kind: "saved";
+      transaction: Transaction;
+      week?: Totals;
+      /** Un movimiento igual que ya llegó del correo (posible repetido). */
+      similar?: string | null;
+    }
   | { kind: "error"; message: string };
 
 const ENTER =
@@ -31,7 +37,7 @@ export function SavedToast({
     );
   }
 
-  const { transaction, week } = feedback;
+  const { transaction, week, similar } = feedback;
   const options = categories.filter((c) => c.type === transaction.type);
   const status = week ? budgetStatus(week.expense, week.income) : null;
   const warning =
@@ -56,6 +62,14 @@ export function SavedToast({
           Deshacer
         </button>
       </div>
+      {similar && (
+        <p className="mt-1 px-1 text-xs text-foreground">
+          <span aria-hidden className="mr-1">
+            📧
+          </span>
+          Parece repetido: ya llegó del correo ({similar}).
+        </p>
+      )}
       {warning && (
         <p className="mt-1 px-1 text-xs text-foreground">
           <span aria-hidden className="mr-1">

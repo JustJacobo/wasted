@@ -16,7 +16,7 @@ export function TextStep({
 }: {
   categories: Category[];
   rules: CategoryRule[];
-  onSaved: (transaction: Transaction, week: Totals) => void;
+  onSaved: (transaction: Transaction, week: Totals, similar?: string | null) => void;
 }) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export function TextStep({
     setError(null);
     startTransition(async () => {
       const result = await quickAdd(value);
-      if (result.status === "ok") onSaved(result.transaction, result.week);
+      if (result.status === "ok") onSaved(result.transaction, result.week, result.similar);
       else if (result.status === "error") setError(result.error);
     });
   }

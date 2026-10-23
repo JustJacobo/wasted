@@ -227,6 +227,7 @@ export function helpText(name?: string): string {
     "/semana · cómo vas esta semana",
     "/mes · resumen del mes",
     "/deshacer · borra el último registro",
+    "/correo · revisa tu correo ahora",
   ].join("\n");
 }
 

@@ -80,8 +80,8 @@ export function AddLauncher({
     setOpen(true);
   }
 
-  function saved(transaction: Transaction, week: Totals) {
-    show({ kind: "saved", transaction, week });
+  function saved(transaction: Transaction, week: Totals, similar?: string | null) {
+    show({ kind: "saved", transaction, week, similar });
     close();
     revealRow(transaction.id);
   }

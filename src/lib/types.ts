@@ -24,7 +24,7 @@ export interface Transaction {
   account_id: string | null;
   occurred_on: string;
   source: string;
-  status: "confirmed" | "pending";
+  status: "confirmed" | "pending" | "discarded";
   created_at: string;
 }
 

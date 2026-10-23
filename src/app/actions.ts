@@ -4,18 +4,40 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireUser } from "@/lib/auth";
 import { safeReturnPath } from "@/lib/search";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
 import { getSummary } from "@/lib/data";
-import { todayIn } from "@/lib/dates";
+import { addDays, todayIn } from "@/lib/dates";
+import { formatCOP } from "@/lib/money";
 import { notifyBudgetCrossing } from "@/lib/telegram/notify";
 import type { Totals, Transaction } from "@/lib/types";
 
 export type QuickAddState =
   | { status: "idle" }
-  | { status: "ok"; transaction: Transaction; week: Totals; at: number }
+  | { status: "ok"; transaction: Transaction; week: Totals; similar: string | null; at: number }
   | { status: "error"; error: string; at: number };
+
+/**
+ * Si el correo ya trajo un movimiento igual (tipo y monto, ±1 día), lo describe
+ * para avisar en la confirmación; el usuario decide si deshace.
+ */
+async function similarFromMail(supabase: SupabaseClient, tx: Transaction): Promise<string | null> {
+  const { data } = await supabase
+    .from("transactions")
+    .select("description, merchant, amount")
+    .in("source", ["email_bank", "email_invoice", "email_other"])
+    .in("status", ["confirmed", "pending"])
+    .eq("type", tx.type)
+    .eq("amount", tx.amount)
+    .neq("id", tx.id)
+    .gte("occurred_on", addDays(tx.occurred_on, -1))
+    .lte("occurred_on", addDays(tx.occurred_on, 1))
+    .limit(1)
+    .maybeSingle();
+  return data ? `${data.merchant || data.description || "movimiento"} ${formatCOP(Number(data.amount))}` : null;
+}
 
 export async function quickAdd(text: string): Promise<QuickAddState> {
   const { supabase, userId } = await requireUser();
@@ -26,7 +48,8 @@ export async function quickAdd(text: string): Promise<QuickAddState> {
   const today = todayIn();
   const { week } = await getSummary(today);
   after(() => notifyBudgetCrossing(userId, result.transaction, week, today));
-  return { status: "ok", transaction: result.transaction, week, at: Date.now() };
+  const similar = await similarFromMail(supabase, result.transaction);
+  return { status: "ok", transaction: result.transaction, week, similar, at: Date.now() };
 }
 
 const NewTransaction = z.object({
@@ -72,7 +95,8 @@ export async function addTransaction(
   const today = todayIn();
   const { week } = await getSummary(today);
   after(() => notifyBudgetCrossing(userId, data, week, today));
-  return { status: "ok", transaction: data, week, at: Date.now() };
+  const similar = await similarFromMail(supabase, data);
+  return { status: "ok", transaction: data, week, similar, at: Date.now() };
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
