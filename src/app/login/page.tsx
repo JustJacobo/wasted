@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LoginForm } from "./login-form";
 
 const ERRORS: Record<string, string> = {
@@ -22,6 +23,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </p>
       )}
       <LoginForm />
+      <Link href="/privacidad" className="text-center text-xs text-muted">
+        Política de privacidad
+      </Link>
     </main>
   );
 }
