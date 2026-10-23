@@ -42,7 +42,7 @@ export function TransactionList({
               {items.map((tx) => {
                 const category = tx.category_id ? byId.get(tx.category_id) : undefined;
                 return (
-                  <li key={tx.id}>
+                  <li key={tx.id} data-tx-id={tx.id}>
                     <Link
                       href={`/movimientos/${tx.id}`}
                       className="flex items-center gap-3 px-4 py-3 active:bg-border/40"

@@ -58,6 +58,17 @@ const relative = new Intl.DateTimeFormat("es-CO", {
   month: "short",
 });
 
+const short = new Intl.DateTimeFormat("es-CO", {
+  timeZone: "UTC",
+  day: "numeric",
+  month: "short",
+});
+
+/** "15 oct": para espacios estrechos. */
+export function formatShortDay(day: string): string {
+  return short.format(toUtc(day)).replace(" de ", " ").replace(".", "");
+}
+
 /** "Hoy", "Ayer" o "lun, 20 oct". */
 export function formatDay(day: string, today: string = todayIn()): string {
   if (day === today) return "Hoy";

@@ -8,7 +8,7 @@ export type Feedback =
   | { kind: "error"; message: string };
 
 const ENTER =
-  "transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] starting:translate-y-2 starting:opacity-0 motion-reduce:starting:translate-y-0";
+  "transition-[opacity,transform] duration-200 ease-ui starting:translate-y-2 starting:opacity-0 motion-reduce:starting:translate-y-0";
 
 /** Confirmación tras guardar: permite cambiar la categoría o deshacer. */
 export function SavedToast({

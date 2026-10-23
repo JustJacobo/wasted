@@ -5,6 +5,7 @@ import type { CategoryRule } from "@/lib/quick-add/categorize";
 import type { Category, Transaction, TxType } from "@/lib/types";
 import { deleteTransaction, setCategory } from "../actions";
 import { AddSheet } from "./add-sheet";
+import { revealRow } from "./reveal-row";
 import { SavedToast, type Feedback } from "./saved-toast";
 
 const DISMISS_MS = 6_000;
@@ -80,6 +81,7 @@ export function AddLauncher({
   function saved(transaction: Transaction) {
     show({ kind: "saved", transaction });
     close();
+    revealRow(transaction.id);
   }
 
   function changeCategory(categoryId: string) {
