@@ -1,5 +1,6 @@
 import { formatCOP, sizeForLength } from "@/lib/money";
 import type { Summary } from "@/lib/types";
+import { BudgetMeter } from "./budget-meter";
 import { GoToPanel } from "./home-pager";
 
 const monthName = new Intl.DateTimeFormat("es-CO", { month: "long", timeZone: "UTC" });
@@ -29,9 +30,10 @@ export function SummaryCard({ summary, today }: { summary: Summary; today: strin
         {hero}
       </p>
       <p className="tabular mt-2 text-sm text-muted">
-        Entró <span className="text-accent">{formatCOP(week.income)}</span> · Salió{" "}
+        Entró <span className="text-foreground">{formatCOP(week.income)}</span> · Salió{" "}
         <span className="text-foreground">{formatCOP(week.expense)}</span>
       </p>
+      <BudgetMeter expense={week.expense} income={week.income} />
 
       <GoToPanel
         index={1}
@@ -40,7 +42,7 @@ export function SummaryCard({ summary, today }: { summary: Summary; today: strin
         <span className="text-muted capitalize">{month_}</span>
         <span className="flex items-center gap-2">
           <span>
-            <span className="text-accent">+{formatCOP(month.income)}</span>
+            <span>+{formatCOP(month.income)}</span>
             <span className="text-muted"> · </span>
             <span>-{formatCOP(month.expense)}</span>
           </span>

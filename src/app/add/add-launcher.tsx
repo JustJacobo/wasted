@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
-import type { Category, Transaction, TxType } from "@/lib/types";
+import type { Category, Totals, Transaction, TxType } from "@/lib/types";
 import { deleteTransaction, setCategory } from "../actions";
 import { AddSheet } from "./add-sheet";
 import { revealRow } from "./reveal-row";
@@ -80,8 +80,8 @@ export function AddLauncher({
     setOpen(true);
   }
 
-  function saved(transaction: Transaction) {
-    show({ kind: "saved", transaction });
+  function saved(transaction: Transaction, week: Totals) {
+    show({ kind: "saved", transaction, week });
     close();
     revealRow(transaction.id);
   }
@@ -89,7 +89,7 @@ export function AddLauncher({
   function changeCategory(categoryId: string) {
     if (feedback?.kind !== "saved") return;
     const tx = feedback.transaction;
-    show({ kind: "saved", transaction: { ...tx, category_id: categoryId } });
+    show({ ...feedback, transaction: { ...tx, category_id: categoryId } });
     startTransition(() => setCategory(tx.id, categoryId));
   }
 

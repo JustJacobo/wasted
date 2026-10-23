@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { sortByUsage } from "@/lib/category-usage";
 import { todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
-import type { Category, Transaction, TxType } from "@/lib/types";
+import type { Category, Totals, Transaction, TxType } from "@/lib/types";
 import { addTransaction } from "../actions";
 import { AmountStep } from "./amount-step";
 import { CategoryStep } from "./category-step";
@@ -34,7 +34,7 @@ export function AddSheet({
   rules: CategoryRule[];
   usage: { category_id: string | null }[];
   onClose: () => void;
-  onSaved: (transaction: Transaction) => void;
+  onSaved: (transaction: Transaction, week: Totals) => void;
 }) {
   const [view, setView] = useState<View>("amount");
   const [direction, setDirection] = useState<keyof typeof ENTER_FROM>("forward");
@@ -92,7 +92,7 @@ export function AddSheet({
         occurredOn: date,
       });
       setPending(false);
-      if (result.status === "ok") onSaved(result.transaction);
+      if (result.status === "ok") onSaved(result.transaction, result.week);
       else if (result.status === "error") setError(result.error);
     });
   }

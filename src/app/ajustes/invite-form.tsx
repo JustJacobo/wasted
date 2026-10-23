@@ -36,7 +36,7 @@ export function InviteForm() {
         </p>
       )}
       {state.invited && (
-        <p className="px-1 text-sm text-accent" aria-live="polite">
+        <p className="px-1 text-sm text-accent-ink" aria-live="polite">
           {state.invited} ya puede entrar.
         </p>
       )}

@@ -7,9 +7,14 @@
   --muted: #78716c;
   --border: #e7e5e4;
   --accent: #16a34a;
+  /* Verde para texto: 5:1 sobre blanco (el --accent solo alcanza 3,3:1). */
+  --accent-ink: #15803d;
   --danger: #dc2626;
   /* Barras de reportes: un solo tono (magnitud), validado con la skill dataviz. */
   --viz: #2a78d6;
+  /* Barra de presupuesto: aviso (≥80%) y exceso (≥100%). */
+  --viz-warn: #d97706;
+  --viz-over: #dc2626;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,8 +25,11 @@
     --muted: #a8a29e;
     --border: #292524;
     --accent: #4ade80;
+    --accent-ink: #4ade80;
     --danger: #f87171;
     --viz: #3987e5;
+    --viz-warn: #c98500;
+    --viz-over: #e66767;
   }
 }
 
@@ -32,8 +40,11 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-danger: var(--danger);
   --color-viz: var(--viz);
+  --color-viz-warn: var(--viz-warn);
+  --color-viz-over: var(--viz-over);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   /* Curvas de animación: `ease-ui` para entradas y respuestas, `ease-drawer` para la ventana inferior. */

@@ -62,7 +62,7 @@ export function TransactionList({
                       </span>
                       <span
                         className={`tabular shrink-0 font-medium ${
-                          tx.type === "income" ? "text-accent" : ""
+                          tx.type === "income" ? "text-accent-ink" : ""
                         }`}
                       >
                         {tx.type === "income" ? "+" : "-"}

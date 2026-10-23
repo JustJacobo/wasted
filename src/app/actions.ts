@@ -5,11 +5,12 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
-import type { Transaction } from "@/lib/types";
+import { getSummary } from "@/lib/data";
+import type { Totals, Transaction } from "@/lib/types";
 
 export type QuickAddState =
   | { status: "idle" }
-  | { status: "ok"; transaction: Transaction; at: number }
+  | { status: "ok"; transaction: Transaction; week: Totals; at: number }
   | { status: "error"; error: string; at: number };
 
 export async function quickAdd(text: string): Promise<QuickAddState> {
@@ -17,7 +18,8 @@ export async function quickAdd(text: string): Promise<QuickAddState> {
   const result = await recordQuickEntry(supabase, text.slice(0, 200));
   if (!result.ok) return { status: "error", error: result.error, at: Date.now() };
   revalidatePath("/");
-  return { status: "ok", transaction: result.transaction, at: Date.now() };
+  const { week } = await getSummary();
+  return { status: "ok", transaction: result.transaction, week, at: Date.now() };
 }
 
 const NewTransaction = z.object({
@@ -59,7 +61,8 @@ export async function addTransaction(
   if (description) await learnCategory(supabase, description, categoryId);
 
   revalidatePath("/");
-  return { status: "ok", transaction: data, at: Date.now() };
+  const { week } = await getSummary();
+  return { status: "ok", transaction: data, week, at: Date.now() };
 }
 
 export async function deleteTransaction(id: string): Promise<void> {

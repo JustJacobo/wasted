@@ -68,7 +68,7 @@ export function CategoryStep({
           ←
         </button>
         <p className="tabular min-w-0 flex-1 truncate text-2xl font-bold tracking-tight">
-          <span className={type === "income" ? "text-accent" : ""}>
+          <span className={type === "income" ? "text-accent-ink" : ""}>
             {type === "income" ? "+" : "-"}
             {formatCOP(amount)}
           </span>

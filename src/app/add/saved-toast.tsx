@@ -1,10 +1,12 @@
 "use client";
 
 import { formatCOP } from "@/lib/money";
-import type { Category, Transaction } from "@/lib/types";
+import { budgetStatus } from "@/lib/budget";
+import type { Category, Totals, Transaction } from "@/lib/types";
+import { budgetMessage } from "../budget-meter";
 
 export type Feedback =
-  | { kind: "saved"; transaction: Transaction }
+  | { kind: "saved"; transaction: Transaction; week?: Totals }
   | { kind: "error"; message: string };
 
 const ENTER =
@@ -30,8 +32,13 @@ export function SavedToast({
     );
   }
 
-  const { transaction } = feedback;
+  const { transaction, week } = feedback;
   const options = categories.filter((c) => c.type === transaction.type);
+  const status = week ? budgetStatus(week.expense, week.income) : null;
+  const warning =
+    week && status && transaction.type === "expense" && (status.level === "warning" || status.level === "over")
+      ? `${budgetMessage(status, week.expense, week.income)} esta semana`
+      : null;
 
   return (
     <div className={`rounded-2xl bg-surface p-3 shadow-lg ring-1 ring-border ${ENTER}`}>
@@ -50,6 +57,14 @@ export function SavedToast({
           Deshacer
         </button>
       </div>
+      {warning && (
+        <p className="mt-1 px-1 text-xs text-foreground">
+          <span aria-hidden className="mr-1">
+            ⚠️
+          </span>
+          {warning}
+        </p>
+      )}
       <div className="-mx-3 mt-2 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]">
         {options.map((c) => {
           const active = c.id === transaction.category_id;
