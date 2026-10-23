@@ -4,7 +4,8 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireOwner, requireUser } from "@/lib/auth";
-import { telegramConfigured, tg } from "@/lib/telegram/api";
+import { appUrl } from "@/lib/app-url";
+import { ensureWebhook, telegramConfigured, tg } from "@/lib/telegram/api";
 import { hashLinkCode } from "@/lib/telegram/bot";
 
 export type InviteState = { error?: string; invited?: string };
@@ -64,6 +65,7 @@ export async function createTelegramLink(): Promise<{ url?: string; error?: stri
   if (error) return { error: "No pude crear el enlace." };
 
   try {
+    await ensureWebhook(`${appUrl()}/api/telegram`);
     const me = await tg<{ username: string }>("getMe", {});
     return { url: `https://t.me/${me.username}?start=${code}` };
   } catch {

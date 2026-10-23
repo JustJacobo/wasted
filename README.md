@@ -58,9 +58,7 @@ Si la categoría no es la correcta, tócala en la confirmación y la app la reco
    - Define las variables de entorno: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y, opcionalmente, `ANTHROPIC_API_KEY`.
 5. **Telegram (opcional):**
    - Crea el bot con @BotFather y guarda su token en Vercel como `TELEGRAM_BOT_TOKEN`.
-   - Después de desplegar, registra el webhook una vez:
-     `curl -H "Authorization: Bearer $CRON_SECRET" https://<tu-app>.vercel.app/api/telegram/setup`
-   - Cada persona lo conecta desde Ajustes → Conectar Telegram.
+   - Cada persona lo conecta desde Ajustes → Conectar Telegram. La primera vez, eso también registra el webhook del bot (o a mano: `curl -H "Authorization: Bearer $CRON_SECRET" https://<tu-app>.vercel.app/api/telegram/setup`).
 6. **En el celular:** abre la URL.
    - En Android, menú → "Instalar app".
    - En iPhone, Compartir → "Agregar a inicio".

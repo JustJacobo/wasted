@@ -74,3 +74,27 @@ export function editMessage(
 export function answerCallback(id: string, text?: string): Promise<unknown> {
   return tg("answerCallbackQuery", { callback_query_id: id, ...(text ? { text } : {}) });
 }
+
+const COMMANDS = [
+  { command: "hoy", description: "Lo que registraste hoy" },
+  { command: "semana", description: "Cómo vas esta semana" },
+  { command: "mes", description: "Resumen del mes" },
+  { command: "deshacer", description: "Borra el último registro" },
+  { command: "ayuda", description: "Cómo registrar" },
+];
+
+/**
+ * Registra el webhook (y los comandos) si Telegram no apunta ya a esta app.
+ * Se llama al conectar desde Ajustes, así no hace falta un paso manual al desplegar.
+ */
+export async function ensureWebhook(url: string): Promise<{ changed: boolean }> {
+  const info = await tg<{ url: string }>("getWebhookInfo", {});
+  if (info.url === url) return { changed: false };
+  await tg("setWebhook", {
+    url,
+    secret_token: webhookSecret(),
+    allowed_updates: ["message", "callback_query"],
+  });
+  await tg("setMyCommands", { commands: COMMANDS });
+  return { changed: true };
+}
