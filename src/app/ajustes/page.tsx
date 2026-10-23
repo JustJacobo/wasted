@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { InviteForm } from "./invite-form";
+import { ReportToggles } from "./report-toggles";
 import { RemoveButton } from "./remove-button";
 
 export default async function SettingsPage() {
   const { supabase, email, name, role } = await requireUser();
+  const { data: settings } = await supabase
+    .from("user_settings")
+    .select("report_weekly, report_monthly")
+    .maybeSingle();
   const members =
     role === "owner"
       ? ((
@@ -46,6 +51,17 @@ export default async function SettingsPage() {
             ›
           </span>
         </Link>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="px-1 text-sm text-muted">Reportes por correo</h2>
+        <ReportToggles
+          weekly={settings?.report_weekly ?? true}
+          monthly={settings?.report_monthly ?? true}
+        />
+        <p className="px-1 text-xs text-muted">
+          Llegan a {email}: el semanal los lunes y el mensual el día 1, a las 7:00 a. m.
+        </p>
       </section>
 
       {role === "owner" && (

@@ -3,13 +3,8 @@ import "server-only";
 import { requireUser } from "@/lib/auth";
 import { startOfMonth, startOfWeek, todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
-import {
-  buildReport,
-  periodRange,
-  previousRange,
-  type PeriodKind,
-  type Report,
-} from "@/lib/report";
+import { periodRange, type PeriodKind, type Report } from "@/lib/report";
+import { fetchReport } from "@/lib/report-data";
 import { likePattern } from "@/lib/search";
 import type { Category, Summary, Totals, Transaction, TxType } from "@/lib/types";
 
@@ -97,19 +92,7 @@ export async function getTransactionsForMonth(filters: HistoryFilters): Promise<
 /** Reporte del periodo que contiene `anchor`, comparado con el anterior. */
 export async function getReport(kind: PeriodKind, anchor: string, today: string): Promise<Report> {
   const { supabase } = await requireUser();
-  const range = periodRange(kind, anchor);
-  const prev = previousRange(kind, range);
-  const [{ data, error }, categories] = await Promise.all([
-    supabase
-      .from("transactions")
-      .select("type, amount, category_id, occurred_on")
-      .eq("status", "confirmed")
-      .gte("occurred_on", prev.start)
-      .lte("occurred_on", range.end),
-    getCategories(),
-  ]);
-  if (error) throw error;
-  return buildReport(kind, anchor, today, data, categories);
+  return fetchReport(supabase, kind, anchor, today);
 }
 
 function sumSince(rows: Pick<Transaction, "type" | "amount" | "occurred_on">[], since: string): Totals {

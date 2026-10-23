@@ -2,6 +2,7 @@ import type { PeriodKind, Report } from "@/lib/report";
 import { CategoryBars } from "./category-bars";
 import { DailyChart } from "./daily-chart";
 import { PeriodNav } from "./period-nav";
+import { SendReportButton } from "./send-report-button";
 import { StatTiles } from "./stat-tiles";
 
 /** Contenido del dashboard: navegación de periodo, cifras y gráficos. */
@@ -42,6 +43,11 @@ export function ReportView({
               month={report.range.start.slice(0, 7)}
             />
           )}
+          <SendReportButton
+            key={`enviar-${kind}-${report.range.start}`}
+            kind={kind}
+            anchor={report.range.start}
+          />
         </>
       )}
     </div>
