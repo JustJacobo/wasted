@@ -52,7 +52,7 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - El sheet agrega una entrada al historial para que Atrás lo cierre.
   - `?nuevo=gasto|ingreso` (accesos directos del manifest) elige el tipo inicial.
   - El ⌨ del sheet abre el modo texto secundario (`text-step.tsx`).
-- **Registro por texto** (modo ⌨ y futuro Telegram/WhatsApp): todo pasa por `recordQuickEntry()` en `src/lib/record.ts`. El flujo es:
+- **Registro por texto** (modo ⌨, Telegram y futuro WhatsApp): todo pasa por `recordQuickEntry()` en `src/lib/record.ts`. El flujo es:
   1. `parseQuickAdd` (`src/lib/quick-add/parse.ts`) interpreta montos como `25k`, `1.5M`, `20 lucas` o `$25.000`, fechas como `ayer`, `el lunes` o `15/10`, y decide si es gasto o ingreso (`+` o palabras clave).
   2. `matchCategory` busca en las reglas aprendidas (`category_rules`) y luego en las palabras clave integradas (`keywords.ts`, indexadas por `categories.key`).
   3. Si nada coincide, `suggestCategory` le pregunta a Claude Haiku (`src/lib/ai/categorize.ts`, se omite sin `ANTHROPIC_API_KEY`).
@@ -67,3 +67,10 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - Las variaciones llevan ▲▼ coloreado y el texto en tinta neutra.
   - Las cifras grandes ajustan su tamaño con `sizeForLength` (`src/lib/money.ts`) en vez de recortarse.
 - **Aprendizaje**: cuando el usuario corrige una categoría, `learnCategory` guarda la descripción plegada (sin tildes, en minúsculas) como regla.
+- **Telegram** (`src/lib/telegram/`, webhook en `src/app/api/telegram/route.ts`):
+  - El webhook valida `X-Telegram-Bot-Api-Secret-Token`, que se deriva del token del bot (`webhookSecret`). `/api/telegram/setup` (con `CRON_SECRET`) registra el webhook y los comandos.
+  - Vinculación: Ajustes crea un código de un solo uso (15 min, guardado como hash) y abre `t.me/<bot>?start=<código>`. Tabla `telegram_links`: un chat por usuario, solo chats privados, y en cada mensaje se verifica que el usuario siga en `members`.
+  - Todo usa el cliente de servicio, así que cada consulta filtra por `user_id`. `recordQuickEntry` recibe `userId` y `externalId = tg:<chat>:<mensaje>` para que un reintento de Telegram no duplique.
+  - Mensajes y botones puros y testeados en `format.ts` (HTML de Telegram escapado; los uuid van en base64url para caber en `callback_data`).
+  - Los reportes programados salen por correo y por Telegram; registrar desde la web avisa por Telegram al cruzar el 80% o el 100% de lo que entró en la semana (`notify.ts`, dentro de `after()`).
+  - En local: `TELEGRAM_API_URL` apunta a un servidor falso del Bot API.

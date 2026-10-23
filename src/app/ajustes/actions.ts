@@ -1,8 +1,11 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireOwner, requireUser } from "@/lib/auth";
+import { telegramConfigured, tg } from "@/lib/telegram/api";
+import { hashLinkCode } from "@/lib/telegram/bot";
 
 export type InviteState = { error?: string; invited?: string };
 
@@ -43,4 +46,33 @@ export async function setReportPreference(
     .upsert({ user_id: userId, [parsed.data.field]: parsed.data.enabled, updated_at: new Date().toISOString() });
   revalidatePath("/ajustes");
   return error ? { error: "No pude guardar la preferencia." } : {};
+}
+
+/**
+ * Crea un código de un solo uso (15 min) y devuelve el enlace t.me que abre el
+ * bot con `/start <código>`. El webhook lo canjea y vincula el chat.
+ */
+export async function createTelegramLink(): Promise<{ url?: string; error?: string }> {
+  const { supabase, userId } = await requireUser();
+  if (!telegramConfigured()) return { error: "El bot de Telegram no está configurado." };
+
+  const code = randomBytes(18).toString("base64url");
+  await supabase.from("telegram_link_codes").delete().eq("user_id", userId);
+  const { error } = await supabase
+    .from("telegram_link_codes")
+    .insert({ code_hash: hashLinkCode(code), user_id: userId });
+  if (error) return { error: "No pude crear el enlace." };
+
+  try {
+    const me = await tg<{ username: string }>("getMe", {});
+    return { url: `https://t.me/${me.username}?start=${code}` };
+  } catch {
+    return { error: "No pude hablar con Telegram. Intenta de nuevo." };
+  }
+}
+
+export async function unlinkTelegram(): Promise<void> {
+  const { supabase, userId } = await requireUser();
+  await supabase.from("telegram_links").delete().eq("user_id", userId);
+  revalidatePath("/ajustes");
 }

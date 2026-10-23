@@ -1,12 +1,12 @@
 import "server-only";
 
 import { requireUser } from "@/lib/auth";
-import { startOfMonth, startOfWeek, todayIn } from "@/lib/dates";
+import { todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
 import { periodRange, type PeriodKind, type Report } from "@/lib/report";
-import { fetchReport } from "@/lib/report-data";
+import { fetchReport, fetchSummary } from "@/lib/report-data";
 import { likePattern } from "@/lib/search";
-import type { Category, Summary, Totals, Transaction, TxType } from "@/lib/types";
+import type { Category, Summary, Transaction, TxType } from "@/lib/types";
 
 const TX_COLUMNS =
   "id, type, amount, description, merchant, category_id, account_id, occurred_on, source, status, created_at";
@@ -95,28 +95,8 @@ export async function getReport(kind: PeriodKind, anchor: string, today: string)
   return fetchReport(supabase, kind, anchor, today);
 }
 
-function sumSince(rows: Pick<Transaction, "type" | "amount" | "occurred_on">[], since: string): Totals {
-  const totals: Totals = { income: 0, expense: 0 };
-  for (const row of rows) {
-    if (row.occurred_on >= since) totals[row.type] += Number(row.amount);
-  }
-  return totals;
-}
-
 /** Ingresos y gastos confirmados de la semana (lunes a hoy) y del mes en curso. */
 export async function getSummary(today: string = todayIn()): Promise<Summary> {
   const { supabase } = await requireUser();
-  const week = startOfWeek(today);
-  const month = startOfMonth(today);
-  const since = week < month ? week : month;
-
-  const { data, error } = await supabase
-    .from("transactions")
-    .select("type, amount, occurred_on")
-    .eq("status", "confirmed")
-    .gte("occurred_on", since)
-    .lte("occurred_on", today);
-  if (error) throw error;
-
-  return { week: sumSince(data, week), month: sumSince(data, month) };
+  return fetchSummary(supabase, today);
 }

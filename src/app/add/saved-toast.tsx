@@ -1,9 +1,8 @@
 "use client";
 
 import { formatCOP } from "@/lib/money";
-import { budgetStatus } from "@/lib/budget";
+import { budgetMessage, budgetStatus } from "@/lib/budget";
 import type { Category, Totals, Transaction } from "@/lib/types";
-import { budgetMessage } from "../budget-meter";
 
 export type Feedback =
   | { kind: "saved"; transaction: Transaction; week?: Totals }

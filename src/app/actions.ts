@@ -2,11 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { safeReturnPath } from "@/lib/search";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
 import { getSummary } from "@/lib/data";
+import { todayIn } from "@/lib/dates";
+import { notifyBudgetCrossing } from "@/lib/telegram/notify";
 import type { Totals, Transaction } from "@/lib/types";
 
 export type QuickAddState =
@@ -15,12 +18,14 @@ export type QuickAddState =
   | { status: "error"; error: string; at: number };
 
 export async function quickAdd(text: string): Promise<QuickAddState> {
-  const { supabase } = await requireUser();
+  const { supabase, userId } = await requireUser();
   const result = await recordQuickEntry(supabase, text.slice(0, 200));
   if (!result.ok) return { status: "error", error: result.error, at: Date.now() };
   revalidatePath("/");
   revalidatePath("/movimientos");
-  const { week } = await getSummary();
+  const today = todayIn();
+  const { week } = await getSummary(today);
+  after(() => notifyBudgetCrossing(userId, result.transaction, week, today));
   return { status: "ok", transaction: result.transaction, week, at: Date.now() };
 }
 
@@ -36,7 +41,7 @@ const NewTransaction = z.object({
 export async function addTransaction(
   input: z.input<typeof NewTransaction>,
 ): Promise<QuickAddState> {
-  const { supabase } = await requireUser();
+  const { supabase, userId } = await requireUser();
   const parsed = NewTransaction.safeParse(input);
   if (!parsed.success) {
     return { status: "error", error: "Revisa el monto y la categoría.", at: Date.now() };
@@ -64,7 +69,9 @@ export async function addTransaction(
 
   revalidatePath("/");
   revalidatePath("/movimientos");
-  const { week } = await getSummary();
+  const today = todayIn();
+  const { week } = await getSummary(today);
+  after(() => notifyBudgetCrossing(userId, data, week, today));
   return { status: "ok", transaction: data, week, at: Date.now() };
 }
 

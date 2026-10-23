@@ -3,13 +3,14 @@ import { requireUser } from "@/lib/auth";
 import { InviteForm } from "./invite-form";
 import { ReportToggles } from "./report-toggles";
 import { RemoveButton } from "./remove-button";
+import { TelegramConnect } from "./telegram-connect";
 
 export default async function SettingsPage() {
   const { supabase, email, name, role } = await requireUser();
-  const { data: settings } = await supabase
-    .from("user_settings")
-    .select("report_weekly, report_monthly")
-    .maybeSingle();
+  const [{ data: settings }, { data: telegram }] = await Promise.all([
+    supabase.from("user_settings").select("report_weekly, report_monthly").maybeSingle(),
+    supabase.from("telegram_links").select("username").maybeSingle(),
+  ]);
   const members =
     role === "owner"
       ? ((
@@ -54,13 +55,23 @@ export default async function SettingsPage() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-sm text-muted">Reportes por correo</h2>
+        <h2 className="px-1 text-sm text-muted">Telegram</h2>
+        <TelegramConnect linked={Boolean(telegram)} username={telegram?.username ?? null} />
+        <p className="px-1 text-xs text-muted">
+          Escríbele al bot “25k almuerzo” para registrar sin abrir la app, y usa /semana o /mes
+          para ver cómo vas. Los reportes y avisos de presupuesto también llegan ahí.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="px-1 text-sm text-muted">Reportes</h2>
         <ReportToggles
           weekly={settings?.report_weekly ?? true}
           monthly={settings?.report_monthly ?? true}
         />
         <p className="px-1 text-xs text-muted">
-          Llegan a {email}: el semanal los lunes y el mensual el día 1, a las 7:00 a. m.
+          Llegan a {email}{telegram ? " y a Telegram" : ""}: el semanal los lunes y el mensual el
+          día 1, a las 7:00 a. m.
         </p>
       </section>
 

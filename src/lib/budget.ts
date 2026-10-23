@@ -1,3 +1,5 @@
+import { formatCOP } from "@/lib/money";
+
 export type BudgetLevel = "none" | "ok" | "warning" | "over";
 
 export interface BudgetStatus {
@@ -17,4 +19,17 @@ export function budgetStatus(expense: number, income: number): BudgetStatus {
   const ratio = expense / income;
   const level = ratio >= 1 ? "over" : ratio >= WARNING_AT ? "warning" : "ok";
   return { ratio, level };
+}
+
+const percent = new Intl.NumberFormat("es-CO", { style: "percent", maximumFractionDigits: 0 });
+
+/** Texto del estado del presupuesto; null si no hay nada que decir. */
+export function budgetMessage(
+  { ratio, level }: BudgetStatus,
+  expense: number,
+  income: number,
+): string | null {
+  if (level === "none") return null;
+  if (level === "over") return `Te pasaste ${formatCOP(expense - income)} de lo que entró`;
+  return `Llevas ${percent.format(ratio)} de lo que entró`;
 }

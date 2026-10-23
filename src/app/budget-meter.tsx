@@ -1,18 +1,4 @@
-import { budgetStatus, type BudgetStatus } from "@/lib/budget";
-import { formatCOP } from "@/lib/money";
-
-const percent = new Intl.NumberFormat("es-CO", { style: "percent", maximumFractionDigits: 0 });
-
-/** Texto del estado del presupuesto; null si no hay nada que decir. */
-export function budgetMessage(
-  { ratio, level }: BudgetStatus,
-  expense: number,
-  income: number,
-): string | null {
-  if (level === "none") return null;
-  if (level === "over") return `Te pasaste ${formatCOP(expense - income)} de lo que entró`;
-  return `Llevas ${percent.format(ratio)} de lo que entró`;
-}
+import { budgetMessage, budgetStatus } from "@/lib/budget";
 
 /**
  * Barra de lo gastado frente a lo que entró en la semana. El relleno cambia de
