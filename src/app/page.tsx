@@ -27,6 +27,20 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </span>
         </h1>
         <Link
+          href="/reportes"
+          aria-label="Reportes"
+          className="ml-auto grid size-9 place-items-center rounded-xl text-muted active:scale-[0.97]"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M4 20V10M10 20V4M16 20v-7M22 20H2"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </Link>
+        <Link
           href="/ajustes"
           aria-label="Ajustes"
           className="grid size-9 place-items-center rounded-xl text-muted active:scale-[0.97]"

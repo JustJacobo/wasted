@@ -1,4 +1,5 @@
-import { formatCOP } from "@/lib/money";
+import Link from "next/link";
+import { formatCOP, sizeForLength } from "@/lib/money";
 import type { Summary } from "@/lib/types";
 
 const monthName = new Intl.DateTimeFormat("es-CO", { month: "long", timeZone: "UTC" });
@@ -8,6 +9,7 @@ export function SummaryCard({ summary, today }: { summary: Summary; today: strin
   const left = week.income - week.expense;
   const hasIncome = week.income > 0;
   const month_ = monthName.format(new Date(`${today}T12:00:00Z`));
+  const hero = formatCOP(hasIncome ? left : week.expense);
 
   return (
     <section className="mt-2 rounded-3xl bg-surface p-5 shadow-sm ring-1 ring-border">
@@ -15,25 +17,39 @@ export function SummaryCard({ summary, today }: { summary: Summary; today: strin
         {hasIncome ? "Te quedan esta semana" : "Gastaste esta semana"}
       </p>
       <p
-        className={`tabular mt-1 text-4xl font-bold tracking-tight ${
-          hasIncome && left < 0 ? "text-danger" : ""
-        }`}
+        className={`mt-1 font-bold tracking-tight ${sizeForLength(
+          hero,
+          [
+            [11, "text-4xl"],
+            [14, "text-3xl"],
+          ],
+          "text-2xl",
+        )} ${hasIncome && left < 0 ? "text-danger" : ""}`}
       >
-        {formatCOP(hasIncome ? left : week.expense)}
+        {hero}
       </p>
       <p className="tabular mt-2 text-sm text-muted">
         Entró <span className="text-accent">{formatCOP(week.income)}</span> · Salió{" "}
         <span className="text-foreground">{formatCOP(week.expense)}</span>
       </p>
 
-      <div className="tabular mt-4 flex justify-between border-t border-border pt-3 text-sm">
+      <Link
+        href="/reportes"
+        className="tabular mt-4 flex items-center justify-between gap-2 border-t border-border pt-3 text-sm active:opacity-70"
+      >
         <span className="text-muted capitalize">{month_}</span>
-        <span>
-          <span className="text-accent">+{formatCOP(month.income)}</span>
-          <span className="text-muted"> · </span>
-          <span>-{formatCOP(month.expense)}</span>
+        <span className="flex items-center gap-2">
+          <span>
+            <span className="text-accent">+{formatCOP(month.income)}</span>
+            <span className="text-muted"> · </span>
+            <span>-{formatCOP(month.expense)}</span>
+          </span>
+          <span aria-hidden className="text-muted">
+            ›
+          </span>
+          <span className="sr-only">Ver reportes</span>
         </span>
-      </div>
+      </Link>
     </section>
   );
 }

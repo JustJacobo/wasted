@@ -9,6 +9,19 @@ export function formatCOP(amount: number): string {
   return cop.format(amount);
 }
 
+/**
+ * Elige el tamaño de letra según el largo del texto, para que un monto enorme
+ * se achique en vez de desbordar o recortar dígitos. `steps` va de mayor a
+ * menor: [largo máximo, clase].
+ */
+export function sizeForLength(
+  text: string,
+  steps: [maxLength: number, className: string][],
+  fallback: string,
+): string {
+  return steps.find(([max]) => text.length <= max)?.[1] ?? fallback;
+}
+
 /** Versión compacta para gráficos y totales: 25000 → "$25k", 3500000 → "$3,5M". */
 export function formatCOPShort(amount: number): string {
   const abs = Math.abs(amount);

@@ -8,6 +8,8 @@
   --border: #e7e5e4;
   --accent: #16a34a;
   --danger: #dc2626;
+  /* Barras de reportes: un solo tono (magnitud), validado con la skill dataviz. */
+  --viz: #2a78d6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,6 +21,7 @@
     --border: #292524;
     --accent: #4ade80;
     --danger: #f87171;
+    --viz: #3987e5;
   }
 }
 
@@ -30,6 +33,7 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-danger: var(--danger);
+  --color-viz: var(--viz);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   /* Curvas de animación: `ease-ui` para entradas y respuestas, `ease-drawer` para la ventana inferior. */

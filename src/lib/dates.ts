@@ -69,6 +69,32 @@ export function formatShortDay(day: string): string {
   return short.format(toUtc(day)).replace(" de ", " ").replace(".", "");
 }
 
+const monthYear = new Intl.DateTimeFormat("es-CO", {
+  timeZone: "UTC",
+  month: "long",
+  year: "numeric",
+});
+
+/** "Octubre 2026" */
+export function formatMonth(day: string): string {
+  const text = monthYear.format(toUtc(day)).replace(" de ", " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** "19 – 25 oct" o "27 oct – 2 nov" */
+export function formatDayRange(start: string, end: string): string {
+  const a = formatShortDay(start);
+  const b = formatShortDay(end);
+  return start.slice(0, 7) === end.slice(0, 7) ? `${a.split(" ")[0]} – ${b}` : `${a} – ${b}`;
+}
+
+const weekdayLetter = new Intl.DateTimeFormat("es-CO", { timeZone: "UTC", weekday: "narrow" });
+
+/** "L", "M", "X"… */
+export function formatWeekdayLetter(day: string): string {
+  return weekdayLetter.format(toUtc(day)).toUpperCase();
+}
+
 /** "Hoy", "Ayer" o "lun, 20 oct". */
 export function formatDay(day: string, today: string = todayIn()): string {
   if (day === today) return "Hoy";
