@@ -43,7 +43,7 @@ Si la categoría no es la correcta, tócala en la confirmación y la app la reco
 3. **URLs de Auth:** en Supabase → Authentication → URL Configuration, pon `https://<tu-app>.vercel.app` como Site URL y agrega `https://<tu-app>.vercel.app/auth/callback` como redirect.
 4. **Vercel:**
    - Importa el repo.
-   - Define las variables de entorno: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `ALLOWED_EMAILS` (tu correo) y, opcionalmente, `ANTHROPIC_API_KEY`.
+   - Define las variables de entorno: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y, opcionalmente, `ANTHROPIC_API_KEY`.
 5. **En el celular:** abre la URL.
    - En Android, menú → "Instalar app".
    - En iPhone, Compartir → "Agregar a inicio".

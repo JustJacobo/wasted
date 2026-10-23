@@ -45,7 +45,7 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
 
 - **Next.js 16 (App Router)**. `cacheComponents` está apagado a propósito: casi todo depende de la sesión. El middleware se llama `src/proxy.ts`. Antes de usar una API de Next, consulta `node_modules/next/dist/docs/`.
 - **Supabase**: Postgres + Auth (Google y enlace mágico) + RLS por `user_id`. El esquema está en `supabase/migrations/`. Un trigger sobre `auth.users` crea las categorías y la cuenta por defecto. Los montos se guardan como `bigint` en pesos y las fechas como `date` en hora de Colombia (`src/lib/dates.ts`).
-- **Auth**: `requireUser()` en `src/lib/auth.ts` es la puerta de toda página y Server Action. `ALLOWED_EMAILS` restringe quién entra.
+- **Auth**: `requireUser()` en `src/lib/auth.ts` es la puerta de toda página y Server Action. Solo entran correos de la tabla `members` (los dueños invitan desde /ajustes); RLS además exige `is_member()`.
 - **Registro rápido**: todo canal (web, Telegram y luego WhatsApp) pasa por `recordQuickEntry()` en `src/lib/record.ts`. El flujo es:
   1. `parseQuickAdd` (`src/lib/quick-add/parse.ts`) interpreta montos como `25k`, `1.5M`, `20 lucas` o `$25.000`, fechas como `ayer`, `el lunes` o `15/10`, y decide si es gasto o ingreso (`+` o palabras clave).
   2. `matchCategory` busca en las reglas aprendidas (`category_rules`) y luego en las palabras clave integradas (`keywords.ts`, indexadas por `categories.key`).

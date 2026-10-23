@@ -2,7 +2,8 @@ import { LoginForm } from "./login-form";
 
 const ERRORS: Record<string, string> = {
   login: "No se pudo iniciar sesión. Intenta de nuevo.",
-  no_autorizado: "Esta cuenta no tiene acceso a Wasted.",
+  no_autorizado:
+    "Esta cuenta todavía no tiene acceso. Pídele a quien te compartió Wasted que agregue tu correo.",
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
