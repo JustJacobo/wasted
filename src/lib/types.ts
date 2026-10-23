@@ -10,6 +10,8 @@ export interface Category {
   type: TxType;
   monthly_budget: number | null;
   sort: number;
+  /** Archivada: no se ofrece para registrar, pero sigue nombrando movimientos pasados. */
+  archived: boolean;
 }
 
 export interface Transaction {

@@ -22,7 +22,9 @@ export function EditForm({
   const [deleting, startDelete] = useTransition();
   const [type, setType] = useState<TxType>(transaction.type);
   const [amount, setAmount] = useState(groupThousands(String(transaction.amount)));
-  const options = categories.filter((c) => c.type === type);
+  const options = categories.filter(
+    (c) => c.type === type && (!c.archived || c.id === transaction.category_id),
+  );
   const [categoryId, setCategoryId] = useState(
     transaction.type === type ? transaction.category_id : null,
   );

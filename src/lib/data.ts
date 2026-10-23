@@ -16,16 +16,22 @@ import type { Category, Summary, Totals, Transaction, TxType } from "@/lib/types
 const TX_COLUMNS =
   "id, type, amount, description, merchant, category_id, account_id, occurred_on, source, status, created_at";
 
+/**
+ * Todas las categorías, incluidas las archivadas (para nombrar movimientos
+ * pasados). Donde se elige una categoría, filtrar con `active`.
+ */
 export async function getCategories(): Promise<Category[]> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from("categories")
-    .select("id, key, name, emoji, type, monthly_budget, sort")
-    .eq("archived", false)
+    .select("id, key, name, emoji, type, monthly_budget, sort, archived")
     .order("sort");
   if (error) throw error;
   return data;
 }
+
+/** Solo las categorías que se pueden elegir al registrar. */
+export const active = (categories: Category[]) => categories.filter((c) => !c.archived);
 
 export async function getRules(): Promise<CategoryRule[]> {
   const { supabase } = await requireUser();

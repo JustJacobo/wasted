@@ -35,6 +35,19 @@ export default async function SettingsPage() {
         </div>
       </section>
 
+      <section className="space-y-2">
+        <h2 className="px-1 text-sm text-muted">Tus finanzas</h2>
+        <Link
+          href="/ajustes/categorias"
+          className="flex items-center justify-between rounded-2xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
+        >
+          <span>Categorías</span>
+          <span aria-hidden className="text-muted">
+            ›
+          </span>
+        </Link>
+      </section>
+
       {role === "owner" && (
         <section className="space-y-2">
           <h2 className="px-1 text-sm text-muted">Personas con acceso</h2>

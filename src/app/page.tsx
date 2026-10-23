@@ -2,6 +2,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import {
+  active,
   getCategories,
   getRecentTransactions,
   getReport,
@@ -59,7 +60,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         dashboard={<ReportView kind={kind} report={report} today={today} />}
       />
       <AddLauncher
-        categories={categories}
+        categories={active(categories)}
         rules={rules}
         usage={transactions}
         initialType={params.nuevo === "ingreso" ? "income" : "expense"}
