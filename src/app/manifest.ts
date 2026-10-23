@@ -15,11 +15,18 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/512", sizes: "512x512", type: "image/png" },
       { src: "/icons/512", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
+    // Aparecen al mantener pulsado el ícono (Android). Abren la ventana de registro.
     shortcuts: [
       {
-        name: "Nuevo gasto",
+        name: "Añadir gasto",
         short_name: "Gasto",
-        url: "/?nuevo=1",
+        url: "/?nuevo=gasto",
+        icons: [{ src: "/icons/192", sizes: "192x192" }],
+      },
+      {
+        name: "Añadir ingreso",
+        short_name: "Ingreso",
+        url: "/?nuevo=ingreso",
         icons: [{ src: "/icons/192", sizes: "192x192" }],
       },
     ],

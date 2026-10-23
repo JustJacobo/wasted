@@ -15,7 +15,7 @@ export function TransactionList({
   if (transactions.length === 0) {
     return (
       <p className="mt-10 text-center text-sm text-muted">
-        Escribe abajo tu primer gasto, por ejemplo <strong>25k almuerzo</strong>.
+        Toca <strong>− Gasto</strong> o <strong>+ Ingreso</strong> para registrar tu primer movimiento.
       </p>
     );
   }
@@ -52,11 +52,13 @@ export function TransactionList({
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">
-                          {tx.description || category?.name || "Sin descripción"}
+                          {tx.description || category?.name || "Sin categoría"}
                         </span>
-                        <span className="block truncate text-xs text-muted">
-                          {category?.name ?? "Sin categoría"}
-                        </span>
+                        {tx.description && (
+                          <span className="block truncate text-xs text-muted">
+                            {category?.name ?? "Sin categoría"}
+                          </span>
+                        )}
                       </span>
                       <span
                         className={`tabular shrink-0 font-medium ${

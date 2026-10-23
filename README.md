@@ -16,7 +16,19 @@ npm run dev
 
 Abre http://localhost:3000 y entra con "Enviar enlace". En local el correo no sale a internet: ábrelo en Mailpit (http://127.0.0.1:54324). Supabase Studio queda en http://127.0.0.1:54323.
 
-## Cómo se escribe un movimiento
+## Cómo registrar
+
+Al abrir la app aparece la ventana de registro, y también la abren los botones **− Gasto** y **+ Ingreso** de abajo:
+
+1. Escribe el monto con el teclado numérico y toca **Siguiente**.
+2. Si quieres, cambia la fecha (Hoy ▾) o agrega una nota.
+3. **Toca la categoría** y queda guardado. Las que más usas aparecen primero.
+
+En Android, al mantener pulsado el ícono de la app aparecen los accesos directos **Añadir gasto** y **Añadir ingreso**.
+
+### Modo texto (⌨)
+
+En la ventana, el ícono ⌨ permite escribir todo en una línea:
 
 | Escribes | Resultado |
 |---|---|

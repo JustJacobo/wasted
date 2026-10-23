@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getCategories, getRecentTransactions, getRules, getSummary } from "@/lib/data";
 import { todayIn } from "@/lib/dates";
-import { QuickAdd } from "./quick-add";
+import { AddLauncher } from "./add/add-launcher";
 import { SummaryCard } from "./summary-card";
 import { TransactionList } from "./transaction-list";
 
@@ -45,7 +45,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
       <SummaryCard summary={summary} today={today} />
       <TransactionList transactions={transactions} categories={categories} today={today} />
-      <QuickAdd categories={categories} rules={rules} autoFocus={nuevo === "1"} />
+      <AddLauncher
+        categories={categories}
+        rules={rules}
+        usage={transactions}
+        initialType={nuevo === "ingreso" ? "income" : "expense"}
+      />
     </div>
   );
 }

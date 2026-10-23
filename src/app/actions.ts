@@ -20,6 +20,48 @@ export async function quickAdd(text: string): Promise<QuickAddState> {
   return { status: "ok", transaction: result.transaction, at: Date.now() };
 }
 
+const NewTransaction = z.object({
+  type: z.enum(["expense", "income"]),
+  amount: z.number().int().positive().max(999_999_999_999),
+  categoryId: z.uuid(),
+  description: z.string().trim().max(200),
+  occurredOn: z.iso.date(),
+});
+
+/** Registro desde los botones de la ventana de añadir (monto → categoría). */
+export async function addTransaction(
+  input: z.input<typeof NewTransaction>,
+): Promise<QuickAddState> {
+  const { supabase } = await requireUser();
+  const parsed = NewTransaction.safeParse(input);
+  if (!parsed.success) {
+    return { status: "error", error: "Revisa el monto y la categoría.", at: Date.now() };
+  }
+
+  const { type, amount, categoryId, description, occurredOn } = parsed.data;
+  const { data, error } = await supabase
+    .from("transactions")
+    .insert({
+      type,
+      amount,
+      category_id: categoryId,
+      description,
+      occurred_on: occurredOn,
+      source: "manual",
+    })
+    .select(
+      "id, type, amount, description, merchant, category_id, account_id, occurred_on, source, status, created_at",
+    )
+    .single();
+  if (error) return { status: "error", error: "No pude guardar el movimiento.", at: Date.now() };
+
+  // La nota con su categoría alimenta las reglas del modo texto y de Telegram.
+  if (description) await learnCategory(supabase, description, categoryId);
+
+  revalidatePath("/");
+  return { status: "ok", transaction: data, at: Date.now() };
+}
+
 export async function deleteTransaction(id: string): Promise<void> {
   const { supabase } = await requireUser();
   await supabase.from("transactions").delete().eq("id", z.uuid().parse(id));

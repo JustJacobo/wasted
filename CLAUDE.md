@@ -24,7 +24,7 @@ Cuando uses una skill, dilo en una línea.
 
 ## Producto
 
-Wasted es una app personal de finanzas (un solo usuario, Colombia, COP). Lo prioritario es que **registrar un gasto o ingreso tome segundos**: el usuario abandonó otras apps y Notion por tener demasiados pasos. Ninguna feature debe añadir pasos al registro. El plan por fases está en `~/.claude/plans/valiant-growing-eclipse.md`.
+Wasted es una app de finanzas personales (Colombia, COP), multiusuario por invitación. Lo prioritario es que **registrar un gasto o ingreso tome segundos**: el usuario abandonó otras apps y Notion por tener demasiados pasos. Ninguna feature debe añadir pasos al registro. El plan por fases está en `~/.claude/plans/valiant-growing-eclipse.md`.
 
 Las categorías por defecto y las palabras clave salen del dashboard que el usuario tenía en Notion: cuota semanal como ingreso principal, mucho transporte (Uber, DiDi, Yango) y la métrica "te quedan $X esta semana".
 
@@ -46,7 +46,13 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
 - **Next.js 16 (App Router)**. `cacheComponents` está apagado a propósito: casi todo depende de la sesión. El middleware se llama `src/proxy.ts`. Antes de usar una API de Next, consulta `node_modules/next/dist/docs/`.
 - **Supabase**: Postgres + Auth (Google y enlace mágico) + RLS por `user_id`. El esquema está en `supabase/migrations/`. Un trigger sobre `auth.users` crea las categorías y la cuenta por defecto. Los montos se guardan como `bigint` en pesos y las fechas como `date` en hora de Colombia (`src/lib/dates.ts`).
 - **Auth**: `requireUser()` en `src/lib/auth.ts` es la puerta de toda página y Server Action. Solo entran correos de la tabla `members` (los dueños invitan desde /ajustes); RLS además exige `is_member()`.
-- **Registro rápido**: todo canal (web, Telegram y luego WhatsApp) pasa por `recordQuickEntry()` en `src/lib/record.ts`. El flujo es:
+- **Registro en la web (vía principal)**: `src/app/add/`. `AddLauncher` muestra la barra "− Gasto / + Ingreso" y abre `AddSheet` al entrar a la app.
+  - El sheet tiene 2 pasos: monto con teclado propio (`src/lib/amount-keypad.ts`) y luego categoría, que al tocarla guarda con la Server Action `addTransaction`.
+  - Las categorías salen ordenadas por uso (`src/lib/category-usage.ts`).
+  - El sheet agrega una entrada al historial para que Atrás lo cierre.
+  - `?nuevo=gasto|ingreso` (accesos directos del manifest) elige el tipo inicial.
+  - El ⌨ del sheet abre el modo texto secundario (`text-step.tsx`).
+- **Registro por texto** (modo ⌨ y futuro Telegram/WhatsApp): todo pasa por `recordQuickEntry()` en `src/lib/record.ts`. El flujo es:
   1. `parseQuickAdd` (`src/lib/quick-add/parse.ts`) interpreta montos como `25k`, `1.5M`, `20 lucas` o `$25.000`, fechas como `ayer`, `el lunes` o `15/10`, y decide si es gasto o ingreso (`+` o palabras clave).
   2. `matchCategory` busca en las reglas aprendidas (`category_rules`) y luego en las palabras clave integradas (`keywords.ts`, indexadas por `categories.key`).
   3. Si nada coincide, `suggestCategory` le pregunta a Claude Haiku (`src/lib/ai/categorize.ts`, se omite sin `ANTHROPIC_API_KEY`).
