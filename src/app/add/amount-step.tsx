@@ -51,7 +51,7 @@ export function AmountStep({
             className={`h-10 rounded-xl text-sm font-medium transition-colors duration-150 ${
               type === t
                 ? t === "income"
-                  ? "bg-accent text-background"
+                  ? "bg-accent text-on-accent"
                   : "bg-foreground text-background"
                 : "text-muted"
             }`}

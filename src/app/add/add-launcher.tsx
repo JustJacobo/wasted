@@ -125,9 +125,9 @@ export function AddLauncher({
             <button
               type="button"
               onClick={() => openWith("income")}
-              className="h-14 rounded-2xl bg-accent text-lg font-semibold text-background transition-transform duration-150 ease-out active:scale-[0.97]"
+              className="h-14 rounded-2xl bg-surface text-lg font-semibold ring-1 ring-border transition-transform duration-150 ease-out active:scale-[0.97]"
             >
-              + Ingreso
+              <span className="text-accent-ink">+</span> Ingreso
             </button>
           </div>
         </div>

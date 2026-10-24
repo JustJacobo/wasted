@@ -49,7 +49,7 @@ export function SavedToast({
     <div className={`rounded-2xl bg-surface p-3 shadow-lg ring-1 ring-border ${ENTER}`}>
       <div className="flex items-center justify-between gap-3 px-1">
         <p className="tabular min-w-0 truncate text-sm" aria-live="polite">
-          <span className="text-accent">✓</span>{" "}
+          <span className="text-accent-ink">✓</span>{" "}
           {transaction.type === "income" ? "Ingreso" : "Gasto"}{" "}
           <strong>{formatCOP(Number(transaction.amount))}</strong>
           {transaction.description && ` · ${transaction.description}`}

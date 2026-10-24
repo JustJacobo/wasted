@@ -30,7 +30,7 @@ export function Delta({
   const good = up === upIsGood;
   return (
     <span className="text-xs text-muted">
-      <span aria-hidden className={`mr-1 ${good ? "text-accent" : "text-danger"}`}>
+      <span aria-hidden className={`mr-1 ${good ? "text-accent-ink" : "text-danger"}`}>
         {up ? "▲" : "▼"}
       </span>
       <span className="sr-only">{up ? "Subió" : "Bajó"}</span>

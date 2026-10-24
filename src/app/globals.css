@@ -1,35 +1,91 @@
 @import "tailwindcss";
 
+/*
+ * Papel y tinta. El único color lo pone el tema de acento (Ajustes → Tema),
+ * que vive en <html data-accent>. Sin atributo = "tinta" (neutro).
+ * Contrastes: textos ≥4,5:1 sobre el fondo; --viz validado con la skill dataviz.
+ */
 :root {
-  --background: #fafaf9;
-  --surface: #ffffff;
-  --foreground: #1c1917;
-  --muted: #78716c;
-  --border: #e7e5e4;
-  --accent: #16a34a;
-  /* Verde para texto: 5:1 sobre blanco (el --accent solo alcanza 3,3:1). */
-  --accent-ink: #15803d;
-  --danger: #dc2626;
-  /* Barras de reportes: un solo tono (magnitud), validado con la skill dataviz. */
-  --viz: #2a78d6;
-  /* Barra de presupuesto: aviso (≥80%) y exceso (≥100%). */
+  --background: #f6f5f1;
+  --surface: #fdfcfa;
+  --foreground: #161513;
+  --muted: #6b6860;
+  --border: #e4e2dc;
+  --danger: #c62828;
+  /* Relleno de acento, el texto encima (--on-accent) y el acento para texto suelto. */
+  --accent: #161513;
+  --on-accent: #f6f5f1;
+  --accent-ink: #161513;
+  /* Barras de reportes: un solo tono (magnitud). */
+  --viz: #57544d;
+  /* Mecha de presupuesto: aviso (≥80%) y exceso (≥100%). */
   --viz-warn: #d97706;
   --viz-over: #dc2626;
 }
 
+:root[data-accent="brasa"] {
+  --accent: #ff5a1f;
+  --on-accent: #161513;
+  --accent-ink: #c2410c;
+  --viz: #e8501a;
+}
+:root[data-accent="cobalto"] {
+  --accent: #2f4bff;
+  --on-accent: #ffffff;
+  --accent-ink: #2f4bff;
+  --viz: #2f4bff;
+}
+:root[data-accent="lila"] {
+  --accent: #7c4dff;
+  --on-accent: #ffffff;
+  --accent-ink: #6b3fe0;
+  --viz: #7c4dff;
+}
+:root[data-accent="menta"] {
+  --accent: #19b38a;
+  --on-accent: #0f2a22;
+  --accent-ink: #0b7a5e;
+  --viz: #0f9474;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0c0a09;
-    --surface: #1c1917;
-    --foreground: #f5f5f4;
-    --muted: #a8a29e;
-    --border: #292524;
-    --accent: #4ade80;
-    --accent-ink: #4ade80;
+    --background: #0f0e0d;
+    --surface: #1a1917;
+    --foreground: #f2f0ea;
+    --muted: #a19d94;
+    --border: #2a2825;
     --danger: #f87171;
-    --viz: #3987e5;
+    --accent: #f2f0ea;
+    --on-accent: #0f0e0d;
+    --accent-ink: #f2f0ea;
+    --viz: #938f86;
     --viz-warn: #c98500;
     --viz-over: #e66767;
+  }
+  :root[data-accent="brasa"] {
+    --accent: #ff6b35;
+    --on-accent: #161513;
+    --accent-ink: #ff7a45;
+    --viz: #e85a24;
+  }
+  :root[data-accent="cobalto"] {
+    --accent: #7088ff;
+    --on-accent: #0f0e0d;
+    --accent-ink: #8b9dff;
+    --viz: #6f86ff;
+  }
+  :root[data-accent="lila"] {
+    --accent: #a98bff;
+    --on-accent: #0f0e0d;
+    --accent-ink: #b9a2ff;
+    --viz: #8c6cf5;
+  }
+  :root[data-accent="menta"] {
+    --accent: #3fd3a5;
+    --on-accent: #0f0e0d;
+    --accent-ink: #4fd8ac;
+    --viz: #1fa883;
   }
 }
 
@@ -40,6 +96,7 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
   --color-accent-ink: var(--accent-ink);
   --color-danger: var(--danger);
   --color-viz: var(--viz);

@@ -174,8 +174,8 @@ export function CategoryStep({
         type="button"
         onClick={onSubmit}
         disabled={!selected || pending}
-        className={`tabular sticky bottom-0 h-14 truncate rounded-2xl px-4 text-lg font-semibold text-background shadow-lg transition-[transform,opacity] duration-150 ease-ui active:scale-[0.98] disabled:opacity-30 ${
-          type === "income" ? "bg-accent" : "bg-foreground"
+        className={`tabular sticky bottom-0 h-14 truncate rounded-2xl px-4 text-lg font-semibold shadow-lg transition-[transform,opacity] duration-150 ease-ui active:scale-[0.98] disabled:opacity-30 ${
+          type === "income" ? "bg-accent text-on-accent" : "bg-foreground text-background"
         }`}
       >
         {pending
