@@ -124,7 +124,7 @@ export default async function HistoryPage({ searchParams }: PageProps<"/movimien
               </Link>
             </>
           ) : (
-            "Este mes está limpio. Sospechoso, pero bien."
+            "No hay movimientos en este mes."
           )
         }
       />

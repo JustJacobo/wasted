@@ -27,7 +27,7 @@ export function SendReportButton({ kind, anchor }: { kind: PeriodKind; anchor: s
           role={result.ok ? "status" : "alert"}
           className={`px-1 text-center text-sm ${result.ok ? "text-muted" : "text-danger"}`}
         >
-          {result.ok ? `Listo, revisa ${result.to}.` : result.error}
+          {result.ok ? `Reporte enviado a ${result.to}.` : result.error}
         </p>
       )}
     </div>

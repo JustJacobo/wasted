@@ -154,7 +154,7 @@ async function linkChat(
     await sendMessage(chatId, "No pude conectar tu cuenta. Intenta de nuevo en un momento.");
     return;
   }
-  await sendMessage(chatId, `✓ Listo, quedó conectado.\n\n${helpText(user.firstName)}`);
+  await sendMessage(chatId, `✓ Cuenta conectada.\n\n${helpText(user.firstName)}`);
 }
 
 async function categoriesFor(admin: SupabaseClient, userId: string): Promise<Category[]> {

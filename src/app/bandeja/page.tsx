@@ -26,7 +26,7 @@ export default async function InboxPage() {
 
       {pending.length === 0 ? (
         <p className="rounded-xl bg-surface px-5 py-10 text-center text-sm text-muted ring-1 ring-border">
-          Nada por revisar. Lo que llega claro del correo se anota solo.
+          Nada por revisar. Lo que llega claro del correo se registra solo.
         </p>
       ) : (
         <>

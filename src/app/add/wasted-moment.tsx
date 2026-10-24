@@ -45,7 +45,7 @@ export function WastedMoment({ over, onDone }: { over: number; onDone: () => voi
       </svg>
       <p role="status" className="mt-6 text-lg leading-snug">
         Te pasaste {formatCOP(over)} esta semana.
-        <span className="block opacity-60">Tranqui, el lunes arranca otra.</span>
+        <span className="block opacity-60">El lunes empieza una semana nueva.</span>
       </p>
     </button>
   );

@@ -30,10 +30,10 @@ describe("budgetMessage", () => {
   });
 
   it("cambia de tono según cuánto va", () => {
-    expect(msg(40_000, 200_000)).toBe("Vas bien, parce: llevas 20% de lo que entró esta semana");
-    expect(msg(120_000, 200_000)).toBe("Ojo, ya va el 60% de lo que entró esta semana");
-    expect(msg(170_000, 200_000)).toBe("Frena un poquito: llevas 85% de lo que entró esta semana");
-    expect(msg(212_300, 200_000)).toBe("Paila: te pasaste $ 12.300 de lo que entró esta semana");
+    expect(msg(40_000, 200_000)).toBe("Vas bien: llevas 20% de lo que entró esta semana");
+    expect(msg(120_000, 200_000)).toBe("Ya llevas el 60% de lo que entró esta semana");
+    expect(msg(170_000, 200_000)).toBe("Cuidado: llevas 85% de lo que entró esta semana");
+    expect(msg(212_300, 200_000)).toBe("Te pasaste $ 12.300 de lo que entró esta semana");
   });
 });
 
