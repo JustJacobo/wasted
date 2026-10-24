@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CategoryIcon } from "@/components/category-icon";
 import { formatDay } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import type { Category, Transaction } from "@/lib/types";
@@ -60,9 +61,7 @@ export function TransactionList({
                       href={editHref(tx.id)}
                       className="flex items-center gap-3 px-4 py-3 active:bg-border/40"
                     >
-                      <span className="text-xl" aria-hidden>
-                        {category?.emoji ?? "•"}
-                      </span>
+                      <CategoryIcon category={category} className="size-5 shrink-0 text-xl text-muted" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">
                           {tx.description || category?.name || "Sin categoría"}

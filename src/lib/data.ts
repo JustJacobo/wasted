@@ -19,7 +19,7 @@ export async function getCategories(): Promise<Category[]> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from("categories")
-    .select("id, key, name, emoji, type, monthly_budget, sort, archived")
+    .select("id, key, name, emoji, icon, type, monthly_budget, sort, archived")
     .order("sort");
   if (error) throw error;
   return data;

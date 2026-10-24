@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { PendingItem } from "@/lib/data";
+import { CategoryIcon } from "@/components/category-icon";
 import { formatDay } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import type { Category } from "@/lib/types";
@@ -41,7 +42,7 @@ export function PendingRow({
       else setDone(true);
     });
 
-  const emoji = categories.find((c) => c.id === categoryId)?.emoji ?? "•";
+  const category = categories.find((c) => c.id === categoryId);
   const similar = item.similar;
   const similarCategory = similar?.category_id
     ? categories.find((c) => c.id === similar.category_id)
@@ -50,9 +51,7 @@ export function PendingRow({
   return (
     <li className="space-y-3 px-4 py-4" data-pending-id={item.id}>
       <div className="flex items-start gap-3">
-        <span className="text-xl" aria-hidden>
-          {emoji}
-        </span>
+        <CategoryIcon category={category} className="size-5 shrink-0 text-xl text-muted" />
         <span className="min-w-0 flex-1">
           <span className="block truncate">{item.description || item.merchant || "Movimiento"}</span>
           <span className="block truncate text-xs text-muted">
@@ -74,7 +73,7 @@ export function PendingRow({
           </span>
           ¿Ya lo registraste? Se parece a{" "}
           <strong className="font-medium">
-            {similarCategory?.emoji} {similar.description || similarCategory?.name || "un movimiento"}{" "}
+            {similar.description || similarCategory?.name || "un movimiento"}{" "}
             {formatCOP(Number(similar.amount))}
           </strong>{" "}
           ({formatDay(similar.occurred_on, today).toLowerCase()}).
@@ -92,7 +91,7 @@ export function PendingRow({
       >
         {options.map((c) => (
           <option key={c.id} value={c.id}>
-            {c.emoji} {c.name}
+            {c.name}
           </option>
         ))}
       </select>

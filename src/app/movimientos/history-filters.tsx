@@ -82,14 +82,14 @@ export function HistoryFilters({
           <optgroup label="Gastos">
             {expense.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.emoji} {c.name}{c.archived ? " (archivada)" : ""}
+                {c.name}{c.archived ? " (archivada)" : ""}
               </option>
             ))}
           </optgroup>
           <optgroup label="Ingresos">
             {income.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.emoji} {c.name}{c.archived ? " (archivada)" : ""}
+                {c.name}{c.archived ? " (archivada)" : ""}
               </option>
             ))}
           </optgroup>

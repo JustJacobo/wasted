@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { CategoryIcon } from "@/components/category-icon";
 import type { Category, Transaction, TxType } from "@/lib/types";
 import { deleteTransaction, updateTransaction, type EditState } from "../../actions";
 
@@ -101,11 +102,12 @@ export function EditForm({
               type="button"
               onClick={() => setCategoryId(c.id)}
               aria-pressed={selected === c.id}
-              className={`rounded-full px-3 py-2 text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] ${
+              className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] ${
                 selected === c.id ? "bg-foreground text-background" : "bg-surface ring-1 ring-border"
               }`}
             >
-              {c.emoji} {c.name}
+              <CategoryIcon category={c} className="size-4 text-base" />
+              {c.name}
             </button>
           ))}
         </div>

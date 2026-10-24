@@ -1,5 +1,6 @@
 "use client";
 
+import { CategoryIcon } from "@/components/category-icon";
 import { formatCOP } from "@/lib/money";
 import { budgetMessage, budgetStatus } from "@/lib/budget";
 import type { Category, Totals, Transaction } from "@/lib/types";
@@ -87,11 +88,12 @@ export function SavedToast({
               type="button"
               onClick={() => onCategory(c.id)}
               aria-pressed={active}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] ${
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] ${
                 active ? "bg-foreground text-background" : "bg-background ring-1 ring-border"
               }`}
             >
-              {c.emoji} {c.name}
+              <CategoryIcon category={c} className="size-4 text-base" />
+              {c.name}
             </button>
           );
         })}

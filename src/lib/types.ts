@@ -7,6 +7,8 @@ export interface Category {
   key: string | null;
   name: string;
   emoji: string;
+  /** Clave de src/lib/category-icons.ts; null en categorías propias antiguas. */
+  icon: string | null;
   type: TxType;
   monthly_budget: number | null;
   sort: number;

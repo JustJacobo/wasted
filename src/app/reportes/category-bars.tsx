@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CategoryIcon } from "@/components/category-icon";
 import { formatCOP } from "@/lib/money";
 import type { CategorySlice } from "@/lib/report";
 import { Delta } from "./delta";
@@ -35,11 +36,9 @@ export function CategoryBars({
               }
             >
               <div className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 truncate">
-                  <span aria-hidden className="mr-1.5">
-                    {s.category?.emoji ?? "❔"}
-                  </span>
-                  {s.category?.name ?? "Sin categoría"}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <CategoryIcon category={s.category} className="size-4 shrink-0 text-base text-muted" />
+                  <span className="truncate">{s.category?.name ?? "Sin categoría"}</span>
                 </span>
                 <span className="shrink-0 font-medium tabular">{formatCOP(s.amount)}</span>
               </div>

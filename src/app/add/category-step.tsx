@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { CategoryIcon } from "@/components/category-icon";
 import { addDays, formatShortDay, todayIn } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import type { Category, TxType } from "@/lib/types";
@@ -154,9 +155,7 @@ export function CategoryStep({
                     : "bg-background ring-1 ring-border"
                 }`}
               >
-                <span className="text-2xl" aria-hidden>
-                  {c.emoji}
-                </span>
+                <CategoryIcon category={c} className="size-6 text-2xl" />
                 <span className="w-full truncate text-center text-xs">{c.name}</span>
               </button>
             );
@@ -181,7 +180,7 @@ export function CategoryStep({
         {pending
           ? "Guardando…"
           : selected
-            ? `Agregar ${type === "income" ? "ingreso" : "gasto"} · ${selected.emoji} ${selected.name}`
+            ? `Agregar ${type === "income" ? "ingreso" : "gasto"} · ${selected.name}`
             : "Elige una categoría"}
       </button>
     </div>

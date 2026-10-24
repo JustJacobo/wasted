@@ -1,6 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Archive, ArrowDown, ArrowUp, PencilSimple } from "@phosphor-icons/react/dist/ssr";
+import { CategoryIcon, ICON_COMPONENTS } from "@/components/category-icon";
+import {
+  CATEGORY_ICON_KEYS,
+  CATEGORY_ICONS,
+  isCategoryIcon,
+  type CategoryIconKey,
+} from "@/lib/category-icons";
 import type { Category, TxType } from "@/lib/types";
 import {
   createCategory,
@@ -9,11 +17,6 @@ import {
   updateCategory,
   type CategoryResult,
 } from "./actions";
-
-const SUGGESTED = [
-  "🍔", "🍕", "☕", "🍺", "🛒", "🚕", "🚌", "⛽", "🏠", "💡", "📱", "💊",
-  "🏋️", "🎓", "📚", "🎮", "🎬", "🎉", "✈️", "🐶", "👕", "🎁", "💼", "💰",
-];
 
 const iconButton =
   "grid size-9 shrink-0 place-items-center rounded-xl text-muted transition-transform duration-150 ease-ui active:scale-[0.97] disabled:opacity-25";
@@ -53,16 +56,14 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
                 pending={pending}
                 submitLabel="Guardar"
                 onCancel={() => setEditing(null)}
-                onSubmit={(name, emoji) =>
-                  run(() => updateCategory({ id: c.id, name, emoji }), () => setEditing(null))
+                onSubmit={(name, icon) =>
+                  run(() => updateCategory({ id: c.id, name, icon }), () => setEditing(null))
                 }
               />
             </li>
           ) : (
             <li key={c.id} className="flex items-center gap-1 py-2 pr-2 pl-4">
-              <span className="text-xl" aria-hidden>
-                {c.emoji}
-              </span>
+              <CategoryIcon category={c} className="size-5 text-xl" />
               <span className="ml-2 min-w-0 flex-1 truncate">{c.name}</span>
               <button
                 type="button"
@@ -71,7 +72,7 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
                 onClick={() => run(() => moveCategory(c.id, "up"))}
                 className={iconButton}
               >
-                ↑
+                <ArrowUp aria-hidden className="size-4" />
               </button>
               <button
                 type="button"
@@ -80,7 +81,7 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
                 onClick={() => run(() => moveCategory(c.id, "down"))}
                 className={iconButton}
               >
-                ↓
+                <ArrowDown aria-hidden className="size-4" />
               </button>
               <button
                 type="button"
@@ -92,7 +93,7 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
                 }}
                 className={iconButton}
               >
-                ✎
+                <PencilSimple aria-hidden className="size-4" />
               </button>
               {c.key === "otros_gasto" || c.key === "otros_ingreso" ? (
                 // Respaldo de la categorización: no se archiva; el hueco mantiene las columnas alineadas.
@@ -103,9 +104,9 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
                   aria-label={`Archivar ${c.name}`}
                   disabled={pending}
                   onClick={() => run(() => setArchived(c.id, true))}
-                  className={`${iconButton} text-xs`}
+                  className={iconButton}
                 >
-                  🗄️
+                  <Archive aria-hidden className="size-4" />
                 </button>
               )}
             </li>
@@ -116,12 +117,12 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
       {creating ? (
         <div className="rounded-2xl bg-surface p-3 ring-1 ring-border">
           <CategoryForm
-            initial={{ name: "", emoji: "" }}
+            initial={{ name: "", icon: null }}
             pending={pending}
             submitLabel="Crear"
             onCancel={() => setCreating(false)}
-            onSubmit={(name, emoji) =>
-              run(() => createCategory({ type, name, emoji }), () => setCreating(false))
+            onSubmit={(name, icon) =>
+              run(() => createCategory({ type, name, icon }), () => setCreating(false))
             }
           />
         </div>
@@ -146,9 +147,7 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
           <ul className="divide-y divide-border border-t border-border">
             {archived.map((c) => (
               <li key={c.id} className="flex items-center gap-2 py-2 pr-2 pl-4">
-                <span className="text-xl opacity-60" aria-hidden>
-                  {c.emoji}
-                </span>
+                <CategoryIcon category={c} className="size-5 text-xl text-muted" />
                 <span className="min-w-0 flex-1 truncate text-muted">{c.name}</span>
                 <button
                   type="button"
@@ -174,56 +173,54 @@ function CategoryForm({
   onSubmit,
   onCancel,
 }: {
-  initial: { name: string; emoji: string };
+  initial: { name: string; icon: string | null };
   pending: boolean;
   submitLabel: string;
-  onSubmit: (name: string, emoji: string) => void;
+  onSubmit: (name: string, icon: CategoryIconKey) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(initial.name);
-  const [emoji, setEmoji] = useState(initial.emoji);
+  const [icon, setIcon] = useState<CategoryIconKey | null>(
+    isCategoryIcon(initial.icon) ? initial.icon : null,
+  );
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit(name, emoji);
+        if (icon) onSubmit(name, icon);
       }}
       className="space-y-3"
     >
-      <div className="flex gap-2">
-        <input
-          aria-label="Emoji"
-          value={emoji}
-          onChange={(e) => setEmoji(e.target.value)}
-          placeholder="🙂"
-          maxLength={16}
-          className="h-12 w-14 shrink-0 rounded-xl border border-border bg-background text-center text-2xl outline-none focus:border-foreground"
-        />
-        <input
-          aria-label="Nombre"
-          autoFocus
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Nombre de la categoría"
-          maxLength={30}
-          className="h-12 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 outline-none placeholder:text-muted focus:border-foreground"
-        />
-      </div>
-      <div className="-mx-3 flex gap-1 overflow-x-auto px-3 [scrollbar-width:none]" role="group" aria-label="Emojis sugeridos">
-        {SUGGESTED.map((e) => (
-          <button
-            key={e}
-            type="button"
-            onClick={() => setEmoji(e)}
-            aria-pressed={emoji === e}
-            className={`grid size-10 shrink-0 place-items-center rounded-xl text-xl transition-[transform,background-color] duration-150 ease-ui active:scale-[0.97] ${
-              emoji === e ? "bg-foreground/10 ring-1 ring-foreground" : ""
-            }`}
-          >
-            {e}
-          </button>
-        ))}
+      <input
+        aria-label="Nombre"
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Nombre de la categoría"
+        maxLength={30}
+        className="h-12 w-full rounded-xl border border-border bg-background px-3 outline-none placeholder:text-muted focus:border-foreground"
+      />
+      <div className="grid grid-cols-8 gap-1" role="radiogroup" aria-label="Ícono">
+        {CATEGORY_ICON_KEYS.map((key) => {
+          const Icon = ICON_COMPONENTS[key];
+          const active = icon === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={CATEGORY_ICONS[key].label}
+              onClick={() => setIcon(key)}
+              className={`grid aspect-square place-items-center rounded-xl transition-[transform,background-color,color] duration-150 ease-ui active:scale-[0.94] ${
+                active ? "bg-foreground text-background" : "text-muted"
+              }`}
+            >
+              <Icon aria-hidden className="size-5" />
+            </button>
+          );
+        })}
       </div>
       <div className="flex gap-2">
         <button
@@ -235,7 +232,7 @@ function CategoryForm({
         </button>
         <button
           type="submit"
-          disabled={pending || !name.trim() || !emoji.trim()}
+          disabled={pending || !name.trim() || !icon}
           className="h-11 flex-1 rounded-xl bg-foreground text-sm font-semibold text-background transition-[transform,opacity] duration-150 ease-ui active:scale-[0.98] disabled:opacity-30"
         >
           {pending ? "Guardando…" : submitLabel}

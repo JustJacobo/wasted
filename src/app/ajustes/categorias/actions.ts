@@ -3,11 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { CATEGORY_ICON_KEYS, emojiForIcon } from "@/lib/category-icons";
 
 export type CategoryResult = { error?: string };
 
 const Name = z.string().trim().min(1, "Ponle un nombre.").max(30, "Máximo 30 caracteres.");
-const Emoji = z.string().trim().min(1, "Elige un emoji.").max(16, "Usa un solo emoji.");
+const Icon = z.enum(CATEGORY_ICON_KEYS, "Elige un ícono.");
 const Type = z.enum(["expense", "income"]);
 
 function refresh() {
@@ -28,10 +29,10 @@ const isFallback = (key: string | null) => key === "otros_gasto" || key === "otr
 export async function createCategory(input: {
   type: string;
   name: string;
-  emoji: string;
+  icon: string;
 }): Promise<CategoryResult> {
   const { supabase } = await requireUser();
-  const parsed = z.object({ type: Type, name: Name, emoji: Emoji }).safeParse(input);
+  const parsed = z.object({ type: Type, name: Name, icon: Icon }).safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   // Queda antes de "Varios"/"Otros", que van al final.
@@ -41,7 +42,10 @@ export async function createCategory(input: {
     .eq("type", parsed.data.type);
   const sort = Math.max(0, ...(siblings ?? []).filter((c) => !isFallback(c.key)).map((c) => c.sort)) + 1;
 
-  const { error } = await supabase.from("categories").insert({ ...parsed.data, sort });
+  // El emoji acompaña al ícono para Telegram y el correo.
+  const { error } = await supabase
+    .from("categories")
+    .insert({ ...parsed.data, emoji: emojiForIcon(parsed.data.icon), sort });
   refresh();
   return message(error, "No pude crear la categoría.");
 }
@@ -49,14 +53,17 @@ export async function createCategory(input: {
 export async function updateCategory(input: {
   id: string;
   name: string;
-  emoji: string;
+  icon: string;
 }): Promise<CategoryResult> {
   const { supabase } = await requireUser();
-  const parsed = z.object({ id: z.uuid(), name: Name, emoji: Emoji }).safeParse(input);
+  const parsed = z.object({ id: z.uuid(), name: Name, icon: Icon }).safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { id, ...fields } = parsed.data;
-  const { error } = await supabase.from("categories").update(fields).eq("id", id);
+  const { id, name, icon } = parsed.data;
+  const { error } = await supabase
+    .from("categories")
+    .update({ name, icon, emoji: emojiForIcon(icon) })
+    .eq("id", id);
   refresh();
   return message(error, "No pude guardar los cambios.");
 }

@@ -160,7 +160,7 @@ async function linkChat(
 async function categoriesFor(admin: SupabaseClient, userId: string): Promise<Category[]> {
   const { data } = await admin
     .from("categories")
-    .select("id, key, name, emoji, type, monthly_budget, sort, archived")
+    .select("id, key, name, emoji, icon, type, monthly_budget, sort, archived")
     .eq("user_id", userId)
     .order("sort");
   return data ?? [];

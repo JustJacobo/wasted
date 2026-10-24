@@ -83,7 +83,7 @@ export function TextStep({
           : preview
             ? `${preview.type === "income" ? "Ingreso" : "Gasto"} · ${formatCOP(preview.amount)}` +
               ` · ${formatDay(preview.occurredOn, todayIn())}` +
-              (previewCategory ? ` · ${previewCategory.emoji} ${previewCategory.name}` : "")
+              (previewCategory ? ` · ${previewCategory.name}` : "")
             : ""}
       </p>
       {error && (
