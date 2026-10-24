@@ -2,6 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { requireOwner, requireUser } from "@/lib/auth";
 import { startOfWeek, todayIn } from "@/lib/dates";
@@ -10,6 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { appUrl } from "@/lib/app-url";
 import { ensureWebhook, telegramConfigured, tg } from "@/lib/telegram/api";
 import { hashLinkCode } from "@/lib/telegram/bot";
+import { ACCENT_COOKIE, ACCENT_COOKIE_MAX_AGE, isAccent } from "@/lib/theme";
 
 export type InviteState = { error?: string; invited?: string };
 
@@ -50,6 +52,22 @@ export async function setReportPreference(
     .upsert({ user_id: userId, [parsed.data.field]: parsed.data.enabled, updated_at: new Date().toISOString() });
   revalidatePath("/ajustes");
   return error ? { error: "No pude guardar la preferencia." } : {};
+}
+
+/** Guarda el tema de acento y lo copia a la cookie que lee el layout. */
+export async function setAccent(accent: string): Promise<{ error?: string }> {
+  const { supabase, userId } = await requireUser();
+  if (!isAccent(accent)) return { error: "Ese tema no existe." };
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert({ user_id: userId, accent, updated_at: new Date().toISOString() });
+  if (error) return { error: "No pude guardar el tema." };
+  (await cookies()).set(ACCENT_COOKIE, accent, {
+    path: "/",
+    maxAge: ACCENT_COOKIE_MAX_AGE,
+    sameSite: "lax",
+  });
+  return {};
 }
 
 /**

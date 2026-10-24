@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
+import { ACCENT_COOKIE, parseAccent } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,10 +32,14 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // El tema de acento llega en el primer HTML para que no parpadee.
+  const accent = parseAccent((await cookies()).get(ACCENT_COOKIE)?.value);
+
   return (
     <html
       lang="es-CO"
+      data-accent={accent}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-dvh">{children}</body>

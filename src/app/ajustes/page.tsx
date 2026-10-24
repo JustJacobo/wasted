@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { canImportMail } from "@/lib/mail-import/sync";
+import { parseAccent } from "@/lib/theme";
 import { SyncButton } from "../bandeja/sync-button";
+import { AccentPicker } from "./accent-picker";
 import { MailToggle } from "./mail-toggle";
 import { InviteForm } from "./invite-form";
 import { ReportToggles } from "./report-toggles";
@@ -27,7 +29,7 @@ export default async function SettingsPage() {
   const { supabase, email, name, role } = await requireUser();
   const mail = canImportMail(email);
   const [{ data: settings }, { data: telegram }, { data: mailSync }] = await Promise.all([
-    supabase.from("user_settings").select("report_weekly, report_monthly").maybeSingle(),
+    supabase.from("user_settings").select("report_weekly, report_monthly, accent").maybeSingle(),
     supabase.from("telegram_links").select("username").maybeSingle(),
     mail
       ? supabase.from("mail_sync").select("enabled, since, last_synced_at").maybeSingle()
@@ -74,6 +76,12 @@ export default async function SettingsPage() {
             ›
           </span>
         </Link>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="px-1 text-sm text-muted">Tema</h2>
+        <AccentPicker initial={parseAccent(settings?.accent)} />
+        <p className="px-1 text-xs text-muted">Solo cambia el color de acento. El resto sigue en papel y tinta.</p>
       </section>
 
       {mail && (

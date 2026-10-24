@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { after } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
@@ -14,6 +15,8 @@ import {
 import { todayIn } from "@/lib/dates";
 import { shouldAutoSync, syncMail } from "@/lib/mail-import/sync";
 import type { PeriodKind } from "@/lib/report";
+import { ACCENT_COOKIE, parseAccent } from "@/lib/theme";
+import { AccentSync } from "./accent-sync";
 import { AddLauncher } from "./add/add-launcher";
 import { HomePager } from "./home-pager";
 import { ReportView } from "./reportes/report-view";
@@ -30,7 +33,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const anchor = requested.success && requested.data <= today ? requested.data : today;
   const onDashboard = params.vista === "dashboard";
 
-  const [{ name, userId, email }, summary, categories, rules, transactions, report, pendingCount] =
+  const [{ name, userId, email, supabase }, summary, categories, rules, transactions, report, pendingCount] =
     await Promise.all([
       requireUser(),
       getSummary(today),
@@ -50,8 +53,15 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     }
   });
 
+  // Dispositivo nuevo: sin cookie del tema, se trae el de la cuenta.
+  const hasAccentCookie = (await cookies()).has(ACCENT_COOKIE);
+  const savedAccent = hasAccentCookie
+    ? null
+    : parseAccent((await supabase.from("user_settings").select("accent").maybeSingle()).data?.accent);
+
   return (
     <>
+      {savedAccent && <AccentSync accent={savedAccent} />}
       <HomePager
         initialPanel={onDashboard ? 1 : 0}
         home={
