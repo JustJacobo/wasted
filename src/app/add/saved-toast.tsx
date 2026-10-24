@@ -42,7 +42,7 @@ export function SavedToast({
   const status = week ? budgetStatus(week.expense, week.income) : null;
   const warning =
     week && status && transaction.type === "expense" && (status.level === "warning" || status.level === "over")
-      ? `${budgetMessage(status, week.expense, week.income)} esta semana`
+      ? budgetMessage(status, week.expense, week.income)
       : null;
 
   return (

@@ -23,13 +23,22 @@ export function budgetStatus(expense: number, income: number): BudgetStatus {
 
 const percent = new Intl.NumberFormat("es-CO", { style: "percent", maximumFractionDigits: 0 });
 
-/** Texto del estado del presupuesto; null si no hay nada que decir. */
+/** Desde aquí el "vas bien" pasa a "ojo". */
+export const HALF_AT = 0.5;
+
+/**
+ * Estado del presupuesto de la semana, en voz parcera: irónica, nunca regañona.
+ * Frase completa sin punto final; null si no hay nada que decir.
+ */
 export function budgetMessage(
   { ratio, level }: BudgetStatus,
   expense: number,
   income: number,
 ): string | null {
   if (level === "none") return null;
-  if (level === "over") return `Te pasaste ${formatCOP(expense - income)} de lo que entró`;
-  return `Llevas ${percent.format(ratio)} de lo que entró`;
+  const pct = percent.format(ratio);
+  if (level === "over") return `Paila: te pasaste ${formatCOP(expense - income)} de lo que entró esta semana`;
+  if (level === "warning") return `Frena un poquito: llevas ${pct} de lo que entró esta semana`;
+  if (ratio >= HALF_AT) return `Ojo, ya va el ${pct} de lo que entró esta semana`;
+  return `Vas bien, parce: llevas ${pct} de lo que entró esta semana`;
 }

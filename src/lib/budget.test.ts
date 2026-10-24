@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budgetStatus } from "./budget";
+import { budgetMessage, budgetStatus } from "./budget";
 
 describe("budgetStatus", () => {
   it("sin ingresos no hay presupuesto", () => {
@@ -18,5 +18,21 @@ describe("budgetStatus", () => {
   it("se pasa al llegar al 100%", () => {
     expect(budgetStatus(200_000, 200_000).level).toBe("over");
     expect(budgetStatus(220_000, 200_000)).toEqual({ ratio: 1.1, level: "over" });
+  });
+});
+
+describe("budgetMessage", () => {
+  const msg = (expense: number, income: number) =>
+    budgetMessage(budgetStatus(expense, income), expense, income);
+
+  it("no dice nada sin ingresos", () => {
+    expect(msg(10_000, 0)).toBeNull();
+  });
+
+  it("cambia de tono según cuánto va", () => {
+    expect(msg(40_000, 200_000)).toBe("Vas bien, parce: llevas 20% de lo que entró esta semana");
+    expect(msg(120_000, 200_000)).toBe("Ojo, ya va el 60% de lo que entró esta semana");
+    expect(msg(170_000, 200_000)).toBe("Frena un poquito: llevas 85% de lo que entró esta semana");
+    expect(msg(212_300, 200_000)).toBe("Paila: te pasaste $ 12.300 de lo que entró esta semana");
   });
 });

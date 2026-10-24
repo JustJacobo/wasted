@@ -18,7 +18,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <h1>
           <Logo className="h-14 w-auto" />
         </h1>
-        <p className="text-muted">Tus gastos e ingresos en segundos.</p>
+        <p className="text-muted">Anota en segundos en qué se te va la plata.</p>
       </div>
       {message && (
         <p role="alert" className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">

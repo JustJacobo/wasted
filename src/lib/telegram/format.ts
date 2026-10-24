@@ -74,7 +74,7 @@ export function savedText(
 function budgetWarning(week: Totals): string | null {
   const status = budgetStatus(week.expense, week.income);
   if (status.level !== "warning" && status.level !== "over") return null;
-  return `⚠️ ${budgetMessage(status, week.expense, week.income)} esta semana`;
+  return `⚠️ ${budgetMessage(status, week.expense, week.income)}`;
 }
 
 export function savedKeyboard(txId: string): InlineButton[][] {
@@ -194,12 +194,12 @@ export function reportText(
 export function budgetAlertText(week: Totals): string | null {
   const status = budgetStatus(week.expense, week.income);
   if (status.level === "over") {
-    return `🔴 ${budgetMessage(status, week.expense, week.income)} esta semana.\nSalió ${formatCOP(
+    return `🔴 ${budgetMessage(status, week.expense, week.income)}.\nSalió ${formatCOP(
       week.expense,
     )} y entró ${formatCOP(week.income)}.`;
   }
   if (status.level === "warning") {
-    return `⚠️ ${budgetMessage(status, week.expense, week.income)} esta semana.\nTe quedan ${formatCOP(
+    return `⚠️ ${budgetMessage(status, week.expense, week.income)}.\nTe quedan ${formatCOP(
       week.income - week.expense,
     )}.`;
   }

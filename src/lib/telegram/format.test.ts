@@ -72,7 +72,7 @@ describe("mensajes", () => {
     const tx = { type: "expense" as const, amount: 1000, description: "", occurred_on: "2026-10-23" };
     expect(savedText(tx, undefined, "2026-10-23", { income: 100_000, expense: 50_000 })).not.toContain("⚠️");
     expect(savedText(tx, undefined, "2026-10-23", { income: 100_000, expense: 85_000 })).toContain(
-      "⚠️ Llevas 85% de lo que entró esta semana",
+      "⚠️ Frena un poquito: llevas 85% de lo que entró esta semana",
     );
     expect(
       savedText({ ...tx, type: "income" }, undefined, "2026-10-23", { income: 100_000, expense: 85_000 }),
@@ -109,7 +109,7 @@ describe("mensajes", () => {
     expect(text).toContain("<b>Esta semana · 19 – 25 oct</b>");
     expect(text).toContain("Te quedan <b>$ 30.000</b>");
     expect(text).toContain("▲ 70% vs la semana anterior");
-    expect(text).toContain("⚠️ Llevas 85% de lo que entró");
+    expect(text).toContain("⚠️ Frena un poquito: llevas 85% de lo que entró");
     expect(text).toContain("🍔 Comida · $ 170.000 (100%)");
   });
 });
@@ -124,7 +124,7 @@ describe("avisos de presupuesto", () => {
 
   it("dice cuánto queda o cuánto se pasó", () => {
     expect(budgetAlertText({ income: 100_000, expense: 85_000 })).toContain("Te quedan $ 15.000");
-    expect(budgetAlertText({ income: 100_000, expense: 120_000 })).toContain("Te pasaste $ 20.000");
+    expect(budgetAlertText({ income: 100_000, expense: 120_000 })).toContain("te pasaste $ 20.000");
     expect(budgetAlertText({ income: 100_000, expense: 10_000 })).toBeNull();
   });
 });

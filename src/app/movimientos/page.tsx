@@ -118,13 +118,13 @@ export default async function HistoryPage({ searchParams }: PageProps<"/movimien
         empty={
           filtered ? (
             <>
-              No hay movimientos con estos filtros.{" "}
+              Nada con estos filtros.{" "}
               <Link href={href({ tipo: "todos", cat: null, q: null })} className="underline">
                 Quitar filtros
               </Link>
             </>
           ) : (
-            "No hay movimientos en este mes."
+            "Este mes está limpio. Sospechoso, pero bien."
           )
         }
       />

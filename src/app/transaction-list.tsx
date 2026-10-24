@@ -22,8 +22,8 @@ export function TransactionList({
       <p className="mt-10 text-center text-sm text-muted">
         {empty ?? (
           <>
-            Toca <strong>− Gasto</strong> o <strong>+ Ingreso</strong> para registrar tu primer
-            movimiento.
+            Todavía nada por aquí. Toca <strong>− Gasto</strong> o <strong>+ Ingreso</strong> y
+            arrancamos.
           </>
         )}
       </p>
