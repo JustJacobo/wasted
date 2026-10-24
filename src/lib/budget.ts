@@ -1,4 +1,5 @@
 import { formatCOP } from "@/lib/money";
+import type { Totals, TxType } from "@/lib/types";
 
 export type BudgetLevel = "none" | "ok" | "warning" | "over";
 
@@ -41,4 +42,25 @@ export function budgetMessage(
   if (level === "warning") return `Frena un poquito: llevas ${pct} de lo que entró esta semana`;
   if (ratio >= HALF_AT) return `Ojo, ya va el ${pct} de lo que entró esta semana`;
   return `Vas bien, parce: llevas ${pct} de lo que entró esta semana`;
+}
+
+const LEVEL_RANK = { none: 0, ok: 1, warning: 2, over: 3 } as const;
+
+/** Nivel que se acaba de cruzar al pasar de `before` a `after` (aviso o exceso), o null. */
+export function crossedLevel(before: Totals, after: Totals): "warning" | "over" | null {
+  const a = budgetStatus(after.expense, after.income).level;
+  if (a !== "warning" && a !== "over") return null;
+  return LEVEL_RANK[a] > LEVEL_RANK[budgetStatus(before.expense, before.income).level] ? a : null;
+}
+
+/** true si pasar de `before` a `after` cruza el umbral de aviso o el de exceso. */
+export function crossedBudget(before: Totals, after: Totals): boolean {
+  return crossedLevel(before, after) !== null;
+}
+
+/** Totales de la semana antes de un movimiento, a partir de los de después. */
+export function weekBefore(after: Totals, tx: { type: TxType; amount: number }): Totals {
+  return tx.type === "income"
+    ? { ...after, income: after.income - tx.amount }
+    : { ...after, expense: after.expense - tx.amount };
 }

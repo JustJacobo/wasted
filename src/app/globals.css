@@ -139,3 +139,25 @@ a,
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Recarga de la mecha: una vez por semana, desde cero hasta su valor (el `to` es el estilo en línea). */
+@media (prefers-reduced-motion: no-preference) {
+  .mecha-refill-line {
+    animation: mecha-refill-line 700ms var(--ease-ui) 200ms both;
+  }
+  .mecha-refill-dot {
+    animation: mecha-refill-dot 700ms var(--ease-ui) 200ms both;
+  }
+}
+
+@keyframes mecha-refill-line {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes mecha-refill-dot {
+  from {
+    transform: translateX(0);
+  }
+}

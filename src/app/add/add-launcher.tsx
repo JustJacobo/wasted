@@ -1,14 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { crossedLevel, weekBefore } from "@/lib/budget";
+import { startOfWeek, todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
 import type { Category, Totals, Transaction, TxType } from "@/lib/types";
 import { deleteTransaction, setCategory } from "../actions";
 import { AddSheet } from "./add-sheet";
+import { pulseMecha } from "./mecha-pulse";
 import { revealRow } from "./reveal-row";
 import { SavedToast, type Feedback } from "./saved-toast";
+import { WastedMoment } from "./wasted-moment";
 
 const DISMISS_MS = 6_000;
+
+/** true la primera vez de la semana que se pasa del 100% (recordado en este dispositivo). */
+function firstOverThisWeek(): boolean {
+  const key = `wasted:pasada:${startOfWeek(todayIn())}`;
+  try {
+    if (localStorage.getItem(key)) return false;
+    localStorage.setItem(key, "1");
+  } catch {
+    // Sin almacenamiento (modo privado): se muestra igual.
+  }
+  return true;
+}
 
 /**
  * Barra fija con "− Gasto" y "+ Ingreso" y la ventana de registro, que se abre
@@ -31,6 +47,8 @@ export function AddLauncher({
   const [open, setOpen] = useState(startOpen);
   const [type, setType] = useState<TxType>(initialType);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [wastedBy, setWastedBy] = useState<number | null>(null);
+  const hideWasted = useCallback(() => setWastedBy(null), []);
   const [, startTransition] = useTransition();
   const inHistory = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -84,6 +102,11 @@ export function AddLauncher({
     show({ kind: "saved", transaction, week, similar });
     close();
     revealRow(transaction.id);
+    pulseMecha();
+    const before = weekBefore(week, { type: transaction.type, amount: Number(transaction.amount) });
+    if (crossedLevel(before, week) === "over" && firstOverThisWeek()) {
+      setWastedBy(week.expense - week.income);
+    }
   }
 
   function changeCategory(categoryId: string) {
@@ -142,6 +165,7 @@ export function AddLauncher({
         onClose={close}
         onSaved={saved}
       />
+      {wastedBy !== null && <WastedMoment over={wastedBy} onDone={hideWasted} />}
     </>
   );
 }

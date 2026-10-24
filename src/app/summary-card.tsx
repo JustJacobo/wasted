@@ -1,16 +1,21 @@
+import { cookies } from "next/headers";
+import { startOfWeek } from "@/lib/dates";
 import { formatCOP, sizeForLength } from "@/lib/money";
+import { REFILL_COOKIE } from "@/lib/theme";
 import type { Summary } from "@/lib/types";
 import { BudgetMeter } from "./budget-meter";
 import { GoToPanel } from "./home-pager";
 
 const monthName = new Intl.DateTimeFormat("es-CO", { month: "long", timeZone: "UTC" });
 
-export function SummaryCard({ summary, today }: { summary: Summary; today: string }) {
+export async function SummaryCard({ summary, today }: { summary: Summary; today: string }) {
   const { week, month } = summary;
   const left = week.income - week.expense;
   const hasIncome = week.income > 0;
   const month_ = monthName.format(new Date(`${today}T12:00:00Z`));
   const hero = formatCOP(hasIncome ? left : week.expense);
+  const monday = startOfWeek(today);
+  const refill = hasIncome && (await cookies()).get(REFILL_COOKIE)?.value !== monday;
 
   return (
     <section className="mt-6">
@@ -33,7 +38,11 @@ export function SummaryCard({ summary, today }: { summary: Summary; today: strin
         Entró <span className="text-foreground">{formatCOP(week.income)}</span> · Salió{" "}
         <span className="text-foreground">{formatCOP(week.expense)}</span>
       </p>
-      <BudgetMeter expense={week.expense} income={week.income} />
+      <BudgetMeter
+        expense={week.expense}
+        income={week.income}
+        refillWeek={refill ? monday : undefined}
+      />
 
       <GoToPanel
         index={1}

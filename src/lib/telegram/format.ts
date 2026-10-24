@@ -206,14 +206,7 @@ export function budgetAlertText(week: Totals): string | null {
   return null;
 }
 
-const LEVEL_RANK = { none: 0, ok: 1, warning: 2, over: 3 } as const;
-
-/** true si pasar de `before` a `after` cruza el umbral de aviso o el de exceso. */
-export function crossedBudget(before: Totals, after: Totals): boolean {
-  const a = budgetStatus(after.expense, after.income).level;
-  if (a !== "warning" && a !== "over") return false;
-  return LEVEL_RANK[a] > LEVEL_RANK[budgetStatus(before.expense, before.income).level];
-}
+export { crossedBudget } from "@/lib/budget";
 
 export function helpText(name?: string): string {
   return [

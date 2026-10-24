@@ -26,3 +26,6 @@ export function isAccent(value: unknown): value is Accent {
 export function parseAccent(value: unknown): Accent {
   return isAccent(value) ? value : DEFAULT_ACCENT;
 }
+
+/** Lunes de la última semana en que se vio la recarga de la mecha. */
+export const REFILL_COOKIE = "wasted-recarga";

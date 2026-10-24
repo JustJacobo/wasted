@@ -1,11 +1,23 @@
 import { budgetMessage, budgetStatus } from "@/lib/budget";
+import { RefillMark } from "./refill-mark";
 
 /**
  * La mecha: lo que queda de lo que entró en la semana. La línea se acorta al
  * gastar y termina en el punto del logo. Al 80% pasa a ámbar; al 100% no
  * queda línea. El texto dice lo mismo sin depender del color.
+ *
+ * `refillWeek`: primera vez que se ve esta semana con ingreso; la mecha se
+ * llena desde cero (animación CSS desde el primer pintado, sin parpadeo).
  */
-export function BudgetMeter({ expense, income }: { expense: number; income: number }) {
+export function BudgetMeter({
+  expense,
+  income,
+  refillWeek,
+}: {
+  expense: number;
+  income: number;
+  refillWeek?: string;
+}) {
   const status = budgetStatus(expense, income);
   const message = budgetMessage(status, expense, income);
   if (!message) return null;
@@ -30,10 +42,13 @@ export function BudgetMeter({ expense, income }: { expense: number; income: numb
         <div className="absolute inset-y-0 right-1.5 left-1.5">
           <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" />
           <div
-            className={`absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 origin-left ${line} ${move}`}
-            style={{ transform: `translateY(-50%) scaleX(${left})` }}
+            className={`absolute inset-x-0 top-[3px] h-1.5 origin-left ${line} ${move} ${refillWeek ? "mecha-refill-line" : ""}`}
+            style={{ transform: `scaleX(${left})` }}
           />
-          <div className={`absolute inset-0 ${move}`} style={{ transform: `translateX(${left * 100}%)` }}>
+          <div
+            className={`absolute inset-0 ${move} ${refillWeek ? "mecha-refill-dot" : ""}`}
+            style={{ transform: `translateX(${left * 100}%)` }}
+          >
             <span
               data-mecha-dot
               className={`absolute top-1/2 left-0 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full ${dot}`}
@@ -41,6 +56,7 @@ export function BudgetMeter({ expense, income }: { expense: number; income: numb
           </div>
         </div>
       </div>
+      {refillWeek && <RefillMark week={refillWeek} />}
       <p className={`mt-2 text-sm ${level === "ok" ? "text-muted" : "text-foreground"}`}>
         {message}
       </p>

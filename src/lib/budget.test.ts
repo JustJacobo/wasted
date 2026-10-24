@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budgetMessage, budgetStatus } from "./budget";
+import { budgetMessage, budgetStatus, crossedLevel, weekBefore } from "./budget";
 
 describe("budgetStatus", () => {
   it("sin ingresos no hay presupuesto", () => {
@@ -34,5 +34,15 @@ describe("budgetMessage", () => {
     expect(msg(120_000, 200_000)).toBe("Ojo, ya va el 60% de lo que entró esta semana");
     expect(msg(170_000, 200_000)).toBe("Frena un poquito: llevas 85% de lo que entró esta semana");
     expect(msg(212_300, 200_000)).toBe("Paila: te pasaste $ 12.300 de lo que entró esta semana");
+  });
+});
+
+describe("crossedLevel", () => {
+  it("dice qué umbral se cruzó con el último movimiento", () => {
+    const after = { income: 100_000, expense: 105_000 };
+    expect(weekBefore(after, { type: "expense", amount: 10_000 })).toEqual({ income: 100_000, expense: 95_000 });
+    expect(crossedLevel(weekBefore(after, { type: "expense", amount: 10_000 }), after)).toBe("over");
+    expect(crossedLevel({ income: 100_000, expense: 70_000 }, { income: 100_000, expense: 85_000 })).toBe("warning");
+    expect(crossedLevel({ income: 100_000, expense: 110_000 }, { income: 100_000, expense: 120_000 })).toBeNull();
   });
 });
