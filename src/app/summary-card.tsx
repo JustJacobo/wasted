@@ -13,18 +13,18 @@ export function SummaryCard({ summary, today }: { summary: Summary; today: strin
   const hero = formatCOP(hasIncome ? left : week.expense);
 
   return (
-    <section className="mt-2 rounded-3xl bg-surface p-5 shadow-sm ring-1 ring-border">
+    <section className="mt-6">
       <p className="text-sm text-muted">
         {hasIncome ? "Te quedan esta semana" : "Gastaste esta semana"}
       </p>
       <p
-        className={`mt-1 font-bold tracking-tight ${sizeForLength(
+        className={`tabular mt-1 font-semibold tracking-[-0.045em] ${sizeForLength(
           hero,
           [
-            [11, "text-4xl"],
-            [14, "text-3xl"],
+            [11, "text-6xl"],
+            [14, "text-5xl"],
           ],
-          "text-2xl",
+          "text-4xl",
         )} ${hasIncome && left < 0 ? "text-danger" : ""}`}
       >
         {hero}
@@ -37,7 +37,7 @@ export function SummaryCard({ summary, today }: { summary: Summary; today: strin
 
       <GoToPanel
         index={1}
-        className="tabular mt-4 flex w-full items-center justify-between gap-2 border-t border-border pt-3 text-sm active:opacity-70"
+        className="tabular mt-6 flex w-full items-center justify-between gap-2 border-y border-border py-3 text-sm active:opacity-70"
       >
         <span className="text-muted capitalize">{month_}</span>
         <span className="flex items-center gap-2">
