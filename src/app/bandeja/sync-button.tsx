@@ -13,7 +13,7 @@ export function SyncButton() {
         type="button"
         disabled={pending}
         onClick={() => start(async () => setMessage((await syncMailNow()).message))}
-        className="h-12 w-full rounded-2xl bg-surface font-medium ring-1 ring-border transition-transform duration-150 ease-out active:scale-[0.98] disabled:opacity-60"
+        className="h-12 w-full rounded-xl bg-surface font-medium ring-1 ring-border transition-transform duration-150 ease-out active:scale-[0.98] disabled:opacity-60"
       >
         {pending ? "Revisando el correo…" : "📧 Revisar correo ahora"}
       </button>

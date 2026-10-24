@@ -21,7 +21,7 @@ export function TelegramConnect({ username, linked }: { username: string | null;
 
   if (linked) {
     return (
-      <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3 ring-1 ring-border">
+      <div className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 ring-1 ring-border">
         <span className="min-w-0">
           <span className="block">Conectado</span>
           {username && <span className="block truncate text-sm text-muted">@{username}</span>}
@@ -54,7 +54,7 @@ export function TelegramConnect({ username, linked }: { username: string | null;
             if (result.url) window.location.href = result.url;
           })
         }
-        className="h-12 w-full rounded-2xl bg-foreground font-medium text-background transition-transform duration-150 ease-out active:scale-[0.98] disabled:opacity-50"
+        className="h-12 w-full rounded-xl bg-foreground font-medium text-background transition-transform duration-150 ease-out active:scale-[0.98] disabled:opacity-50"
       >
         {pending ? "Abriendo Telegram…" : "Conectar Telegram"}
       </button>

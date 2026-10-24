@@ -17,7 +17,7 @@ export default async function CategoriesPage({ searchParams }: PageProps<"/ajust
         <h1 className="flex-1 text-right text-lg font-bold tracking-tight">Categorías</h1>
       </header>
 
-      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-surface p-1 ring-1 ring-border">
+      <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface p-1 ring-1 ring-border">
         {(["expense", "income"] as const).map((t) => (
           <Link
             key={t}

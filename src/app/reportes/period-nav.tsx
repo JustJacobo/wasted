@@ -27,7 +27,7 @@ export function PeriodNav({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-surface p-1 ring-1 ring-border">
+      <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface p-1 ring-1 ring-border">
         {(["semana", "mes"] as const).map((k) => (
           <Link
             key={k}

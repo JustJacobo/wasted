@@ -23,7 +23,7 @@ export function CategoryBars({
   const max = slices[0]?.amount ?? 1;
 
   return (
-    <section className="rounded-3xl bg-surface p-5 ring-1 ring-border">
+    <section className="border-t border-border pt-5">
       <h3 className="font-semibold">Gasto por categoría</h3>
       <ul className="mt-4 space-y-4">
         {slices.map((s) => (

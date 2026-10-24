@@ -29,7 +29,7 @@ export function DailyChart({
   const isMonth = kind === "mes";
 
   return (
-    <section className="rounded-3xl bg-surface p-5 ring-1 ring-border">
+    <section className="border-t border-border pt-5">
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="shrink-0 font-semibold">Gasto por día</h3>
         <p className="min-w-0 truncate text-right text-sm" aria-live="polite">

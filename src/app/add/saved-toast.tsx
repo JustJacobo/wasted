@@ -32,7 +32,7 @@ export function SavedToast({
 }) {
   if (feedback.kind === "error") {
     return (
-      <p role="alert" className={`rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger ${ENTER}`}>
+      <p role="alert" className={`rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger ${ENTER}`}>
         {feedback.message}
       </p>
     );
@@ -47,7 +47,7 @@ export function SavedToast({
       : null;
 
   return (
-    <div className={`rounded-2xl bg-surface p-3 shadow-lg ring-1 ring-border ${ENTER}`}>
+    <div className={`rounded-xl bg-surface p-3 ring-1 ring-border ${ENTER}`}>
       <div className="flex items-center justify-between gap-3 px-1">
         <p className="tabular min-w-0 truncate text-sm" aria-live="polite">
           <span className="text-accent-ink">✓</span>{" "}

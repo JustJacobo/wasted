@@ -41,7 +41,7 @@ export function AmountStep({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-background p-1 ring-1 ring-border">
+      <div className="grid grid-cols-2 gap-1 rounded-xl bg-background p-1 ring-1 ring-border">
         {(["expense", "income"] as const).map((t) => (
           <button
             key={t}
@@ -77,7 +77,7 @@ export function AmountStep({
             type="button"
             onClick={() => onDigits(pressKey(digits, key))}
             aria-label={key === "back" ? "Borrar" : key}
-            className="tabular h-14 rounded-2xl bg-background text-2xl font-medium ring-1 ring-border transition-[transform,background-color] duration-100 ease-out active:scale-[0.97] active:bg-border/60"
+            className="tabular h-14 rounded-xl bg-background text-2xl font-medium ring-1 ring-border transition-[transform,background-color] duration-100 ease-out active:scale-[0.97] active:bg-border/60"
           >
             {key === "back" ? "⌫" : key}
           </button>
@@ -88,7 +88,7 @@ export function AmountStep({
         type="button"
         onClick={onNext}
         disabled={!digits}
-        className="h-14 rounded-2xl bg-foreground text-lg font-semibold text-background transition-[transform,opacity] duration-150 ease-out active:scale-[0.98] disabled:opacity-30"
+        className="h-14 rounded-xl bg-foreground text-lg font-semibold text-background transition-[transform,opacity] duration-150 ease-out active:scale-[0.98] disabled:opacity-30"
       >
         Siguiente
       </button>

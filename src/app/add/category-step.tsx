@@ -78,7 +78,7 @@ export function CategoryStep({
 
       <fieldset>
         <legend className="mb-2 px-1 text-sm text-muted">Fecha</legend>
-        <div className="grid grid-cols-3 gap-1 rounded-2xl bg-background p-1 ring-1 ring-border">
+        <div className="grid grid-cols-3 gap-1 rounded-xl bg-background p-1 ring-1 ring-border">
           <button
             type="button"
             onClick={() => onDate(today)}
@@ -126,7 +126,7 @@ export function CategoryStep({
           placeholder="Nota (opcional)"
           aria-label="Nota"
           enterKeyHint="done"
-          className="h-12 rounded-2xl border border-border bg-background px-4 outline-none placeholder:text-muted focus:border-foreground"
+          className="h-12 rounded-xl border border-border bg-background px-4 outline-none placeholder:text-muted focus:border-foreground"
         />
       ) : (
         <button
@@ -149,7 +149,7 @@ export function CategoryStep({
                 type="button"
                 onClick={() => onSelect(c.id)}
                 aria-pressed={active}
-                className={`flex h-20 flex-col items-center justify-center gap-1 rounded-2xl px-1 transition-[background-color,color,transform,box-shadow] duration-150 ease-ui active:scale-[0.97] ${
+                className={`flex h-20 flex-col items-center justify-center gap-1 rounded-xl px-1 transition-[background-color,color,transform,box-shadow] duration-150 ease-ui active:scale-[0.97] ${
                   active
                     ? "bg-foreground text-background ring-2 ring-foreground"
                     : "bg-background ring-1 ring-border"
@@ -173,7 +173,7 @@ export function CategoryStep({
         type="button"
         onClick={onSubmit}
         disabled={!selected || pending}
-        className={`tabular sticky bottom-0 h-14 truncate rounded-2xl px-4 text-lg font-semibold shadow-lg transition-[transform,opacity] duration-150 ease-ui active:scale-[0.98] disabled:opacity-30 ${
+        className={`tabular sticky bottom-0 h-14 truncate rounded-xl px-4 text-lg font-semibold transition-[transform,opacity] duration-150 ease-ui active:scale-[0.98] disabled:opacity-30 ${
           type === "income" ? "bg-accent text-on-accent" : "bg-foreground text-background"
         }`}
       >

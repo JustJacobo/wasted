@@ -25,7 +25,7 @@ export default async function InboxPage() {
       </header>
 
       {pending.length === 0 ? (
-        <p className="rounded-3xl bg-surface px-5 py-10 text-center text-sm text-muted ring-1 ring-border">
+        <p className="rounded-xl bg-surface px-5 py-10 text-center text-sm text-muted ring-1 ring-border">
           Nada por revisar. Lo que llega claro del correo se anota solo.
         </p>
       ) : (
@@ -33,7 +33,7 @@ export default async function InboxPage() {
           <p className="px-1 text-sm text-muted">
             Llegaron del correo, pero no son seguros o se parecen a algo que ya registraste.
           </p>
-          <ul className="divide-y divide-border overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
+          <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-border">
             {pending.map((item) => (
               <PendingRow key={item.id} item={item} categories={categories} today={today} />
             ))}

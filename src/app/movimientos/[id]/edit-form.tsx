@@ -52,7 +52,7 @@ export function EditForm({
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="category_id" value={selected ?? ""} />
 
-      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-surface p-1 ring-1 ring-border">
+      <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface p-1 ring-1 ring-border">
         {(["expense", "income"] as const).map((t) => (
           <button
             key={t}
@@ -70,7 +70,7 @@ export function EditForm({
 
       <label className="block">
         <span className="mb-1 block px-1 text-sm text-muted">Monto</span>
-        <div className="flex h-14 items-center rounded-2xl border border-border bg-surface px-4 focus-within:border-foreground">
+        <div className="flex h-14 items-center rounded-xl border border-border bg-surface px-4 focus-within:border-foreground">
           <span className="text-2xl text-muted">$</span>
           <input
             name="amount"
@@ -89,7 +89,7 @@ export function EditForm({
           name="description"
           defaultValue={transaction.description}
           maxLength={200}
-          className="h-12 w-full rounded-2xl border border-border bg-surface px-4 outline-none focus:border-foreground"
+          className="h-12 w-full rounded-xl border border-border bg-surface px-4 outline-none focus:border-foreground"
         />
       </label>
 
@@ -120,7 +120,7 @@ export function EditForm({
           name="occurred_on"
           required
           defaultValue={transaction.occurred_on}
-          className="h-12 w-full rounded-2xl border border-border bg-surface px-4 outline-none focus:border-foreground"
+          className="h-12 w-full rounded-xl border border-border bg-surface px-4 outline-none focus:border-foreground"
         />
       </label>
 
@@ -134,7 +134,7 @@ export function EditForm({
         <button
           type="submit"
           disabled={saving || deleting}
-          className="h-12 w-full rounded-2xl bg-foreground font-medium text-background transition-transform duration-150 ease-out active:scale-[0.98] disabled:opacity-50"
+          className="h-12 w-full rounded-xl bg-foreground font-medium text-background transition-transform duration-150 ease-out active:scale-[0.98] disabled:opacity-50"
         >
           {saving ? "Guardando…" : "Guardar"}
         </button>
@@ -142,7 +142,7 @@ export function EditForm({
           type="button"
           onClick={remove}
           disabled={saving || deleting}
-          className="h-12 w-full rounded-2xl font-medium text-danger transition-transform duration-150 ease-out active:scale-[0.98] disabled:opacity-50"
+          className="h-12 w-full rounded-xl font-medium text-danger transition-transform duration-150 ease-out active:scale-[0.98] disabled:opacity-50"
         >
           {deleting ? "Eliminando…" : "Eliminar"}
         </button>

@@ -75,7 +75,7 @@ export default async function HistoryPage({ searchParams }: PageProps<"/movimien
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-1 rounded-2xl bg-surface p-1 ring-1 ring-border">
+      <div className="grid grid-cols-3 gap-1 rounded-xl bg-surface p-1 ring-1 ring-border">
         {(["todos", "gasto", "ingreso"] as const).map((t) => (
           <Link
             key={t}

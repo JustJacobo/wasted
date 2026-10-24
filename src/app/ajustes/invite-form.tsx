@@ -21,11 +21,11 @@ export function InviteForm() {
           inputMode="email"
           autoComplete="off"
           placeholder="correo@ejemplo.com"
-          className="h-12 min-w-0 flex-1 rounded-2xl border border-border bg-surface px-4 outline-none placeholder:text-muted focus:border-foreground"
+          className="h-12 min-w-0 flex-1 rounded-xl border border-border bg-surface px-4 outline-none placeholder:text-muted focus:border-foreground"
         />
         <button
           disabled={pending}
-          className="h-12 shrink-0 rounded-2xl bg-foreground px-4 font-medium text-background transition-transform duration-150 ease-out active:scale-[0.97] disabled:opacity-50"
+          className="h-12 shrink-0 rounded-xl bg-foreground px-4 font-medium text-background transition-transform duration-150 ease-out active:scale-[0.97] disabled:opacity-50"
         >
           {pending ? "Agregando…" : "Invitar"}
         </button>

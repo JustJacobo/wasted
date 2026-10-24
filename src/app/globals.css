@@ -19,7 +19,7 @@
   /* Barras de reportes: un solo tono (magnitud). */
   --viz: #57544d;
   /* Mecha de presupuesto: aviso (≥80%) y exceso (≥100%). */
-  --viz-warn: #d97706;
+  --viz-warn: #c46504;
   --viz-over: #dc2626;
 }
 

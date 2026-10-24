@@ -21,7 +21,7 @@ export function ReportToggles({ weekly, monthly }: { weekly: boolean; monthly: b
   }
 
   return (
-    <ul className="divide-y divide-border overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
+    <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-border">
       {(
         [
           ["report_weekly", "Reporte semanal"],

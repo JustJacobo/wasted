@@ -66,13 +66,13 @@ export function TextStep({
           spellCheck={false}
           enterKeyHint="send"
           maxLength={200}
-          className="h-12 min-w-0 flex-1 rounded-2xl border border-border bg-background px-4 outline-none placeholder:text-muted focus:border-foreground"
+          className="h-12 min-w-0 flex-1 rounded-xl border border-border bg-background px-4 outline-none placeholder:text-muted focus:border-foreground"
         />
         <button
           type="submit"
           disabled={!text.trim() || pending}
           aria-label="Guardar"
-          className="grid size-12 shrink-0 place-items-center rounded-2xl bg-foreground text-background transition-[transform,opacity] duration-150 ease-out active:scale-[0.97] disabled:opacity-30"
+          className="grid size-12 shrink-0 place-items-center rounded-xl bg-foreground text-background transition-[transform,opacity] duration-150 ease-out active:scale-[0.97] disabled:opacity-30"
         >
           →
         </button>

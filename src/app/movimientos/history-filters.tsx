@@ -63,7 +63,7 @@ export function HistoryFilters({
           onChange={(e) => onSearch(e.target.value)}
           placeholder="Buscar: uber, mercado…"
           maxLength={100}
-          className="h-12 w-full rounded-2xl border border-border bg-surface px-4 outline-none placeholder:text-muted focus:border-foreground"
+          className="h-12 w-full rounded-xl border border-border bg-surface px-4 outline-none placeholder:text-muted focus:border-foreground"
         />
         {pending && (
           <span className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-xs text-muted">
@@ -76,7 +76,7 @@ export function HistoryFilters({
         <select
           value={categoryId ?? ""}
           onChange={(e) => update("cat", e.target.value)}
-          className="h-12 w-full rounded-2xl border border-border bg-surface px-3 outline-none focus:border-foreground"
+          className="h-12 w-full rounded-xl border border-border bg-surface px-3 outline-none focus:border-foreground"
         >
           <option value="">Todas las categorías</option>
           <optgroup label="Gastos">

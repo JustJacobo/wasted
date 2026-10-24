@@ -1,3 +1,4 @@
+import { EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
@@ -75,12 +76,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             {pendingCount > 0 && (
               <Link
                 href="/bandeja"
-                className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3 text-sm ring-1 ring-border active:scale-[0.99]"
+                className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 text-sm ring-1 ring-border active:scale-[0.99]"
               >
                 <span>
-                  <span aria-hidden className="mr-2">
-                    📧
-                  </span>
+                  <EnvelopeSimple aria-hidden className="mr-2 inline size-4 align-[-2px] text-muted" />
                   {pendingCount === 1
                     ? "1 movimiento por revisar"
                     : `${pendingCount} movimientos por revisar`}
@@ -94,7 +93,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             {transactions.length > 0 && (
               <Link
                 href="/movimientos"
-                className="mt-4 block rounded-2xl py-3 text-center text-sm font-medium text-muted active:scale-[0.98]"
+                className="mt-4 block rounded-xl py-3 text-center text-sm font-medium text-muted active:scale-[0.98]"
               >
                 Ver historial completo →
               </Link>

@@ -17,7 +17,7 @@ export function SendReportButton({ kind, anchor }: { kind: PeriodKind; anchor: s
           setResult(null);
           startTransition(async () => setResult(await sendReportNow(kind, anchor)));
         }}
-        className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-surface font-medium ring-1 ring-border transition-transform duration-150 ease-ui active:scale-[0.98] disabled:opacity-50"
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-surface font-medium ring-1 ring-border transition-transform duration-150 ease-ui active:scale-[0.98] disabled:opacity-50"
       >
         <span aria-hidden>✉️</span>
         {pending ? "Enviando…" : "Enviarme este reporte"}

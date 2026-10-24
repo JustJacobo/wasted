@@ -23,7 +23,7 @@ export function ReportView({
       <PeriodNav kind={kind} range={report.range} today={today} />
 
       {empty ? (
-        <p className="rounded-3xl bg-surface px-5 py-10 text-center text-sm text-muted ring-1 ring-border">
+        <p className="rounded-xl bg-surface px-5 py-10 text-center text-sm text-muted ring-1 ring-border">
           No hay movimientos en este periodo.
         </p>
       ) : (

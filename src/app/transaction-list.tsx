@@ -52,14 +52,14 @@ export function TransactionList({
               <span>{formatDay(day, today)}</span>
               {spent > 0 && <span>-{formatCOP(spent)}</span>}
             </h2>
-            <ul className="divide-y divide-border overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
+            <ul className="divide-y divide-border border-y border-border">
               {items.map((tx) => {
                 const category = tx.category_id ? byId.get(tx.category_id) : undefined;
                 return (
                   <li key={tx.id} data-tx-id={tx.id}>
                     <Link
                       href={editHref(tx.id)}
-                      className="flex items-center gap-3 px-4 py-3 active:bg-border/40"
+                      className="-mx-1 flex items-center gap-3 px-1 py-3 active:bg-border/40"
                     >
                       <CategoryIcon category={category} className="size-5 shrink-0 text-xl text-muted" />
                       <span className="min-w-0 flex-1">
@@ -75,7 +75,7 @@ export function TransactionList({
                         )}
                       </span>
                       <span
-                        className={`tabular shrink-0 font-medium ${
+                        className={`shrink-0 font-mono text-[15px] tracking-tight ${
                           tx.type === "income" ? "text-accent-ink" : ""
                         }`}
                       >

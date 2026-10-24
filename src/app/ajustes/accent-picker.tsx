@@ -29,7 +29,7 @@ export function AccentPicker({ initial }: { initial: Accent }) {
   }
 
   return (
-    <div className="rounded-2xl bg-surface px-4 py-4 ring-1 ring-border">
+    <div className="rounded-xl bg-surface px-4 py-4 ring-1 ring-border">
       <div role="radiogroup" aria-label="Tema de acento" className="flex justify-between gap-2">
         {ACCENTS.map((a) => {
           const active = a.key === accent;

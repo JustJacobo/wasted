@@ -2,24 +2,24 @@ import { formatCOP, sizeForLength } from "@/lib/money";
 import type { Report } from "@/lib/report";
 import { Delta } from "./delta";
 
-/** Cifra protagonista (gasto) y tarjetas de ingresos, balance y promedio diario. */
+/** Cifra protagonista (gasto) y, debajo, ingresos, balance y promedio diario separados por líneas finas. */
 export function StatTiles({ report, periodName }: { report: Report; periodName: string }) {
   const balance = report.income - report.expense;
 
   return (
-    <div className="space-y-3">
-      <section className="rounded-3xl bg-surface p-5 ring-1 ring-border">
+    <div className="space-y-6">
+      <section className="pt-2">
         <p className="text-sm text-muted">Gastaste</p>
         {/* Cifras proporcionales en el número grande; tabulares solo en columnas. */}
         <p
-          className={`mt-1 font-bold tracking-tight ${sizeForLength(
+          className={`mt-1 font-semibold tracking-[-0.045em] ${sizeForLength(
             formatCOP(report.expense),
             [
-              [11, "text-5xl"],
-              [13, "text-4xl"],
-              [15, "text-3xl"],
+              [11, "text-6xl"],
+              [14, "text-5xl"],
+              [16, "text-4xl"],
             ],
-            "text-2xl",
+            "text-3xl",
           )}`}
         >
           {formatCOP(report.expense)}
@@ -34,7 +34,7 @@ export function StatTiles({ report, periodName }: { report: Report; periodName: 
         </p>
       </section>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-5">
         <Tile label="Ingresos" value={formatCOP(report.income)}>
           <Delta
             current={report.income}
@@ -72,7 +72,7 @@ function Tile({
 }) {
   return (
     <section
-      className={`min-w-0 rounded-2xl bg-surface p-4 ring-1 ring-border ${wide ? "col-span-2" : ""}`}
+      className={`min-w-0 border-t border-border pt-3 ${wide ? "col-span-2" : ""}`}
     >
       <p className="text-sm text-muted">{label}</p>
       <p

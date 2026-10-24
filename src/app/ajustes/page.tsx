@@ -52,7 +52,7 @@ export default async function SettingsPage() {
 
       <section className="space-y-2">
         <h1 className="px-1 text-sm text-muted">Tu cuenta</h1>
-        <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3 ring-1 ring-border">
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 ring-1 ring-border">
           <span className="min-w-0">
             <span className="block truncate font-medium capitalize">{name}</span>
             <span className="block truncate text-sm text-muted">{email}</span>
@@ -69,7 +69,7 @@ export default async function SettingsPage() {
         <h2 className="px-1 text-sm text-muted">Tus finanzas</h2>
         <Link
           href="/ajustes/categorias"
-          className="flex items-center justify-between rounded-2xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
+          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
         >
           <span>Categorías</span>
           <span aria-hidden className="text-muted">
@@ -87,7 +87,7 @@ export default async function SettingsPage() {
       {mail && (
         <section className="space-y-2">
           <h2 className="px-1 text-sm text-muted">Correo</h2>
-          <div className="overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
+          <div className="overflow-hidden rounded-xl bg-surface ring-1 ring-border">
             <MailToggle enabled={mailSync?.enabled ?? true} />
           </div>
           <p className="px-1 text-xs text-muted">
@@ -126,7 +126,7 @@ export default async function SettingsPage() {
       {role === "owner" && (
         <section className="space-y-2">
           <h2 className="px-1 text-sm text-muted">Personas con acceso</h2>
-          <ul className="divide-y divide-border overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
+          <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-border">
             {members.map((m) => (
               <li key={m.email} className="flex items-center justify-between gap-3 px-4 py-3">
                 <span className="min-w-0 truncate">{m.email}</span>

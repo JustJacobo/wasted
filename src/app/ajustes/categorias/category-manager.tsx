@@ -47,7 +47,7 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
         </p>
       )}
 
-      <ul className="divide-y divide-border overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
+      <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-border">
         {activeList.map((c, i) =>
           editing === c.id ? (
             <li key={c.id} className="p-3">
@@ -115,7 +115,7 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
       </ul>
 
       {creating ? (
-        <div className="rounded-2xl bg-surface p-3 ring-1 ring-border">
+        <div className="rounded-xl bg-surface p-3 ring-1 ring-border">
           <CategoryForm
             initial={{ name: "", icon: null }}
             pending={pending}
@@ -133,14 +133,14 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
             setEditing(null);
             setCreating(true);
           }}
-          className="h-12 w-full rounded-2xl border border-dashed border-border font-medium text-muted transition-transform duration-150 ease-ui active:scale-[0.98]"
+          className="h-12 w-full rounded-xl border border-dashed border-border font-medium text-muted transition-transform duration-150 ease-ui active:scale-[0.98]"
         >
           + Nueva categoría
         </button>
       )}
 
       {archived.length > 0 && (
-        <details className="rounded-2xl bg-surface ring-1 ring-border">
+        <details className="rounded-xl bg-surface ring-1 ring-border">
           <summary className="cursor-pointer px-4 py-3 text-sm text-muted select-none">
             Archivadas ({archived.length})
           </summary>
