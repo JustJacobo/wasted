@@ -5,16 +5,17 @@ import { deltaRatio, type PeriodKind, type Report } from "@/lib/report";
 const percent = new Intl.NumberFormat("es-CO", { style: "percent", maximumFractionDigits: 0 });
 
 // Colores fijos (los clientes de correo no entienden variables CSS ni modo oscuro fiable).
+// Papel y tinta, como la app; el correo no sigue el tema de acento.
 const C = {
-  ink: "#1c1917",
-  muted: "#78716c",
-  border: "#e7e5e4",
-  surface: "#ffffff",
-  page: "#f5f5f4",
-  bar: "#2a78d6",
-  track: "#e8f0fb",
-  good: "#15803d",
-  bad: "#dc2626",
+  ink: "#161513",
+  muted: "#6b6860",
+  border: "#e4e2dc",
+  surface: "#fdfcfa",
+  page: "#f6f5f1",
+  bar: "#57544d",
+  track: "#ecebe6",
+  good: "#161513",
+  bad: "#c62828",
 };
 
 const escape = (s: string) =>
@@ -87,6 +88,7 @@ export function renderReportEmail({
 <body style="margin:0;background:${C.page};font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
+  <tr><td style="padding:0 4px 12px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:30px;line-height:1;color:${C.ink}">w<span style="color:#8a867d">.</span></td></tr>
   <tr><td style="padding:0 4px 16px;font-size:14px;color:${C.muted}">Hola, ${escape(first)}. Este es tu resumen de <strong style="color:${C.ink}">${escape(label)}</strong>.</td></tr>
   <tr><td style="background:${C.surface};border:1px solid ${C.border};border-radius:20px;padding:20px">
     <div style="font-size:14px;color:${C.muted}">Gastaste</div>

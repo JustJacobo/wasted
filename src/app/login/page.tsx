@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { LoginForm } from "./login-form";
 
 const ERRORS: Record<string, string> = {
@@ -13,8 +14,10 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-8 px-6 pb-[env(safe-area-inset-bottom)]">
-      <div className="space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight">Wasted</h1>
+      <div className="space-y-4">
+        <h1>
+          <Logo className="h-14 w-auto" />
+        </h1>
         <p className="text-muted">Tus gastos e ingresos en segundos.</p>
       </div>
       {message && (

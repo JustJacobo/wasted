@@ -16,6 +16,7 @@ import { todayIn } from "@/lib/dates";
 import { shouldAutoSync, syncMail } from "@/lib/mail-import/sync";
 import type { PeriodKind } from "@/lib/report";
 import { ACCENT_COOKIE, parseAccent } from "@/lib/theme";
+import { Logo } from "@/components/logo";
 import { AccentSync } from "./accent-sync";
 import { AddLauncher } from "./add/add-launcher";
 import { HomePager } from "./home-pager";
@@ -66,9 +67,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         initialPanel={onDashboard ? 1 : 0}
         home={
           <>
-            <p className="mb-2 px-1 text-sm text-muted capitalize">
-              Hola, {name.split(" ")[0]}
-            </p>
+            <div className="mb-2 flex items-center gap-2 px-1">
+              <Logo className="h-4 w-auto" title={null} />
+              <p className="text-sm text-muted capitalize">Hola, {name.split(" ")[0]}</p>
+            </div>
             <SummaryCard summary={summary} today={today} />
             {pendingCount > 0 && (
               <Link
