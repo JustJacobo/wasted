@@ -29,3 +29,33 @@ export function parseAccent(value: unknown): Accent {
 
 /** Lunes de la última semana en que se vio la recarga de la mecha. */
 export const REFILL_COOKIE = "wasted-recarga";
+
+/** Modo claro u oscuro (Ajustes → Tema). "system" sigue al teléfono. */
+export const COLOR_MODES = [
+  { key: "system", name: "Sistema" },
+  { key: "light", name: "Claro" },
+  { key: "dark", name: "Oscuro" },
+] as const;
+
+export type ColorMode = (typeof COLOR_MODES)[number]["key"];
+
+export const DEFAULT_MODE: ColorMode = "system";
+export const MODE_KEYS = COLOR_MODES.map((m) => m.key) as [ColorMode, ...ColorMode[]];
+export const MODE_COOKIE = "wasted-modo";
+
+export function isColorMode(value: unknown): value is ColorMode {
+  return typeof value === "string" && (MODE_KEYS as string[]).includes(value);
+}
+
+export function parseMode(value: unknown): ColorMode {
+  return isColorMode(value) ? value : DEFAULT_MODE;
+}
+
+/** Color de la barra de estado del teléfono en cada modo (el fondo de la app). */
+export const THEME_COLORS = { light: "#f6f5f1", dark: "#0f0e0d" } as const;
+
+/**
+ * Script del <head>: pone data-theme a partir de data-mode antes del primer
+ * pintado y, con "system", sigue los cambios del teléfono.
+ */
+export const MODE_SCRIPT = `(function(){var r=document.documentElement,q=matchMedia("(prefers-color-scheme: dark)");function a(){var m=r.dataset.mode;r.dataset.theme=m==="dark"||(m!=="light"&&q.matches)?"dark":"light"}a();q.addEventListener("change",a);window.__wastedApplyMode=a})()`;

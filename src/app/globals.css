@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
+/* `dark:` sigue a data-theme (Ajustes → Modo), no solo a la preferencia del sistema. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
  * Papel y tinta. El único color lo pone el tema de acento (Ajustes → Tema),
  * que vive en <html data-accent>. Sin atributo = "tinta" (neutro).
  * Contrastes: textos ≥4,5:1 sobre el fondo; --viz validado con la skill dataviz.
  */
 :root {
+  color-scheme: light;
   --background: #f6f5f1;
   --surface: #fdfcfa;
   --foreground: #161513;
@@ -48,45 +52,48 @@
   --viz: #0f9474;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f0e0d;
-    --surface: #1a1917;
-    --foreground: #f2f0ea;
-    --muted: #a19d94;
-    --border: #2a2825;
-    --danger: #f87171;
-    --accent: #f2f0ea;
-    --on-accent: #0f0e0d;
-    --accent-ink: #f2f0ea;
-    --viz: #938f86;
-    --viz-warn: #c98500;
-    --viz-over: #e66767;
-  }
-  :root[data-accent="brasa"] {
-    --accent: #ff6b35;
-    --on-accent: #161513;
-    --accent-ink: #ff7a45;
-    --viz: #e85a24;
-  }
-  :root[data-accent="cobalto"] {
-    --accent: #7088ff;
-    --on-accent: #0f0e0d;
-    --accent-ink: #8b9dff;
-    --viz: #6f86ff;
-  }
-  :root[data-accent="lila"] {
-    --accent: #a98bff;
-    --on-accent: #0f0e0d;
-    --accent-ink: #b9a2ff;
-    --viz: #8c6cf5;
-  }
-  :root[data-accent="menta"] {
-    --accent: #3fd3a5;
-    --on-accent: #0f0e0d;
-    --accent-ink: #4fd8ac;
-    --viz: #1fa883;
-  }
+/*
+ * Modo oscuro: <html data-theme="dark">. Lo pone el servidor si elegiste
+ * Oscuro en Ajustes, o el script de modo del layout si sigues al sistema.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0f0e0d;
+  --surface: #1a1917;
+  --foreground: #f2f0ea;
+  --muted: #a19d94;
+  --border: #2a2825;
+  --danger: #f87171;
+  --accent: #f2f0ea;
+  --on-accent: #0f0e0d;
+  --accent-ink: #f2f0ea;
+  --viz: #938f86;
+  --viz-warn: #c98500;
+  --viz-over: #e66767;
+}
+:root[data-theme="dark"][data-accent="brasa"] {
+  --accent: #ff6b35;
+  --on-accent: #161513;
+  --accent-ink: #ff7a45;
+  --viz: #e85a24;
+}
+:root[data-theme="dark"][data-accent="cobalto"] {
+  --accent: #7088ff;
+  --on-accent: #0f0e0d;
+  --accent-ink: #8b9dff;
+  --viz: #6f86ff;
+}
+:root[data-theme="dark"][data-accent="lila"] {
+  --accent: #a98bff;
+  --on-accent: #0f0e0d;
+  --accent-ink: #b9a2ff;
+  --viz: #8c6cf5;
+}
+:root[data-theme="dark"][data-accent="menta"] {
+  --accent: #3fd3a5;
+  --on-accent: #0f0e0d;
+  --accent-ink: #4fd8ac;
+  --viz: #1fa883;
 }
 
 @theme inline {

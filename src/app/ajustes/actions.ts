@@ -11,7 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { appUrl } from "@/lib/app-url";
 import { ensureWebhook, telegramConfigured, tg } from "@/lib/telegram/api";
 import { hashLinkCode } from "@/lib/telegram/bot";
-import { ACCENT_COOKIE, ACCENT_COOKIE_MAX_AGE, isAccent } from "@/lib/theme";
+import { ACCENT_COOKIE, ACCENT_COOKIE_MAX_AGE, MODE_COOKIE, isAccent, isColorMode } from "@/lib/theme";
 
 export type InviteState = { error?: string; invited?: string };
 
@@ -63,6 +63,22 @@ export async function setAccent(accent: string): Promise<{ error?: string }> {
     .upsert({ user_id: userId, accent, updated_at: new Date().toISOString() });
   if (error) return { error: "No pude guardar el tema." };
   (await cookies()).set(ACCENT_COOKIE, accent, {
+    path: "/",
+    maxAge: ACCENT_COOKIE_MAX_AGE,
+    sameSite: "lax",
+  });
+  return {};
+}
+
+/** Guarda el modo claro/oscuro/sistema y lo copia a la cookie que lee el layout. */
+export async function setColorMode(mode: string): Promise<{ error?: string }> {
+  const { supabase, userId } = await requireUser();
+  if (!isColorMode(mode)) return { error: "Ese modo no existe." };
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert({ user_id: userId, color_mode: mode, updated_at: new Date().toISOString() });
+  if (error) return { error: "No pude guardar el modo." };
+  (await cookies()).set(MODE_COOKIE, mode, {
     path: "/",
     maxAge: ACCENT_COOKIE_MAX_AGE,
     sameSite: "lax",

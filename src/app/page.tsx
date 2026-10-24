@@ -16,9 +16,9 @@ import {
 import { todayIn } from "@/lib/dates";
 import { shouldAutoSync, syncMail } from "@/lib/mail-import/sync";
 import type { PeriodKind } from "@/lib/report";
-import { ACCENT_COOKIE, parseAccent } from "@/lib/theme";
+import { ACCENT_COOKIE, MODE_COOKIE, parseAccent, parseMode } from "@/lib/theme";
 import { Logo } from "@/components/logo";
-import { AccentSync } from "./accent-sync";
+import { AppearanceSync } from "./appearance-sync";
 import { AddLauncher } from "./add/add-launcher";
 import { HomePager } from "./home-pager";
 import { ReportView } from "./reportes/report-view";
@@ -55,15 +55,18 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     }
   });
 
-  // Dispositivo nuevo: sin cookie del tema, se trae el de la cuenta.
-  const hasAccentCookie = (await cookies()).has(ACCENT_COOKIE);
-  const savedAccent = hasAccentCookie
-    ? null
-    : parseAccent((await supabase.from("user_settings").select("accent").maybeSingle()).data?.accent);
+  // Dispositivo nuevo: sin cookies de apariencia, se trae lo guardado en la cuenta.
+  const jar = await cookies();
+  const needsSync = !jar.has(ACCENT_COOKIE) || !jar.has(MODE_COOKIE);
+  const saved = needsSync
+    ? (await supabase.from("user_settings").select("accent, color_mode").maybeSingle()).data
+    : null;
 
   return (
     <>
-      {savedAccent && <AccentSync accent={savedAccent} />}
+      {needsSync && (
+        <AppearanceSync accent={parseAccent(saved?.accent)} mode={parseMode(saved?.color_mode)} />
+      )}
       <HomePager
         initialPanel={onDashboard ? 1 : 0}
         home={
