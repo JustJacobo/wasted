@@ -46,9 +46,11 @@ export async function quickAdd(text: string): Promise<QuickAddState> {
   revalidatePath("/");
   revalidatePath("/movimientos");
   const today = todayIn();
-  const { week } = await getSummary(today);
+  const [{ week }, similar] = await Promise.all([
+    getSummary(today),
+    similarFromMail(supabase, result.transaction),
+  ]);
   after(() => notifyBudgetCrossing(userId, result.transaction, week, today));
-  const similar = await similarFromMail(supabase, result.transaction);
   return { status: "ok", transaction: result.transaction, week, similar, at: Date.now() };
 }
 
@@ -89,14 +91,13 @@ export async function addTransaction(
   if (error) return { status: "error", error: "No pude guardar el movimiento.", at: Date.now() };
 
   // La nota con su categoría alimenta las reglas del modo texto y de Telegram.
-  if (description) await learnCategory(supabase, description, categoryId);
+  if (description) after(() => learnCategory(supabase, description, categoryId));
 
   revalidatePath("/");
   revalidatePath("/movimientos");
   const today = todayIn();
-  const { week } = await getSummary(today);
+  const [{ week }, similar] = await Promise.all([getSummary(today), similarFromMail(supabase, data)]);
   after(() => notifyBudgetCrossing(userId, data, week, today));
-  const similar = await similarFromMail(supabase, data);
   return { status: "ok", transaction: data, week, similar, at: Date.now() };
 }
 

@@ -157,6 +157,32 @@ a,
   }
 }
 
+/* Pantallas de carga. Aparecen con retraso para que una carga rápida no parpadee,
+   y el pulso solo empieza si la espera se alarga. */
+.skeleton {
+  animation: skeleton-in 200ms var(--ease-ui) 150ms both;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation:
+      skeleton-in 200ms var(--ease-ui) 150ms both,
+      skeleton-pulse 1.6s ease-in-out 1s infinite;
+  }
+}
+
+@keyframes skeleton-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
 @keyframes mecha-refill-line {
   from {
     transform: scaleX(0);
