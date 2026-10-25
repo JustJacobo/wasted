@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { CATEGORY_COLOR_KEYS } from "@/lib/category-colors";
 import { CATEGORY_ICON_KEYS, emojiForIcon } from "@/lib/category-icons";
 
 export type CategoryResult = { error?: string };
@@ -10,6 +11,8 @@ export type CategoryResult = { error?: string };
 const Name = z.string().trim().min(1, "Ponle un nombre.").max(30, "Máximo 30 caracteres.");
 const Icon = z.enum(CATEGORY_ICON_KEYS, "Elige un ícono.");
 const Type = z.enum(["expense", "income"]);
+/** null = gris neutro. */
+const Color = z.enum(CATEGORY_COLOR_KEYS).nullable();
 
 function refresh() {
   revalidatePath("/ajustes/categorias");
@@ -30,9 +33,10 @@ export async function createCategory(input: {
   type: string;
   name: string;
   icon: string;
+  color: string | null;
 }): Promise<CategoryResult> {
   const { supabase } = await requireUser();
-  const parsed = z.object({ type: Type, name: Name, icon: Icon }).safeParse(input);
+  const parsed = z.object({ type: Type, name: Name, icon: Icon, color: Color }).safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   // Queda antes de "Varios"/"Otros", que van al final.
@@ -54,15 +58,18 @@ export async function updateCategory(input: {
   id: string;
   name: string;
   icon: string;
+  color: string | null;
 }): Promise<CategoryResult> {
   const { supabase } = await requireUser();
-  const parsed = z.object({ id: z.uuid(), name: Name, icon: Icon }).safeParse(input);
+  const parsed = z
+    .object({ id: z.uuid(), name: Name, icon: Icon, color: Color })
+    .safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { id, name, icon } = parsed.data;
+  const { id, name, icon, color } = parsed.data;
   const { error } = await supabase
     .from("categories")
-    .update({ name, icon, emoji: emojiForIcon(icon) })
+    .update({ name, icon, color, emoji: emojiForIcon(icon) })
     .eq("id", id);
   refresh();
   return message(error, "No pude guardar los cambios.");

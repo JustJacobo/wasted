@@ -25,7 +25,7 @@ export async function fetchReport(
     .eq("status", "confirmed")
     .gte("occurred_on", prev.start)
     .lte("occurred_on", range.end);
-  let catQuery = supabase.from("categories").select("id, name, emoji, icon");
+  let catQuery = supabase.from("categories").select("id, name, emoji, icon, color");
   if (userId) {
     txQuery = txQuery.eq("user_id", userId);
     catQuery = catQuery.eq("user_id", userId);

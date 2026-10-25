@@ -4,6 +4,14 @@ import { useState, useTransition } from "react";
 import { Archive, ArrowDown, ArrowUp, PencilSimple } from "@phosphor-icons/react/dist/ssr";
 import { CategoryIcon, ICON_COMPONENTS } from "@/components/category-icon";
 import {
+  CATEGORY_COLOR_KEYS,
+  CATEGORY_COLORS,
+  categoryColorVar,
+  isCategoryColor,
+  nextCategoryColor,
+  type CategoryColor,
+} from "@/lib/category-colors";
+import {
   CATEGORY_ICON_KEYS,
   CATEGORY_ICONS,
   isCategoryIcon,
@@ -56,8 +64,8 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
                 pending={pending}
                 submitLabel="Guardar"
                 onCancel={() => setEditing(null)}
-                onSubmit={(name, icon) =>
-                  run(() => updateCategory({ id: c.id, name, icon }), () => setEditing(null))
+                onSubmit={(name, icon, color) =>
+                  run(() => updateCategory({ id: c.id, name, icon, color }), () => setEditing(null))
                 }
               />
             </li>
@@ -65,6 +73,11 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
             <li key={c.id} className="flex items-center gap-1 py-2 pr-2 pl-4">
               <CategoryIcon category={c} className="size-5 text-xl" />
               <span className="ml-2 min-w-0 flex-1 truncate">{c.name}</span>
+              <span
+                aria-hidden
+                className="mr-1 size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: categoryColorVar(c.color) }}
+              />
               <button
                 type="button"
                 aria-label={`Subir ${c.name}`}
@@ -117,12 +130,12 @@ export function CategoryManager({ type, categories }: { type: TxType; categories
       {creating ? (
         <div className="rounded-xl bg-surface p-3 ring-1 ring-border">
           <CategoryForm
-            initial={{ name: "", icon: null }}
+            initial={{ name: "", icon: null, color: nextCategoryColor(activeList.map((c) => c.color)) }}
             pending={pending}
             submitLabel="Crear"
             onCancel={() => setCreating(false)}
-            onSubmit={(name, icon) =>
-              run(() => createCategory({ type, name, icon }), () => setCreating(false))
+            onSubmit={(name, icon, color) =>
+              run(() => createCategory({ type, name, icon, color }), () => setCreating(false))
             }
           />
         </div>
@@ -173,22 +186,25 @@ function CategoryForm({
   onSubmit,
   onCancel,
 }: {
-  initial: { name: string; icon: string | null };
+  initial: { name: string; icon: string | null; color: string | null };
   pending: boolean;
   submitLabel: string;
-  onSubmit: (name: string, icon: CategoryIconKey) => void;
+  onSubmit: (name: string, icon: CategoryIconKey, color: CategoryColor | null) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(initial.name);
   const [icon, setIcon] = useState<CategoryIconKey | null>(
     isCategoryIcon(initial.icon) ? initial.icon : null,
   );
+  const [color, setColor] = useState<CategoryColor | null>(
+    isCategoryColor(initial.color) ? initial.color : null,
+  );
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (icon) onSubmit(name, icon);
+        if (icon) onSubmit(name, icon, color);
       }}
       className="space-y-3"
     >
@@ -218,6 +234,28 @@ function CategoryForm({
               }`}
             >
               <Icon aria-hidden className="size-5" />
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex flex-wrap gap-2 px-1" role="radiogroup" aria-label="Color en el dashboard">
+        {[...CATEGORY_COLOR_KEYS, null].map((key) => {
+          const active = color === key;
+          return (
+            <button
+              key={key ?? "gris"}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={key ? CATEGORY_COLORS[key] : "Gris"}
+              onClick={() => setColor(key)}
+              className="grid size-9 place-items-center rounded-full transition-transform duration-150 ease-ui active:scale-[0.94]"
+            >
+              <span
+                aria-hidden
+                className={`size-7 rounded-full ${active ? "ring-2 ring-foreground ring-offset-2 ring-offset-surface" : ""}`}
+                style={{ backgroundColor: categoryColorVar(key) }}
+              />
             </button>
           );
         })}

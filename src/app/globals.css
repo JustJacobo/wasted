@@ -25,6 +25,17 @@
   /* Mecha de presupuesto: aviso (≥80%) y exceso (≥100%). */
   --viz-warn: #c46504;
   --viz-over: #dc2626;
+  /* Categorías en el dashboard (src/lib/category-colors.ts). Paleta categórica de la
+     skill dataviz, validada sobre --background; cada barra lleva su nombre escrito. */
+  --cat-azul: #2a78d6;
+  --cat-naranja: #eb6834;
+  --cat-aqua: #1baf7a;
+  --cat-amarillo: #eda100;
+  --cat-magenta: #e87ba4;
+  --cat-verde: #008300;
+  --cat-violeta: #6250d6;
+  --cat-rojo: #e34948;
+  --cat-gris: #8f8b82;
 }
 
 :root[data-accent="brasa"] {
@@ -70,6 +81,15 @@
   --viz: #938f86;
   --viz-warn: #c98500;
   --viz-over: #e66767;
+  --cat-azul: #3987e5;
+  --cat-naranja: #d95926;
+  --cat-aqua: #199e70;
+  --cat-amarillo: #c98500;
+  --cat-magenta: #d55181;
+  --cat-verde: #008300;
+  --cat-violeta: #9085e9;
+  --cat-rojo: #e66767;
+  --cat-gris: #75716a;
 }
 :root[data-theme="dark"][data-accent="brasa"] {
   --accent: #ff6b35;

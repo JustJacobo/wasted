@@ -22,6 +22,7 @@ export interface ReportCategory {
   name: string;
   emoji: string;
   icon?: string | null;
+  color?: string | null;
 }
 
 export interface CategorySlice {

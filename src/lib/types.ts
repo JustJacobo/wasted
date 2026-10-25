@@ -9,6 +9,8 @@ export interface Category {
   emoji: string;
   /** Clave de src/lib/category-icons.ts; null en categorías propias antiguas. */
   icon: string | null;
+  /** Clave de src/lib/category-colors.ts; null = gris neutro. */
+  color: string | null;
   type: TxType;
   monthly_budget: number | null;
   sort: number;
