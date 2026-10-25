@@ -145,3 +145,44 @@ export function buildReport(
     byCategory,
   };
 }
+
+export interface CompositionSegment {
+  /** id de la categoría, o "otras" para el grupo que junta el resto. */
+  key: string;
+  label: string;
+  /** Clave de color de la categoría; null = gris. */
+  color: string | null;
+  amount: number;
+  share: number;
+}
+
+/**
+ * Segmentos del gráfico de composición del gasto: las categorías con color más
+ * grandes (hasta `named`) y un grupo gris con el resto. Las grises ("Varios",
+ * "Sin categoría") van al grupo, así no hay dos segmentos grises.
+ */
+export function compositionSegments(slices: CategorySlice[], named = 5): CompositionSegment[] {
+  const colored = slices.filter((s) => s.category?.color);
+  const shown = colored.slice(0, named);
+  const rest = slices.filter((s) => !shown.includes(s));
+
+  const segments: CompositionSegment[] = shown.map((s) => ({
+    key: s.category!.id,
+    label: s.category!.name,
+    color: s.category!.color!,
+    amount: s.amount,
+    share: s.share,
+  }));
+  if (rest.length > 0) {
+    // Un solo sobrante conserva su nombre; si son varios, se nombran como grupo.
+    const only = rest.length === 1 ? rest[0] : null;
+    segments.push({
+      key: only?.category?.id ?? "otras",
+      label: only ? (only.category?.name ?? "Sin categoría") : "Otras",
+      color: only?.category?.color ?? null,
+      amount: rest.reduce((sum, s) => sum + s.amount, 0),
+      share: rest.reduce((sum, s) => sum + s.share, 0),
+    });
+  }
+  return segments;
+}

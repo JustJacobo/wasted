@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CategoryIcon } from "@/components/category-icon";
+import { categoryColorVar } from "@/lib/category-colors";
 import { formatDay, formatTime } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import type { Category, Transaction } from "@/lib/types";
@@ -66,7 +67,9 @@ export function TransactionList({
                       href={editHref(tx.id)}
                       className="-mx-1 flex items-center gap-3 px-1 py-3 active:bg-border/40"
                     >
-                      <CategoryIcon category={category} className="size-5 shrink-0 text-xl text-muted" />
+                      <span className="flex shrink-0" style={{ color: categoryColorVar(category?.color) }}>
+                        <CategoryIcon category={category} className="size-5 text-xl" />
+                      </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">
                           {tx.description || category?.name || "Sin categoría"}

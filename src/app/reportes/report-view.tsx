@@ -1,5 +1,6 @@
 import type { PeriodKind, Report } from "@/lib/report";
 import { CategoryBars } from "./category-bars";
+import { CategoryDonut } from "./category-donut";
 import { DailyChart } from "./daily-chart";
 import { PeriodNav } from "./period-nav";
 import { SendReportButton } from "./send-report-button";
@@ -36,6 +37,9 @@ export function ReportView({
             dailyAverage={report.dailyAverage}
             today={today}
           />
+          {report.byCategory.length > 1 && (
+            <CategoryDonut key={`dona-${kind}-${report.range.start}`} slices={report.byCategory} />
+          )}
           {report.byCategory.length > 0 && (
             <CategoryBars
               slices={report.byCategory}

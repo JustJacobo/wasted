@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildReport,
+  compositionSegments,
   deltaRatio,
   nextRange,
   periodRange,
@@ -99,5 +100,43 @@ describe("buildReport", () => {
   it("un periodo pasado promedia sobre todos sus días", () => {
     const past = buildReport("semana", "2026-10-14", "2026-10-23", txs, categories);
     expect(past.dailyAverage).toBe(Math.round(40_000 / 7));
+  });
+});
+
+describe("composición del gasto", () => {
+  const slice = (id: string, amount: number, color: string | null = "azul") => ({
+    category: { id, name: id, emoji: "", color },
+    amount,
+    share: amount / 100,
+    previous: 0,
+  });
+
+  it("muestra las 5 más grandes con color y junta el resto en gris", () => {
+    const slices = [
+      slice("a", 30),
+      slice("varios", 20, null),
+      slice("b", 15),
+      slice("c", 10),
+      slice("d", 9),
+      slice("e", 8),
+      slice("f", 5),
+      slice("g", 3),
+    ];
+    const segments = compositionSegments(slices);
+    expect(segments.map((s) => s.key)).toEqual(["a", "b", "c", "d", "e", "otras"]);
+    expect(segments.at(-1)).toMatchObject({ label: "Otras", color: null, amount: 28 });
+    expect(segments.reduce((sum, s) => sum + s.share, 0)).toBeCloseTo(1);
+  });
+
+  it("un único sobrante conserva su nombre y color", () => {
+    const segments = compositionSegments([slice("a", 60), slice("varios", 40, null)]);
+    expect(segments.at(-1)).toMatchObject({ key: "varios", label: "varios", color: null, amount: 40 });
+
+    const sinCategoria = compositionSegments([slice("a", 60), { ...slice("x", 40), category: null }]);
+    expect(sinCategoria.at(-1)).toMatchObject({ key: "otras", label: "Sin categoría", color: null });
+  });
+
+  it("sin sobrantes no agrega grupo", () => {
+    expect(compositionSegments([slice("a", 70), slice("b", 30)]).map((s) => s.key)).toEqual(["a", "b"]);
   });
 });
