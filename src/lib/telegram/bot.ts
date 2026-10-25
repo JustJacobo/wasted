@@ -40,7 +40,7 @@ export interface TelegramUpdate {
 }
 
 const TX_COLUMNS =
-  "id, type, amount, description, merchant, category_id, account_id, occurred_on, source, status, created_at";
+  "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, created_at";
 
 export const hashLinkCode = (code: string) => createHash("sha256").update(code).digest("hex");
 

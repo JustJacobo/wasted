@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CategoryIcon } from "@/components/category-icon";
-import { formatDay } from "@/lib/dates";
+import { formatDay, formatTime } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import type { Category, Transaction } from "@/lib/types";
 
@@ -55,6 +55,11 @@ export function TransactionList({
             <ul className="divide-y divide-border border-y border-border">
               {items.map((tx) => {
                 const category = tx.category_id ? byId.get(tx.category_id) : undefined;
+                const details = [
+                  tx.occurred_at && formatTime(tx.occurred_at),
+                  tx.description && (category?.name ?? "Sin categoría"),
+                  tx.source.startsWith("email_") && "del correo",
+                ].filter(Boolean);
                 return (
                   <li key={tx.id} data-tx-id={tx.id}>
                     <Link
@@ -66,12 +71,8 @@ export function TransactionList({
                         <span className="block truncate">
                           {tx.description || category?.name || "Sin categoría"}
                         </span>
-                        {(tx.description || tx.source.startsWith("email_")) && (
-                          <span className="block truncate text-xs text-muted">
-                            {tx.description && (category?.name ?? "Sin categoría")}
-                            {tx.description && tx.source.startsWith("email_") && " · "}
-                            {tx.source.startsWith("email_") && "del correo"}
-                          </span>
+                        {details.length > 0 && (
+                          <span className="block truncate text-xs text-muted">{details.join(" · ")}</span>
                         )}
                       </span>
                       <span

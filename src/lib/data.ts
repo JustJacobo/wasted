@@ -9,7 +9,7 @@ import { likePattern } from "@/lib/search";
 import type { Category, Summary, Transaction, TxType } from "@/lib/types";
 
 const TX_COLUMNS =
-  "id, type, amount, description, merchant, category_id, account_id, occurred_on, source, status, created_at";
+  "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, created_at";
 
 /**
  * Todas las categorías, incluidas las archivadas (para nombrar movimientos
@@ -42,6 +42,7 @@ export async function getRecentTransactions(limit = 60): Promise<Transaction[]> 
     .select(TX_COLUMNS)
     .eq("status", "confirmed")
     .order("occurred_on", { ascending: false })
+    .order("occurred_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -73,6 +74,7 @@ export async function getPending(): Promise<PendingItem[]> {
     .select(`${TX_COLUMNS}, raw`)
     .eq("status", "pending")
     .order("occurred_on", { ascending: false })
+    .order("occurred_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw error;
@@ -132,6 +134,7 @@ export async function getTransactionsForMonth(filters: HistoryFilters): Promise<
 
   const { data, error } = await query
     .order("occurred_on", { ascending: false })
+    .order("occurred_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(1000);
   if (error) throw error;

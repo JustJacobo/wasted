@@ -9,7 +9,7 @@ import { requireUser } from "@/lib/auth";
 import { safeReturnPath } from "@/lib/search";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
 import { getSummary } from "@/lib/data";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays, atTime, occurredAt, todayIn } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import { notifyBudgetCrossing } from "@/lib/telegram/notify";
 import type { Totals, Transaction } from "@/lib/types";
@@ -79,10 +79,11 @@ export async function addTransaction(
       category_id: categoryId,
       description,
       occurred_on: occurredOn,
+      occurred_at: occurredAt(occurredOn),
       source: "manual",
     })
     .select(
-      "id, type, amount, description, merchant, category_id, account_id, occurred_on, source, status, created_at",
+      "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, created_at",
     )
     .single();
   if (error) return { status: "error", error: "No pude guardar el movimiento.", at: Date.now() };
@@ -127,6 +128,8 @@ const TransactionForm = z.object({
   description: z.string().trim().max(200),
   category_id: z.uuid(),
   occurred_on: z.iso.date(),
+  /** "HH:MM"; vacío si no se sabe la hora. */
+  occurred_time: z.union([z.literal(""), z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/)]).default(""),
 });
 
 export type EditState = { error?: string };
@@ -142,7 +145,11 @@ export async function updateTransaction(
   });
   if (!parsed.success) return { error: "Revisa el monto, la fecha y la categoría." };
 
-  const { id, ...fields } = parsed.data;
+  const { id, occurred_time, ...rest } = parsed.data;
+  const fields = {
+    ...rest,
+    occurred_at: occurred_time ? atTime(rest.occurred_on, occurred_time) : null,
+  };
   const { data: before } = await supabase
     .from("transactions")
     .select("category_id")

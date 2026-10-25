@@ -101,3 +101,40 @@ export function formatDay(day: string, today: string = todayIn()): string {
   if (day === addDays(today, -1)) return "Ayer";
   return relative.format(toUtc(day));
 }
+
+// Horas: los movimientos guardan el instante en `occurred_at` (timestamptz) y
+// se muestran en hora de Colombia, que no tiene horario de verano (UTC-5 fijo).
+
+const clock = new Intl.DateTimeFormat("es-CO", {
+  timeZone: TIME_ZONE,
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+/** "9:41 p. m." */
+export function formatTime(at: string | Date): string {
+  return clock.format(new Date(at)).replace(/\s/g, " ");
+}
+
+const clock24 = new Intl.DateTimeFormat("en-GB", {
+  timeZone: TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** "21:41": el valor de un <input type="time">. */
+export function timeInputValue(at: string | Date): string {
+  return clock24.format(new Date(at));
+}
+
+/** Instante ISO del día `day` a la hora "HH:MM" de Colombia. */
+export function atTime(day: string, time: string): string {
+  return new Date(`${day}T${time.slice(0, 5)}:00-05:00`).toISOString();
+}
+
+/** La hora de `now` si el movimiento es de hoy; si es de otro día no se sabe. */
+export function occurredAt(day: string, now: Date = new Date()): string | null {
+  return todayIn(now) === day ? now.toISOString() : null;
+}

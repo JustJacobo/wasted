@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { addDays } from "@/lib/dates";
+import { addDays, occurredAt } from "@/lib/dates";
 import {
   fallbackCategory,
   matchCategory,
@@ -65,6 +65,7 @@ export async function ingestMail(
         merchant: parsed.merchant,
         category_id: categoryId,
         occurred_on: parsed.occurredOn,
+        occurred_at: occurredAt(parsed.occurredOn, mail.date),
         source: parsed.source,
         status,
         external_id: parsed.externalId,

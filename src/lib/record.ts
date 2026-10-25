@@ -8,6 +8,7 @@ import {
   ruleKeyword,
   type CategoryOption,
 } from "@/lib/quick-add/categorize";
+import { occurredAt } from "@/lib/dates";
 import { parseQuickAdd, type QuickEntry } from "@/lib/quick-add/parse";
 import type { Transaction } from "@/lib/types";
 
@@ -61,13 +62,14 @@ export async function recordQuickEntry(
       amount: entry.amount,
       description: entry.description,
       occurred_on: entry.occurredOn,
+      occurred_at: occurredAt(entry.occurredOn, now),
       category_id: categoryId,
       source,
       ...(userId ? { user_id: userId } : {}),
       ...(externalId ? { external_id: externalId } : {}),
     })
     .select(
-      "id, type, amount, description, merchant, category_id, account_id, occurred_on, source, status, created_at",
+      "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, created_at",
     )
     .single();
   if (error?.code === "23505") return { ok: false, error: "Ya estaba registrado.", duplicate: true };

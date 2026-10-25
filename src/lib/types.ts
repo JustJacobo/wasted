@@ -25,6 +25,8 @@ export interface Transaction {
   category_id: string | null;
   account_id: string | null;
   occurred_on: string;
+  /** Instante del movimiento; null si no se sabe la hora. */
+  occurred_at: string | null;
   source: string;
   status: "confirmed" | "pending" | "discarded";
   created_at: string;

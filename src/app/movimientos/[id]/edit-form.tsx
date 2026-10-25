@@ -3,6 +3,7 @@
 import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CategoryIcon } from "@/components/category-icon";
+import { timeInputValue } from "@/lib/dates";
 import type { Category, Transaction, TxType } from "@/lib/types";
 import { deleteTransaction, updateTransaction, type EditState } from "../../actions";
 
@@ -113,16 +114,27 @@ export function EditForm({
         </div>
       </fieldset>
 
-      <label className="block">
-        <span className="mb-1 block px-1 text-sm text-muted">Fecha</span>
-        <input
-          type="date"
-          name="occurred_on"
-          required
-          defaultValue={transaction.occurred_on}
-          className="h-12 w-full rounded-xl border border-border bg-surface px-4 outline-none focus:border-foreground"
-        />
-      </label>
+      <div className="grid grid-cols-[3fr_2fr] gap-3">
+        <label className="block min-w-0">
+          <span className="mb-1 block px-1 text-sm text-muted">Fecha</span>
+          <input
+            type="date"
+            name="occurred_on"
+            required
+            defaultValue={transaction.occurred_on}
+            className="h-12 w-full min-w-0 rounded-xl border border-border bg-surface px-4 outline-none focus:border-foreground"
+          />
+        </label>
+        <label className="block min-w-0">
+          <span className="mb-1 block px-1 text-sm text-muted">Hora</span>
+          <input
+            type="time"
+            name="occurred_time"
+            defaultValue={transaction.occurred_at ? timeInputValue(transaction.occurred_at) : ""}
+            className="h-12 w-full min-w-0 rounded-xl border border-border bg-surface px-4 outline-none focus:border-foreground"
+          />
+        </label>
+      </div>
 
       {state.error && (
         <p role="alert" className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">
