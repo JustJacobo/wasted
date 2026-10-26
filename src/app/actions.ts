@@ -9,14 +9,15 @@ import { requireUser } from "@/lib/auth";
 import { safeReturnPath } from "@/lib/search";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
 import { getSummary } from "@/lib/data";
+import { weekBudget } from "@/lib/report-data";
 import { addDays, atTime, occurredAt, todayIn } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import { notifyBudgetCrossing } from "@/lib/telegram/notify";
-import type { Totals, Transaction } from "@/lib/types";
+import type { Transaction, WeekBudget } from "@/lib/types";
 
 export type QuickAddState =
   | { status: "idle" }
-  | { status: "ok"; transaction: Transaction; week: Totals; similar: string | null; at: number }
+  | { status: "ok"; transaction: Transaction; week: WeekBudget; similar: string | null; at: number }
   | { status: "error"; error: string; at: number };
 
 /**
@@ -46,10 +47,11 @@ export async function quickAdd(text: string): Promise<QuickAddState> {
   revalidatePath("/");
   revalidatePath("/movimientos");
   const today = todayIn();
-  const [{ week }, similar] = await Promise.all([
+  const [summary, similar] = await Promise.all([
     getSummary(today),
     similarFromMail(supabase, result.transaction),
   ]);
+  const week = weekBudget(summary);
   after(() => notifyBudgetCrossing(userId, result.transaction, week, today));
   return { status: "ok", transaction: result.transaction, week, similar, at: Date.now() };
 }
@@ -96,7 +98,8 @@ export async function addTransaction(
   revalidatePath("/");
   revalidatePath("/movimientos");
   const today = todayIn();
-  const [{ week }, similar] = await Promise.all([getSummary(today), similarFromMail(supabase, data)]);
+  const [summary, similar] = await Promise.all([getSummary(today), similarFromMail(supabase, data)]);
+  const week = weekBudget(summary);
   after(() => notifyBudgetCrossing(userId, data, week, today));
   return { status: "ok", transaction: data, week, similar, at: Date.now() };
 }

@@ -1,27 +1,28 @@
 import { cookies } from "next/headers";
+import { available, balance, budgetStatus } from "@/lib/budget";
 import { startOfWeek } from "@/lib/dates";
 import { formatCOP, sizeForLength } from "@/lib/money";
 import { REFILL_COOKIE } from "@/lib/theme";
-import type { Summary } from "@/lib/types";
+import type { Summary, WeekBudget } from "@/lib/types";
 import { BudgetMeter } from "./budget-meter";
 import { GoToPanel } from "./home-pager";
 
 const monthName = new Intl.DateTimeFormat("es-CO", { month: "long", timeZone: "UTC" });
 
 export async function SummaryCard({ summary, today }: { summary: Summary; today: string }) {
-  const { week, month } = summary;
-  const left = week.income - week.expense;
-  const hasIncome = week.income > 0;
+  const { month, carry } = summary;
+  const week: WeekBudget = { ...summary.week, carry };
+  // El saldo no se reinicia cada lunes: lo que sobró o faltó pasa a esta semana.
+  const hasBudget = budgetStatus(week).level !== "none";
+  const left = balance(week);
   const month_ = monthName.format(new Date(`${today}T12:00:00Z`));
-  const hero = formatCOP(hasIncome ? left : week.expense);
+  const hero = formatCOP(hasBudget ? left : week.expense);
   const monday = startOfWeek(today);
-  const refill = hasIncome && (await cookies()).get(REFILL_COOKIE)?.value !== monday;
+  const refill = available(week) > 0 && (await cookies()).get(REFILL_COOKIE)?.value !== monday;
 
   return (
     <section className="mt-6">
-      <p className="text-sm text-muted">
-        {hasIncome ? "Te quedan esta semana" : "Gastaste esta semana"}
-      </p>
+      <p className="text-sm text-muted">{hasBudget ? "Te quedan" : "Gastaste esta semana"}</p>
       <p
         className={`tabular mt-1 font-semibold tracking-[-0.045em] ${sizeForLength(
           hero,
@@ -30,19 +31,20 @@ export async function SummaryCard({ summary, today }: { summary: Summary; today:
             [14, "text-5xl"],
           ],
           "text-4xl",
-        )} ${hasIncome && left < 0 ? "text-danger" : ""}`}
+        )} ${hasBudget && left < 0 ? "text-danger" : ""}`}
       >
         {hero}
       </p>
       <p className="tabular mt-2 text-sm text-muted">
-        Entró <span className="text-foreground">{formatCOP(week.income)}</span> · Salió{" "}
+        Esta semana entró <span className="text-foreground">{formatCOP(week.income)}</span> · salió{" "}
         <span className="text-foreground">{formatCOP(week.expense)}</span>
       </p>
-      <BudgetMeter
-        expense={week.expense}
-        income={week.income}
-        refillWeek={refill ? monday : undefined}
-      />
+      {carry !== 0 && (
+        <p className="tabular mt-0.5 text-sm text-muted">
+          Saldo anterior <span className="text-foreground">{formatCOP(carry)}</span>
+        </p>
+      )}
+      <BudgetMeter week={week} refillWeek={refill ? monday : undefined} />
 
       <GoToPanel
         index={1}

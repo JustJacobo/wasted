@@ -3,7 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { startOfMonth, startOfWeek } from "@/lib/dates";
 import { buildReport, periodRange, previousRange, type PeriodKind, type Report } from "@/lib/report";
-import type { Summary, Totals } from "@/lib/types";
+import type { Summary, Totals, WeekBudget } from "@/lib/types";
 
 /**
  * Reporte del periodo que contiene `anchor`. Con el cliente de sesión, RLS ya
@@ -48,7 +48,10 @@ function sumSince(rows: { type: "expense" | "income"; amount: number; occurred_o
   return totals;
 }
 
-/** Ingresos y gastos confirmados de la semana (lunes a hoy) y del mes en curso. */
+/**
+ * Ingresos y gastos confirmados de la semana (lunes a hoy) y del mes en curso,
+ * más el saldo con que arrancó la semana.
+ */
 export async function fetchSummary(
   supabase: SupabaseClient,
   today: string,
@@ -65,8 +68,21 @@ export async function fetchSummary(
     .gte("occurred_on", since)
     .lte("occurred_on", today);
   if (userId) query = query.eq("user_id", userId);
-  const { data, error } = await query;
+  const [{ data, error }, { data: before, error: beforeError }] = await Promise.all([
+    query,
+    supabase.rpc("totals_before", { p_before: week, p_user: userId ?? null }).single<Totals>(),
+  ]);
   if (error) throw error;
+  if (beforeError) throw beforeError;
 
-  return { week: sumSince(data, week), month: sumSince(data, month) };
+  return {
+    week: sumSince(data, week),
+    month: sumSince(data, month),
+    carry: Number(before.income) - Number(before.expense),
+  };
+}
+
+/** Lo que miden la mecha y los avisos: la semana con el saldo anterior. */
+export function weekBudget({ week, carry }: Summary): WeekBudget {
+  return { ...week, carry };
 }

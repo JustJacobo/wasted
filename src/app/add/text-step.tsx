@@ -5,7 +5,7 @@ import { formatDay, todayIn } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import { matchCategory, type CategoryRule } from "@/lib/quick-add/categorize";
 import { parseQuickAdd } from "@/lib/quick-add/parse";
-import type { Category, Totals, Transaction } from "@/lib/types";
+import type { Category, Transaction, WeekBudget } from "@/lib/types";
 import { quickAdd } from "../actions";
 
 /** Modo secundario: escribir "25k almuerzo" en una línea. */
@@ -16,7 +16,7 @@ export function TextStep({
 }: {
   categories: Category[];
   rules: CategoryRule[];
-  onSaved: (transaction: Transaction, week: Totals, similar?: string | null) => void;
+  onSaved: (transaction: Transaction, week: WeekBudget, similar?: string | null) => void;
 }) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);

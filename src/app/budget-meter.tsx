@@ -1,25 +1,18 @@
 import { budgetMessage, budgetStatus } from "@/lib/budget";
+import type { WeekBudget } from "@/lib/types";
 import { RefillMark } from "./refill-mark";
 
 /**
- * La mecha: lo que queda de lo que entró en la semana. La línea se acorta al
- * gastar y termina en el punto del logo. Al 80% pasa a ámbar; al 100% no
+ * La mecha: lo que queda de lo disponible en la semana (saldo anterior + lo que
+ * entró). La línea se acorta al gastar y termina en el punto del logo. Al 80% pasa a ámbar; al 100% no
  * queda línea. El texto dice lo mismo sin depender del color.
  *
- * `refillWeek`: primera vez que se ve esta semana con ingreso; la mecha se
+ * `refillWeek`: primera vez que se ve esta semana con saldo; la mecha se
  * llena desde cero (animación CSS desde el primer pintado, sin parpadeo).
  */
-export function BudgetMeter({
-  expense,
-  income,
-  refillWeek,
-}: {
-  expense: number;
-  income: number;
-  refillWeek?: string;
-}) {
-  const status = budgetStatus(expense, income);
-  const message = budgetMessage(status, expense, income);
+export function BudgetMeter({ week, refillWeek }: { week: WeekBudget; refillWeek?: string }) {
+  const status = budgetStatus(week);
+  const message = budgetMessage(status, week);
   if (!message) return null;
 
   const { ratio, level } = status;
@@ -32,7 +25,7 @@ export function BudgetMeter({
     <div className="mt-5">
       <div
         role="meter"
-        aria-label="Lo que te queda de lo que entró esta semana"
+        aria-label="Lo que te queda de lo disponible esta semana"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(left * 100)}

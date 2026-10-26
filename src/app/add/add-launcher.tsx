@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { crossedLevel, weekBefore } from "@/lib/budget";
+import { balance, crossedLevel, weekBefore } from "@/lib/budget";
 import { startOfWeek, todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
-import type { Category, Totals, Transaction, TxType } from "@/lib/types";
+import type { Category, Transaction, TxType, WeekBudget } from "@/lib/types";
 import { deleteTransaction, setCategory } from "../actions";
 import { AddSheet } from "./add-sheet";
 import { pulseMecha } from "./mecha-pulse";
@@ -98,14 +98,14 @@ export function AddLauncher({
     setOpen(true);
   }
 
-  function saved(transaction: Transaction, week: Totals, similar?: string | null) {
+  function saved(transaction: Transaction, week: WeekBudget, similar?: string | null) {
     show({ kind: "saved", transaction, week, similar });
     close();
     revealRow(transaction.id);
     pulseMecha();
     const before = weekBefore(week, { type: transaction.type, amount: Number(transaction.amount) });
     if (crossedLevel(before, week) === "over" && firstOverThisWeek()) {
-      setWastedBy(week.expense - week.income);
+      setWastedBy(-balance(week));
     }
   }
 

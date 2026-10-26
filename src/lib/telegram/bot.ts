@@ -6,7 +6,7 @@ import { todayIn } from "@/lib/dates";
 import { appUrl } from "@/lib/app-url";
 import { canImportMail, syncMail, syncSummary } from "@/lib/mail-import/sync";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
-import { fetchReport, fetchSummary } from "@/lib/report-data";
+import { fetchReport, fetchSummary, weekBudget } from "@/lib/report-data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Category, Transaction } from "@/lib/types";
 import { answerCallback, editMessage, sendMessage } from "./api";
@@ -83,8 +83,11 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
     case "hoy":
       return sendToday(admin, user.userId, chatId, today);
     case "semana": {
-      const report = await fetchReport(admin, "semana", today, today, user.userId);
-      await sendMessage(chatId, reportText("semana", report, { title: "Esta semana", current: true }));
+      const [report, { carry }] = await Promise.all([
+        fetchReport(admin, "semana", today, today, user.userId),
+        fetchSummary(admin, today, user.userId),
+      ]);
+      await sendMessage(chatId, reportText("semana", report, { title: "Esta semana", carry }));
       return;
     }
     case "mes": {
@@ -193,7 +196,7 @@ async function record(
     fetchSummary(admin, today, userId),
   ]);
   const category = categories.find((c) => c.id === tx.category_id);
-  await sendMessage(chatId, savedText(tx, category, today, summary.week), savedKeyboard(tx.id));
+  await sendMessage(chatId, savedText(tx, category, today, weekBudget(summary)), savedKeyboard(tx.id));
 }
 
 /** /correo: revisa el correo ahora y cuenta qué entró. */

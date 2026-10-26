@@ -2,20 +2,21 @@ import "server-only";
 
 import { startOfWeek } from "@/lib/dates";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Totals, Transaction } from "@/lib/types";
+import type { Transaction, WeekBudget } from "@/lib/types";
 import { sendMessage, telegramConfigured } from "./api";
 import { chatFor } from "./bot";
 import { budgetAlertText, crossedBudget } from "./format";
 
 /**
- * Si el movimiento recién guardado hizo cruzar el 80% o el 100% de lo que entró
- * en la semana, avisa por Telegram (cuando el usuario lo vinculó). Pensado para
- * correr dentro de `after()`: nunca lanza.
+ * Si el movimiento recién guardado hizo cruzar el 80% o el 100% de lo
+ * disponible en la semana (saldo anterior + lo que entró), avisa por Telegram
+ * (cuando el usuario lo vinculó). Pensado para correr dentro de `after()`:
+ * nunca lanza.
  */
 export async function notifyBudgetCrossing(
   userId: string,
   tx: Pick<Transaction, "type" | "amount" | "occurred_on">,
-  week: Totals,
+  week: WeekBudget,
   today: string,
 ): Promise<void> {
   if (!telegramConfigured() || tx.type !== "expense") return;

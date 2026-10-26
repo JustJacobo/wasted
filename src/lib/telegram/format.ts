@@ -1,11 +1,11 @@
 // Mensajes y botones del bot de Telegram. Todo puro: texto en HTML de Telegram
 // (solo <b>, <i>; el resto escapado) y teclados en línea.
 
-import { budgetMessage, budgetStatus } from "@/lib/budget";
+import { balance, budgetMessage, budgetStatus } from "@/lib/budget";
 import { formatDay, formatDayRange, formatMonth } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import { deltaRatio, type PeriodKind, type Report } from "@/lib/report";
-import type { Category, Totals, Transaction, TxType } from "@/lib/types";
+import type { Category, Totals, Transaction, TxType, WeekBudget } from "@/lib/types";
 
 export interface InlineButton {
   text: string;
@@ -50,12 +50,12 @@ export function parseCallback(data: string): CallbackAction | null {
 
 const typeLabel = (type: TxType) => (type === "income" ? "Ingreso" : "Gasto");
 
-/** Confirmación de un registro, con aviso si la semana va en 80% o más de lo que entró. */
+/** Confirmación de un registro, con aviso si la semana va en 80% o más de lo disponible. */
 export function savedText(
   tx: Pick<Transaction, "type" | "amount" | "description" | "occurred_on">,
   category: Pick<Category, "emoji" | "name"> | undefined,
   today: string,
-  week?: Totals,
+  week?: WeekBudget,
 ): string {
   const lines = [
     `✓ ${typeLabel(tx.type)} <b>${formatCOP(Number(tx.amount))}</b>${
@@ -71,10 +71,10 @@ export function savedText(
   return lines.join("\n");
 }
 
-function budgetWarning(week: Totals): string | null {
-  const status = budgetStatus(week.expense, week.income);
+function budgetWarning(week: WeekBudget): string | null {
+  const status = budgetStatus(week);
   if (status.level !== "warning" && status.level !== "over") return null;
-  return `⚠️ ${budgetMessage(status, week.expense, week.income)}`;
+  return `⚠️ ${budgetMessage(status, week)}`;
 }
 
 export function savedKeyboard(txId: string): InlineButton[][] {
@@ -147,32 +147,38 @@ function deltaLine(current: number, previous: number, periodName: string): strin
 
 /**
  * Resumen de una semana o un mes: lo de /semana y /mes y el reporte programado.
- * `current` agrega "Te quedan" y el aviso de presupuesto de la semana en curso.
+ * `carry` (saldo con que arrancó la semana en curso) agrega "Te quedan" y el
+ * aviso de presupuesto.
  */
 export function reportText(
   kind: PeriodKind,
   report: Report,
-  { title, current = false }: { title?: string; current?: boolean } = {},
+  { title, carry }: { title?: string; carry?: number } = {},
 ): string {
   const label =
     kind === "mes" ? formatMonth(report.range.start) : formatDayRange(report.range.start, report.range.end);
   const periodName = kind === "semana" ? "la semana anterior" : "el mes anterior";
-  const balance = report.income - report.expense;
+  const net = report.income - report.expense;
+  const week: WeekBudget | null =
+    kind === "semana" && carry !== undefined
+      ? { income: report.income, expense: report.expense, carry }
+      : null;
 
   const lines = [
     `<b>${escapeHtml(title ?? (kind === "semana" ? "Tu semana" : "Tu mes"))} · ${label}</b>`,
     "",
   ];
-  if (current && kind === "semana" && report.income > 0) {
-    lines.push(`Te quedan <b>${formatCOP(balance)}</b>`);
+  if (week && budgetStatus(week).level !== "none") {
+    lines.push(`Te quedan <b>${formatCOP(balance(week))}</b>`);
+    if (week.carry) lines.push(`Saldo anterior ${formatCOP(week.carry)}`);
   }
   lines.push(
     `Gastaste <b>${formatCOP(report.expense)}</b> (${deltaLine(report.expense, report.previousExpense, periodName)})`,
-    `Entró ${formatCOP(report.income)} · Balance ${balance < 0 ? "-" : "+"}${formatCOP(Math.abs(balance))}`,
+    `Entró ${formatCOP(report.income)} · Balance ${net < 0 ? "-" : "+"}${formatCOP(Math.abs(net))}`,
     `Promedio diario ${formatCOP(report.dailyAverage)}`,
   );
-  if (current && kind === "semana") {
-    const warning = budgetWarning({ income: report.income, expense: report.expense });
+  if (week) {
+    const warning = budgetWarning(week);
     if (warning) lines.push(warning);
   }
 
@@ -190,18 +196,16 @@ export function reportText(
   return lines.join("\n");
 }
 
-/** Aviso cuando un gasto hace cruzar el 80% o el 100% de lo que entró en la semana. */
-export function budgetAlertText(week: Totals): string | null {
-  const status = budgetStatus(week.expense, week.income);
+/** Aviso cuando un gasto hace cruzar el 80% o el 100% de lo disponible en la semana. */
+export function budgetAlertText(week: WeekBudget): string | null {
+  const status = budgetStatus(week);
   if (status.level === "over") {
-    return `🔴 ${budgetMessage(status, week.expense, week.income)}.\nSalió ${formatCOP(
-      week.expense,
-    )} y entró ${formatCOP(week.income)}.`;
+    return `🔴 ${budgetMessage(status, week)}.\nSalió ${formatCOP(week.expense)} y entró ${formatCOP(
+      week.income,
+    )}${week.carry ? `; saldo anterior ${formatCOP(week.carry)}` : ""}.`;
   }
   if (status.level === "warning") {
-    return `⚠️ ${budgetMessage(status, week.expense, week.income)}.\nTe quedan ${formatCOP(
-      week.income - week.expense,
-    )}.`;
+    return `⚠️ ${budgetMessage(status, week)}.\nTe quedan ${formatCOP(balance(week))}.`;
   }
   return null;
 }

@@ -3,13 +3,13 @@
 import { CategoryIcon } from "@/components/category-icon";
 import { formatCOP } from "@/lib/money";
 import { budgetMessage, budgetStatus } from "@/lib/budget";
-import type { Category, Totals, Transaction } from "@/lib/types";
+import type { Category, Transaction, WeekBudget } from "@/lib/types";
 
 export type Feedback =
   | {
       kind: "saved";
       transaction: Transaction;
-      week?: Totals;
+      week?: WeekBudget;
       /** Un movimiento igual que ya llegó del correo (posible repetido). */
       similar?: string | null;
     }
@@ -40,10 +40,10 @@ export function SavedToast({
 
   const { transaction, week, similar } = feedback;
   const options = categories.filter((c) => c.type === transaction.type);
-  const status = week ? budgetStatus(week.expense, week.income) : null;
+  const status = week ? budgetStatus(week) : null;
   const warning =
     week && status && transaction.type === "expense" && (status.level === "warning" || status.level === "over")
-      ? budgetMessage(status, week.expense, week.income)
+      ? budgetMessage(status, week)
       : null;
 
   return (

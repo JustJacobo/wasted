@@ -8,8 +8,8 @@ const SHOW_MS = 2_600;
 const EXIT_MS = 200;
 
 /**
- * Pantalla completa "wasted." cuando un gasto pasa el 100% de lo que entró en
- * la semana. Sale una vez por semana, se cierra sola o al tocarla.
+ * Pantalla completa "wasted." cuando un gasto pasa el 100% de lo disponible en
+ * la semana (saldo anterior + lo que entró). Sale una vez por semana, se cierra sola o al tocarla.
  */
 export function WastedMoment({ over, onDone }: { over: number; onDone: () => void }) {
   const [leaving, setLeaving] = useState(false);

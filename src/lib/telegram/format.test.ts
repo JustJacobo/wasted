@@ -70,12 +70,12 @@ describe("mensajes", () => {
 
   it("agrega el aviso de presupuesto solo a gastos en 80% o más", () => {
     const tx = { type: "expense" as const, amount: 1000, description: "", occurred_on: "2026-10-23" };
-    expect(savedText(tx, undefined, "2026-10-23", { income: 100_000, expense: 50_000 })).not.toContain("⚠️");
-    expect(savedText(tx, undefined, "2026-10-23", { income: 100_000, expense: 85_000 })).toContain(
-      "⚠️ Cuidado: llevas 85% de lo que entró esta semana",
+    expect(savedText(tx, undefined, "2026-10-23", { income: 100_000, expense: 50_000, carry: 0 })).not.toContain("⚠️");
+    expect(savedText(tx, undefined, "2026-10-23", { income: 100_000, expense: 85_000, carry: 0 })).toContain(
+      "⚠️ Cuidado: llevas 85% de lo disponible esta semana",
     );
     expect(
-      savedText({ ...tx, type: "income" }, undefined, "2026-10-23", { income: 100_000, expense: 85_000 }),
+      savedText({ ...tx, type: "income" }, undefined, "2026-10-23", { income: 100_000, expense: 85_000, carry: 0 }),
     ).not.toContain("⚠️");
   });
 
@@ -105,26 +105,39 @@ describe("mensajes", () => {
       ],
       [{ id: CAT, name: "Comida", emoji: "🍔" }],
     );
-    const text = reportText("semana", report, { title: "Esta semana", current: true });
+    const text = reportText("semana", report, { title: "Esta semana", carry: 0 });
     expect(text).toContain("<b>Esta semana · 19 – 25 oct</b>");
     expect(text).toContain("Te quedan <b>$ 30.000</b>");
     expect(text).toContain("▲ 70% vs la semana anterior");
-    expect(text).toContain("⚠️ Cuidado: llevas 85% de lo que entró");
+    expect(text).toContain("⚠️ Cuidado: llevas 85% de lo disponible");
     expect(text).toContain("🍔 Comida · $ 170.000 (100%)");
+    expect(text).not.toContain("Saldo anterior");
+
+    const withCarry = reportText("semana", report, { title: "Esta semana", carry: 50_000 });
+    expect(withCarry).toContain("Te quedan <b>$ 80.000</b>");
+    expect(withCarry).toContain("Saldo anterior $ 50.000");
+    expect(withCarry).not.toContain("⚠️");
+    expect(reportText("semana", report)).not.toContain("Te quedan");
   });
 });
 
 describe("avisos de presupuesto", () => {
   it("avisa solo al cruzar un umbral", () => {
-    expect(crossedBudget({ income: 100, expense: 70 }, { income: 100, expense: 85 })).toBe(true);
-    expect(crossedBudget({ income: 100, expense: 85 }, { income: 100, expense: 90 })).toBe(false);
-    expect(crossedBudget({ income: 100, expense: 90 }, { income: 100, expense: 110 })).toBe(true);
-    expect(crossedBudget({ income: 0, expense: 10 }, { income: 0, expense: 20 })).toBe(false);
+    const w = (expense: number, income: number, carry = 0) => ({ expense, income, carry });
+    expect(crossedBudget(w(70, 100), w(85, 100))).toBe(true);
+    expect(crossedBudget(w(85, 100), w(90, 100))).toBe(false);
+    expect(crossedBudget(w(90, 100), w(110, 100))).toBe(true);
+    expect(crossedBudget(w(10, 0), w(20, 0))).toBe(false);
+    expect(crossedBudget(w(10, 0, 100), w(85, 0, 100))).toBe(true);
   });
 
   it("dice cuánto queda o cuánto se pasó", () => {
-    expect(budgetAlertText({ income: 100_000, expense: 85_000 })).toContain("Te quedan $ 15.000");
-    expect(budgetAlertText({ income: 100_000, expense: 120_000 })).toContain("Te pasaste $ 20.000");
-    expect(budgetAlertText({ income: 100_000, expense: 10_000 })).toBeNull();
+    expect(budgetAlertText({ income: 100_000, expense: 85_000, carry: 0 })).toContain("Te quedan $ 15.000");
+    expect(budgetAlertText({ income: 100_000, expense: 120_000, carry: 0 })).toContain("Te pasaste $ 20.000");
+    expect(budgetAlertText({ income: 100_000, expense: 10_000, carry: 0 })).toBeNull();
+    expect(budgetAlertText({ income: 100_000, expense: 130_000, carry: 50_000 })).toContain("Te quedan $ 20.000");
+    expect(budgetAlertText({ income: 100_000, expense: 120_000, carry: 10_000 })).toBe(
+      "🔴 Te pasaste $ 10.000 de lo disponible esta semana.\nSalió $ 120.000 y entró $ 100.000; saldo anterior $ 10.000.",
+    );
   });
 });

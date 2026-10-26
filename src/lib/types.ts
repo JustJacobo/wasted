@@ -39,7 +39,14 @@ export interface Totals {
   expense: number;
 }
 
+/** La semana en curso más el saldo con que arrancó (lo que sobró o faltó antes del lunes). */
+export interface WeekBudget extends Totals {
+  carry: number;
+}
+
 export interface Summary {
   week: Totals;
   month: Totals;
+  /** Ingresos menos gastos confirmados antes del lunes de esta semana. */
+  carry: number;
 }
