@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { todayIn } from "@/lib/dates";
 import { appUrl } from "@/lib/app-url";
 import { canImportMail, syncMail, syncSummary } from "@/lib/mail-import/sync";
+import { memberInfo } from "@/lib/members";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
 import { fetchReport, fetchSummary, weekBudget } from "@/lib/report-data";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -113,17 +114,6 @@ async function linkedUser(admin: SupabaseClient, chatId: number) {
     .maybeSingle();
   if (!link) return null;
   return memberInfo(admin, link.user_id);
-}
-
-async function memberInfo(admin: SupabaseClient, userId: string) {
-  const { data, error } = await admin.auth.admin.getUserById(userId);
-  const email = data.user?.email?.toLowerCase();
-  if (error || !email) return null;
-  const { data: member } = await admin.from("members").select("email").eq("email", email).maybeSingle();
-  if (!member) return null;
-  const meta = data.user!.user_metadata ?? {};
-  const name = String(meta.full_name ?? meta.name ?? "");
-  return { userId, email, firstName: name.split(" ")[0] || undefined };
 }
 
 async function linkChat(

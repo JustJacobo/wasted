@@ -17,7 +17,7 @@ export type RecordResult =
   | { ok: false; error: string; duplicate?: boolean };
 
 export interface RecordOptions {
-  source?: "manual" | "telegram";
+  source?: "manual" | "telegram" | "shortcut";
   /** Obligatorio con el cliente de servicio (sin sesión): filtra y asigna al usuario. */
   userId?: string;
   /** Evita registrar dos veces lo mismo (p. ej. un mensaje de Telegram reintentado). */

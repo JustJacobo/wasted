@@ -78,6 +78,11 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - Mensajes y botones puros y testeados en `format.ts` (HTML de Telegram escapado; los uuid van en base64url para caber en `callback_data`).
   - Los reportes programados salen por correo y por Telegram; registrar desde la web avisa por Telegram al cruzar el 80% o el 100% de lo disponible en la semana (`notify.ts`, dentro de `after()`).
   - En local: `TELEGRAM_API_URL` apunta a un servidor falso del Bot API.
+- **Atajos y widgets** (Atajos y Scriptable en iPhone, HTTP Shortcuts en Android; guía en `/ajustes/atajos`):
+  - Clave personal `wst_…` creada en Ajustes. En `api_tokens` queda solo su hash (`src/lib/api-token.ts`), una por usuario.
+  - `userFromRequest` (`src/lib/api-auth.ts`) lee `Authorization: Bearer`, busca el hash con el cliente de servicio y verifica `members` en cada llamada (`memberInfo`, `src/lib/members.ts`).
+  - `POST /api/atajos/registrar` (JSON `texto`, formulario o texto plano) pasa por `recordQuickEntry` con `source = 'shortcut'`. `GET /api/atajos/saldo` da el saldo para widgets.
+  - Con `?formato=texto` responden solo el mensaje, para mostrarlo tal cual. Los textos son puros y testeados en `src/lib/shortcut-format.ts`.
 - **Importar del correo** (`src/lib/mail-import/`; solo el buzón de `GMAIL_USER`, por IMAP con la contraseña de aplicación):
   - `source.ts` busca en Gmail (`X-GM-RAW`) desde el lunes en que se activó, salta los Message-ID ya procesados y convierte el HTML a texto con `html.ts` (separa las celdas de las tablas).
   - `parsers.ts` (puro y testeado con textos reales): Nequi (Bre-B, PSE, Cívica), Uber, Rappi, facturas DIAN (XML dentro del ZIP, con límite de tamaño) y un genérico por "Total". Las transferencias propias (tu nombre o el pago a la tarjeta Nu) no cuentan.

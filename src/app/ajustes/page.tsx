@@ -9,6 +9,7 @@ import { MailToggle } from "./mail-toggle";
 import { InviteForm } from "./invite-form";
 import { ReportToggles } from "./report-toggles";
 import { RemoveButton } from "./remove-button";
+import { ShortcutsKey } from "./shortcuts-key";
 import { TelegramConnect } from "./telegram-connect";
 
 const time = new Intl.DateTimeFormat("es-CO", {
@@ -31,12 +32,13 @@ export default async function SettingsPage() {
   const mail = canImportMail(email);
   // El tema que muestra Ajustes es el que pinta este dispositivo (cookies del layout).
   const jar = await cookies();
-  const [{ data: settings }, { data: telegram }, { data: mailSync }] = await Promise.all([
+  const [{ data: settings }, { data: telegram }, { data: mailSync }, { data: apiToken }] = await Promise.all([
     supabase.from("user_settings").select("report_weekly, report_monthly, accent, color_mode").maybeSingle(),
     supabase.from("telegram_links").select("username").maybeSingle(),
     mail
       ? supabase.from("mail_sync").select("enabled, since, last_synced_at").maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase.from("api_tokens").select("last_used_at").maybeSingle(),
   ]);
   const members =
     role === "owner"
@@ -114,6 +116,19 @@ export default async function SettingsPage() {
         <p className="px-1 text-xs text-muted">
           Escríbele al bot “25k almuerzo” para registrar sin abrir la app, y usa /semana o /mes
           para ver cómo vas. Los reportes y avisos de presupuesto también llegan ahí.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="px-1 text-sm text-muted">Atajos y widgets</h2>
+        <ShortcutsKey
+          active={Boolean(apiToken)}
+          lastUsed={apiToken?.last_used_at ? lastSync(apiToken.last_used_at) : null}
+        />
+        <p className="px-1 text-xs text-muted">
+          Registra desde la pantalla de inicio sin abrir la app: un botón que pide “25k almuerzo”,
+          botones fijos para lo de siempre y un widget con lo que te queda. Funciona con Atajos en
+          iPhone y HTTP Shortcuts en Android.
         </p>
       </section>
 

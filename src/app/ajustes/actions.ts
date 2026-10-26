@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { hashToken, newToken } from "@/lib/api-token";
 import { requireOwner, requireUser } from "@/lib/auth";
 import { startOfWeek, todayIn } from "@/lib/dates";
 import { canImportMail } from "@/lib/mail-import/sync";
@@ -108,6 +109,27 @@ export async function createTelegramLink(): Promise<{ url?: string; error?: stri
   } catch {
     return { error: "No pude hablar con Telegram. Intenta de nuevo." };
   }
+}
+
+/**
+ * Crea la clave de atajos y widgets (reemplaza la anterior). Devuelve la clave
+ * en claro una sola vez; en la BD queda solo su hash.
+ */
+export async function createApiToken(): Promise<{ token?: string; error?: string }> {
+  const { supabase, userId } = await requireUser();
+  const token = newToken();
+  await supabase.from("api_tokens").delete().eq("user_id", userId);
+  const { error } = await supabase.from("api_tokens").insert({ user_id: userId, token_hash: hashToken(token) });
+  if (error) return { error: "No pude crear la clave." };
+  revalidatePath("/ajustes");
+  return { token };
+}
+
+/** Revoca la clave: los atajos y widgets dejan de funcionar hasta crear otra. */
+export async function revokeApiToken(): Promise<void> {
+  const { supabase, userId } = await requireUser();
+  await supabase.from("api_tokens").delete().eq("user_id", userId);
+  revalidatePath("/ajustes");
 }
 
 export async function unlinkTelegram(): Promise<void> {
