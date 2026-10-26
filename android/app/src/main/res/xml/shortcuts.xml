@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Al mantener pulsado el ícono de la app. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="registrar"
+        android:shortcutShortLabel="@string/shortcut_add">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="app.wasted.android.QuickAddActivity"
+            android:targetPackage="app.wasted.android" />
+    </shortcut>
+    <shortcut
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="gasto"
+        android:shortcutShortLabel="@string/shortcut_expense">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://wasted-lilac.vercel.app/?nuevo=gasto"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:targetPackage="app.wasted.android" />
+    </shortcut>
+    <shortcut
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="ingreso"
+        android:shortcutShortLabel="@string/shortcut_income">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://wasted-lilac.vercel.app/?nuevo=ingreso"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:targetPackage="app.wasted.android" />
+    </shortcut>
+</shortcuts>

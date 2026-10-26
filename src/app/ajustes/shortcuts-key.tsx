@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 import { createApiToken, revokeApiToken } from "./actions";
 import { CopyField } from "./copy-field";
+
+const noSubscribe = () => () => {};
+const isAndroid = () => /android/i.test(navigator.userAgent);
 
 /**
  * Clave de atajos y widgets. Se muestra una sola vez al crearla; después solo
@@ -12,6 +15,7 @@ import { CopyField } from "./copy-field";
 export function ShortcutsKey({ active, lastUsed }: { active: boolean; lastUsed: string | null }) {
   const [pending, start] = useTransition();
   const [result, setResult] = useState<{ token?: string; error?: string }>({});
+  const android = useSyncExternalStore(noSubscribe, isAndroid, () => false);
 
   function create() {
     if (active && !confirm("¿Crear otra clave? Los atajos con la clave anterior dejarán de funcionar.")) return;
@@ -23,6 +27,15 @@ export function ShortcutsKey({ active, lastUsed }: { active: boolean; lastUsed: 
       {result.token ? (
         <>
           <CopyField label="Tu clave (cópiala ahora, no se vuelve a mostrar)" value={result.token} />
+          {android && (
+            // Lo abre la app de Android (ConnectActivity), que pide confirmar antes de guardar.
+            <a
+              href={`wasted://conectar?clave=${encodeURIComponent(result.token)}`}
+              className="flex h-12 items-center justify-center rounded-xl bg-foreground font-medium text-background active:scale-[0.98]"
+            >
+              Conectar widget de Android
+            </a>
+          )}
           <Link
             href="/ajustes/atajos"
             className="flex h-12 items-center justify-center rounded-xl bg-foreground font-medium text-background active:scale-[0.98]"

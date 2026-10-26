@@ -48,7 +48,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Todo excepto estáticos, íconos, manifest y webhooks (que se autentican solos).
-    "/((?!_next/static|_next/image|favicon.ico|icons/|manifest.webmanifest|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Todo excepto estáticos, íconos, manifest, webhooks (que se autentican solos)
+    // y .well-known (assetlinks.json de la app de Android, que Android lee sin sesión).
+    "/((?!_next/static|_next/image|favicon.ico|icons/|manifest.webmanifest|api/|\\.well-known/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

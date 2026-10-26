@@ -13,5 +13,6 @@ export async function GET(request: NextRequest) {
   if (!user) return respond(request, UNAUTHORIZED, 401);
 
   const summary = await fetchSummary(admin, todayIn(), user.userId);
-  return respond(request, { ok: true, ...balanceSnapshot(weekBudget(summary)) });
+  // `cuenta`: el widget de Android la muestra antes de conectar una clave.
+  return respond(request, { ok: true, cuenta: user.email, ...balanceSnapshot(weekBudget(summary)) });
 }

@@ -120,6 +120,25 @@ export default async function SettingsPage() {
       </section>
 
       <section className="space-y-2">
+        <h2 className="px-1 text-sm text-muted">App de Android</h2>
+        <a
+          href="/descargas/wasted.apk"
+          download
+          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
+        >
+          <span>Descargar la app (APK)</span>
+          <span aria-hidden className="text-muted">
+            ↓
+          </span>
+        </a>
+        <p className="px-1 text-xs text-muted">
+          Ábrela desde las descargas y permite instalar apps de Chrome si Android lo pide. Trae un
+          widget con lo que te queda y un botón para registrar sin abrir la app: conéctalo con tu
+          clave de abajo.
+        </p>
+      </section>
+
+      <section className="space-y-2">
         <h2 className="px-1 text-sm text-muted">Atajos y widgets</h2>
         <ShortcutsKey
           active={Boolean(apiToken)}

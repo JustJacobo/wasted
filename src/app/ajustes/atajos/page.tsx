@@ -166,6 +166,12 @@ export default async function ShortcutsGuidePage({ searchParams }: PageProps<"/a
         </>
       ) : (
         <>
+          <p className="rounded-xl bg-surface px-4 py-3 text-sm ring-1 ring-border">
+            Con la <B>app de Android</B> (Ajustes → Descargar la app) no necesitas nada de esto: trae su
+            propio widget. Al crear la clave toca <B>Conectar widget de Android</B> y agrega el widget
+            Wasted en la pantalla de inicio. Lo de abajo sirve si prefieres no instalarla.
+          </p>
+
           <Steps title="Registrar con un toque">
             <li>
               Instala <B>HTTP Shortcuts</B> (gratis en Play Store).

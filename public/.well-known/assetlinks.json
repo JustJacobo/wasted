@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.wasted.android",
+      "sha256_cert_fingerprints": ["3A:AD:5B:17:C3:C1:A4:BA:53:7E:11:F8:7E:1D:68:B7:89:05:86:5B:48:41:D2:6D:A0:72:0C:59:47:2C:61:48"]
+    }
+  }
+]

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wasted</string>
+
+    <!-- Widget -->
+    <string name="widget_description">Lo que te queda y un botón para registrar sin abrir la app.</string>
+    <string name="widget_title_default">Te quedan</string>
+    <string name="widget_register">+ Registrar</string>
+    <string name="widget_refresh">Actualizar</string>
+    <string name="widget_refresh_symbol" translatable="false">↻</string>
+    <string name="widget_not_connected">Conecta el widget</string>
+    <string name="widget_not_connected_detail">En Wasted → Ajustes → Atajos y widgets</string>
+    <string name="widget_loading">Cargando…</string>
+    <string name="widget_offline">Sin conexión · %1$s</string>
+
+    <!-- Registrar -->
+    <string name="add_title">¿Qué registras?</string>
+    <string name="add_hint">6k uber · +200k cuota semanal</string>
+    <string name="add_save">Guardar</string>
+    <string name="add_saving">Guardando…</string>
+    <string name="add_save_button">Guardar como botón</string>
+    <string name="add_buttons_hint">Mantén pulsado un botón para quitarlo.</string>
+    <string name="add_remove_button">¿Quitar el botón “%1$s”?</string>
+    <string name="add_remove">Quitar</string>
+    <string name="add_offline">Sin conexión. Revisa el internet e intenta de nuevo.</string>
+    <string name="add_not_connected">Primero conecta el widget: en Wasted → Ajustes → Atajos y widgets, crea la clave y toca “Conectar widget de Android”.</string>
+    <string name="open_wasted">Abrir Wasted</string>
+
+    <!-- Conectar -->
+    <string name="connect_title">Conectar el widget</string>
+    <string name="connect_hint">Pega tu clave (wst_…)</string>
+    <string name="connect_checking">Revisando la clave…</string>
+    <string name="connect_confirm">¿Conectar el widget a la cuenta %1$s? Hazlo solo si creaste esta clave en Wasted.</string>
+    <string name="connect_action">Conectar</string>
+    <string name="connect_invalid">Esa clave no es válida. Crea una nueva en Wasted → Ajustes → Atajos y widgets.</string>
+    <string name="connect_done">Widget conectado</string>
+
+    <string name="cancel">Cancelar</string>
+    <string name="close">Cerrar</string>
+
+    <!-- Accesos al mantener pulsado el ícono -->
+    <string name="shortcut_add">Registrar rápido</string>
+    <string name="shortcut_expense">Gasto</string>
+    <string name="shortcut_income">Ingreso</string>
+</resources>

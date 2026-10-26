@@ -48,3 +48,13 @@ supabase/.branches
 
 .vercel
 .env*
+
+# android (el keystore y su contraseña viven fuera del repositorio)
+/android/.gradle/
+/android/.kotlin/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/keystore.properties
+*.jks
+*.keystore

@@ -83,6 +83,16 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - `userFromRequest` (`src/lib/api-auth.ts`) lee `Authorization: Bearer`, busca el hash con el cliente de servicio y verifica `members` en cada llamada (`memberInfo`, `src/lib/members.ts`).
   - `POST /api/atajos/registrar` (JSON `texto`, formulario o texto plano) pasa por `recordQuickEntry` con `source = 'shortcut'`. `GET /api/atajos/saldo` da el saldo para widgets.
   - Con `?formato=texto` responden solo el mensaje, para mostrarlo tal cual. Los textos son puros y testeados en `src/lib/shortcut-format.ts`.
+- **App de Android** (`android/`, Gradle 9.4 + AGP 9.2, Java, sin Kotlin; se instala como APK, sin tienda):
+  - Es una TWA (`androidbrowserhelper`): abre la web en Chrome a pantalla completa, así que el login con Google funciona y cada despliegue llega solo. Un WebView (Capacitor) no sirve porque Google bloquea su login ahí.
+  - `public/.well-known/assetlinks.json` tiene la huella del certificado de release (el proxy deja pasar `.well-known/` sin sesión). Si cambia el keystore, hay que actualizar la huella o vuelve la barra de dirección.
+  - Lo nativo usa la API de atajos con la clave `wst_…`:
+    - `BalanceWidget` muestra "Te quedan" y se actualiza cada 30 min, con ↻ y al registrar.
+    - `QuickAddActivity` es el cuadro "¿Qué registras?" con botones fijos guardados en el teléfono.
+    - `ConnectActivity` recibe `wasted://conectar?clave=…` desde Ajustes y siempre muestra la cuenta y pide confirmar antes de guardar.
+  - Compilar: `cd android && gradlew assembleRelease` con `JAVA_HOME` en el JBR de Android Studio. Después, copiar `app/build/outputs/apk/release/app-release.apk` a `public/descargas/wasted.apk`, que se descarga desde Ajustes con sesión.
+  - La variante debug (`app.wasted.android.debug`) apunta a `http://10.0.2.2:3000` (`npm run dev` visto desde el emulador).
+  - Firma: el keystore está en `%USERPROFILE%\.wasted\` y la contraseña en `android/keystore.properties`; los dos quedan fuera de git. Sin ese keystore no se pueden instalar actualizaciones encima: hay que respaldarlo.
 - **Importar del correo** (`src/lib/mail-import/`; solo el buzón de `GMAIL_USER`, por IMAP con la contraseña de aplicación):
   - `source.ts` busca en Gmail (`X-GM-RAW`) desde el lunes en que se activó, salta los Message-ID ya procesados y convierte el HTML a texto con `html.ts` (separa las celdas de las tablas).
   - `parsers.ts` (puro y testeado con textos reales): Nequi (Bre-B, PSE, Cívica), Uber, Rappi, facturas DIAN (XML dentro del ZIP, con límite de tamaño) y un genérico por "Total". Las transferencias propias (tu nombre o el pago a la tarjeta Nu) no cuentan.
