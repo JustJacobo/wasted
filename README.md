@@ -2,6 +2,18 @@
 
 App personal de finanzas: registras un gasto escribiendo `25k almuerzo` y listo.
 
+## App de Android
+
+[**Descargar wasted.apk**](https://github.com/JustJacobo/wasted/releases/latest/download/wasted.apk) · [todas las versiones](https://github.com/JustJacobo/wasted/releases)
+
+Abre el APK desde las descargas y permite instalar apps de esa fuente si Android lo pide. La app abre Wasted a pantalla completa y trae un widget con lo que te queda y un botón para registrar sin abrirla. Para entrar hace falta una invitación.
+
+Para publicar una versión, sube un tag `android-vX.Y.Z`. El workflow [android-release.yml](.github/workflows/android-release.yml) compila, firma, comprueba la huella contra `assetlinks.json` y crea el Release:
+
+```bash
+git tag android-v1.1.0 && git push origin android-v1.1.0
+```
+
 ## Correr en local
 
 Requisitos: Node 22 y Docker Desktop abierto.

@@ -12,6 +12,9 @@ import { RemoveButton } from "./remove-button";
 import { ShortcutsKey } from "./shortcuts-key";
 import { TelegramConnect } from "./telegram-connect";
 
+/** Último APK publicado por el workflow de GitHub Releases (.github/workflows/android-release.yml). */
+const APK_URL = "https://github.com/JustJacobo/wasted/releases/latest/download/wasted.apk";
+
 const time = new Intl.DateTimeFormat("es-CO", {
   timeZone: "America/Bogota",
   day: "numeric",
@@ -131,8 +134,8 @@ export default async function SettingsPage() {
       <section className="space-y-2">
         <h2 className="px-1 text-sm text-muted">App de Android</h2>
         <a
-          href="/descargas/wasted.apk"
-          download
+          href={APK_URL}
+          rel="noopener"
           className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
         >
           <span>Descargar la app (APK)</span>

@@ -1,0 +1,106 @@
+# Publica el APK de Android en GitHub Releases al subir un tag android-vX.Y.Z:
+#   git tag android-v1.1.0 && git push origin android-v1.1.0
+# El enlace estable es https://github.com/JustJacobo/wasted/releases/latest/download/wasted.apk
+#
+# Secretos del repo: ANDROID_KEYSTORE_BASE64 (el .jks en base64), ANDROID_KEYSTORE_PASSWORD,
+# ANDROID_KEY_ALIAS y ANDROID_KEY_PASSWORD. Tiene que ser el mismo keystore de siempre:
+# si no, el APK no se instala encima y la TWA muestra la barra de dirección.
+name: APK de Android
+
+on:
+  push:
+    tags: ["android-v*"]
+  # Para repetir una versión: "Run workflow" eligiendo el tag.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ github.ref_name }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Versión desde el tag
+        id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [[ ! "$TAG" =~ ^android-v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::El tag debe ser android-vX.Y.Z (llegó '$TAG')"
+            exit 1
+          fi
+          echo "name=${TAG#android-v}" >> "$GITHUB_OUTPUT"
+          echo "code=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 + BASH_REMATCH[3] ))" >> "$GITHUB_OUTPUT"
+
+      - name: Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Falta el secreto ANDROID_KEYSTORE_BASE64"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/wasted.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/wasted.jks"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+
+      - name: Compilar
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -PversionName=${{ steps.version.outputs.name }} \
+            -PversionCode=${{ steps.version.outputs.code }}
+
+      - name: Comprobar la firma contra assetlinks.json
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          GOT=$("$APKSIGNER" verify --print-certs "$APK" | grep -m1 'SHA-256 digest' | awk '{print $NF}' \
+            | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')
+          WANT=$(jq -r '.[0].target.sha256_cert_fingerprints[0]' ../public/.well-known/assetlinks.json)
+          if [ "$GOT" != "$WANT" ]; then
+            echo "::error::La firma del APK ($GOT) no coincide con assetlinks.json ($WANT)"
+            exit 1
+          fi
+          cp "$APK" "$RUNNER_TEMP/wasted.apk"
+
+      - name: Publicar el Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" "$RUNNER_TEMP/wasted.apk" --clobber
+          else
+            gh release create "$TAG" "$RUNNER_TEMP/wasted.apk" \
+              --title "Wasted Android $VERSION" \
+              --notes "Descarga **wasted.apk**, ábrelo y permite instalar apps de esa fuente si Android lo pide. Para entrar hace falta una invitación." \
+              --latest
+          fi
+
+      - name: Borrar el keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/wasted.jks" keystore.properties

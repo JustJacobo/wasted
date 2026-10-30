@@ -28,13 +28,13 @@ function mail(partial: Partial<MailMessage>): MailMessage {
 
 // Textos reales (convertidos de HTML a texto), sin datos personales.
 const NEQUI_SENT = `NEQUI | | | ¡Realizaste un envío por Bre-B y todo salió bien! | | ¡Hola, JACOBO GIRALDO RIOS! |
-| Enviaste de manera exitosa 7.500 a la llave 0087523524 de CRES CATERING SAS el 8 de septiembre de 2026 a las 7:51 p.m. Revisa el detalle en los movimientos de tu app o descarga el comprobante si lo necesitas. |`;
+| Enviaste de manera exitosa 7.500 a la llave 0012345678 de CRES CATERING SAS el 8 de septiembre de 2026 a las 7:51 p.m. Revisa el detalle en los movimientos de tu app o descarga el comprobante si lo necesitas. |`;
 const NEQUI_RECEIVED_OWN = `| ¡Recibiste plata por Bre-B! | | ¡Hola, JACOBO GIRALDO RIOS! |
 | Recibiste 42.000 de Jacobo Giraldo Rios el 20 de octubre de 2026 a las 10:10 p.m, desde el banco Nubank. Revisa el detalle |`;
-const NEQUI_PSE = `| ¡Pago exitoso! | | Hiciste un pago en PEXTO COLOMBIA SAS por $38.069 Fecha: El 22 de agosto de 2026 Hora: 8:27 p. m. CUS: 588260575 Puedes ingresar a tu app Nequi |`;
+const NEQUI_PSE = `| ¡Pago exitoso! | | Hiciste un pago en PEXTO COLOMBIA SAS por $38.069 Fecha: El 22 de agosto de 2026 Hora: 8:27 p. m. CUS: 123456789 Puedes ingresar a tu app Nequi |`;
 const NEQUI_CIVICA = `| Recarga en Cívica - Metro de Medellín | | Hiciste una recarga a tu Cívica por $10.000 | | Estado: Exitoso | | Comprobante de Pago | | Valor: $10.000 | | Fecha del pago: 4/Oct/2026 |`;
 const UBER = `| 20/10/2026 5:09 p.m. | | 20/10/2026 , 5:09 p.m. | | Gracias por usar Uber, Jacobo Esperamos que hayas disfrutado tu viaje de esta noche. | | | Total | COP 7,901 | | Tarifa del viaje | COP 9,522 | | Descuentos y ajustes | -COP 1,621 | | Pagos | | Cash | COP 7,901 |`;
-const RAPPI = `| | ##### sin Miseria - Metro | ###### Orden # 2510458143 | # ¡Jacobo, aquí están los detalles de tu pedido! | ##### Entregado con cambios | ##### 2026-10-06 17:39:59 | | ## Total pagado | $23.800 | | ## Cargo neto | ## $23.800 |`;
+const RAPPI = `| | ##### sin Miseria - Metro | ###### Orden # 1234567890 | # ¡Jacobo, aquí están los detalles de tu pedido! | ##### Entregado con cambios | ##### 2026-10-06 17:39:59 | | ## Total pagado | $23.800 | | ## Cargo neto | ## $23.800 |`;
 
 describe("utilidades", () => {
   it("lee montos colombianos y en formato inglés", () => {
@@ -102,7 +102,7 @@ describe("Nequi", () => {
       amount: 38069,
       merchant: "Pexto Colombia Sas",
       occurredOn: "2026-08-22",
-      externalId: "nequi:cus:588260575",
+      externalId: "nequi:cus:123456789",
     });
   });
 
@@ -166,7 +166,7 @@ describe("Uber y Rappi", () => {
       merchant: "sin Miseria - Metro",
       description: "Rappi · sin Miseria - Metro",
       occurredOn: "2026-10-06",
-      externalId: "rappi:2510458143",
+      externalId: "rappi:1234567890",
     });
   });
 });

@@ -23,8 +23,9 @@ android {
         applicationId = "app.wasted.android"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        // El workflow de Releases las pasa desde el tag (android-v1.2.3 → 10203 y "1.2.3").
+        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
+        versionName = findProperty("versionName") as String? ?: "1.0"
 
         val host = "wasted-lilac.vercel.app"
         buildConfigField("String", "WASTED_URL", "\"https://$host\"")

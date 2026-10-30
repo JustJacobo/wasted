@@ -90,7 +90,8 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
     - `BalanceWidget` muestra "Te quedan" y se actualiza cada 30 min, con ↻ y al registrar.
     - `QuickAddActivity` es el cuadro "¿Qué registras?" con botones fijos guardados en el teléfono.
     - `ConnectActivity` recibe `wasted://conectar?clave=…` desde Ajustes y siempre muestra la cuenta y pide confirmar antes de guardar.
-  - Compilar: `cd android && gradlew assembleRelease` con `JAVA_HOME` en el JBR de Android Studio. Después, copiar `app/build/outputs/apk/release/app-release.apk` a `public/descargas/wasted.apk`, que se descarga desde Ajustes con sesión.
+  - Publicar: subir un tag `android-vX.Y.Z`. `.github/workflows/android-release.yml` compila con el keystore de los secretos del repo (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`), pasa `-PversionName`/`-PversionCode` (1.2.3 → 10203), falla si la huella no coincide con `assetlinks.json` y sube `wasted.apk` al Release. Ajustes y el README enlazan a `releases/latest/download/wasted.apk`.
+  - Compilar en local (para probar): `cd android && gradlew assembleRelease` con `JAVA_HOME` en el JBR de Android Studio.
   - La variante debug (`app.wasted.android.debug`) apunta a `http://10.0.2.2:3000` (`npm run dev` visto desde el emulador).
   - Firma: el keystore está en `%USERPROFILE%\.wasted\` y la contraseña en `android/keystore.properties`; los dos quedan fuera de git. Sin ese keystore no se pueden instalar actualizaciones encima: hay que respaldarlo.
 - **Importar del correo** (`src/lib/mail-import/`; solo el buzón de `GMAIL_USER`, por IMAP con la contraseña de aplicación):
