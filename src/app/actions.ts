@@ -13,7 +13,7 @@ import { weekBudget } from "@/lib/report-data";
 import { addDays, atTime, occurredAt, todayIn } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import { notifyBudgetCrossing } from "@/lib/telegram/notify";
-import { TX_COLUMNS, type Transaction, type WeekBudget } from "@/lib/types";
+import { MAIL_SOURCES, TX_COLUMNS, type Transaction, type WeekBudget } from "@/lib/types";
 
 /** Un movimiento igual que ya llegó del correo o ya está como recurrente (posible repetido). */
 export interface Similar {
@@ -25,8 +25,6 @@ export type QuickAddState =
   | { status: "idle" }
   | { status: "ok"; transaction: Transaction; week: WeekBudget; similar: Similar | null; at: number }
   | { status: "error"; error: string; at: number };
-
-const MAIL_SOURCES = ["email_bank", "email_invoice", "email_other"];
 
 /**
  * Si el correo ya trajo un movimiento igual (tipo y monto, ±1 día), o ya está

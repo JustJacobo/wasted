@@ -1,10 +1,42 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getCategories, getPending } from "@/lib/data";
+import { getCategories, getPending, type PendingItem } from "@/lib/data";
 import { todayIn } from "@/lib/dates";
 import { canImportMail } from "@/lib/mail-import/sync";
+import { PendingPair } from "./pending-pair";
 import { PendingRow } from "./pending-row";
 import { SyncButton } from "./sync-button";
+
+type Card = { kind: "row"; item: PendingItem } | { kind: "pair"; recurring: PendingItem; mail: PendingItem };
+
+/**
+ * Un recurrente y un correo pendientes que se señalan como posible mismo cobro
+ * van en una sola tarjeta; lo demás, uno por fila, en el mismo orden.
+ */
+function cards(pending: PendingItem[]): Card[] {
+  const byId = new Map(pending.map((p) => [p.id, p]));
+  const partner = new Map<string, PendingItem>();
+  for (const item of pending) {
+    const other = item.similar ? byId.get(item.similar.id) : undefined;
+    if (!other || partner.has(item.id) || partner.has(other.id)) continue;
+    if ((item.source === "recurring") === (other.source === "recurring")) continue;
+    partner.set(item.id, other);
+    partner.set(other.id, item);
+  }
+  const out: Card[] = [];
+  const shown = new Set<string>();
+  for (const item of pending) {
+    if (shown.has(item.id)) continue;
+    const other = partner.get(item.id);
+    if (other) {
+      shown.add(other.id);
+      out.push(item.source === "recurring" ? { kind: "pair", recurring: item, mail: other } : { kind: "pair", recurring: other, mail: item });
+    } else {
+      out.push({ kind: "row", item });
+    }
+  }
+  return out;
+}
 
 /** Movimientos del correo y recurrentes vencidos que esperan confirmación. */
 export default async function InboxPage() {
@@ -15,8 +47,8 @@ export default async function InboxPage() {
   ]);
   const today = todayIn();
   const fromMail = canImportMail(email);
-  const recurring = pending.some((p) => p.source === "recurring");
-  const imported = pending.some((p) => p.source !== "recurring");
+  const recurring = pending.some((p) => p.recurring_id);
+  const imported = pending.some((p) => !p.recurring_id);
 
   return (
     <main className="mx-auto max-w-lg space-y-4 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
@@ -41,9 +73,19 @@ export default async function InboxPage() {
                 : "Llegaron del correo, pero no son seguros o se parecen a algo que ya registraste."}
           </p>
           <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-border">
-            {pending.map((item) => (
-              <PendingRow key={item.id} item={item} categories={categories} today={today} />
-            ))}
+            {cards(pending).map((card) =>
+              card.kind === "pair" ? (
+                <PendingPair
+                  key={`${card.recurring.id}:${card.mail.id}`}
+                  recurring={card.recurring}
+                  mail={card.mail}
+                  categories={categories}
+                  today={today}
+                />
+              ) : (
+                <PendingRow key={card.item.id} item={card.item} categories={categories} today={today} />
+              ),
+            )}
           </ul>
         </>
       )}

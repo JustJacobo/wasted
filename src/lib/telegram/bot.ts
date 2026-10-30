@@ -8,12 +8,14 @@ import { canImportMail, syncMail, syncSummary } from "@/lib/mail-import/sync";
 import { memberInfo } from "@/lib/members";
 import { fallbackCategory } from "@/lib/quick-add/categorize";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
+import { learnFromCharge } from "@/lib/recurring-link";
 import { fetchReport, fetchSummary, weekBudget } from "@/lib/report-data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TX_COLUMNS, type Category, type Transaction } from "@/lib/types";
 import { answerCallback, editMessage, sendMessage } from "./api";
 import {
   categoryKeyboard,
+  escapeHtml,
   helpText,
   NOT_LINKED_TEXT,
   parseCallback,
@@ -315,33 +317,82 @@ async function handleCallback(
       return;
     case "confirm":
     case "skip": {
-      // Un pendiente de la bandeja (recurrente): solo se resuelve una vez.
-      const confirm = parsed.action === "confirm";
-      // Como en la bandeja, se agrega con categoría (la de respaldo si no tenía).
-      const category = byId(tx.category_id) ?? categories.find((c) => c.id === fallbackCategory(tx.type, categories));
-      const { data: resolved } = await admin
-        .from("transactions")
-        .update(confirm ? { status: "confirmed", category_id: category?.id ?? null } : { status: "discarded" })
-        .eq("id", tx.id)
-        .eq("user_id", user.userId)
-        .eq("status", "pending")
-        .select("id");
-      if (!resolved?.length) {
-        await answerCallback(query.id, "Ya estaba resuelto.");
-        const text = tx.status === "discarded" ? skippedText(tx) : savedText(tx, byId(tx.category_id), today);
-        await editMessage(chatId, message.message_id, text).catch(() => {});
+      // Un pendiente de la bandeja (recurrente): solo se resuelve una vez. Si ya se
+      // juntó con su cobro del correo, Agregar actúa sobre ese movimiento; "Esta vez
+      // no" no lo descarta, porque es un cobro real: se revisa en la bandeja.
+      const merged = tx.status === "discarded" ? await mergedTarget(admin, tx.id, user.userId) : null;
+      if (merged?.status === "pending" && parsed.action === "skip") {
+        await answerCallback(query.id, "Ese cobro llegó del correo.");
+        await editMessage(
+          chatId,
+          message.message_id,
+          `📧 ${escapeHtml(merged.description || "Ese cobro")} llegó del correo. Revísalo en ${appUrl()}/bandeja`,
+        ).catch(() => {});
         return;
       }
-      if (confirm) {
-        if (tx.description && category) await learnCategory(admin, tx.description, category.id, user.userId);
-        await editMessage(chatId, message.message_id, savedText(tx, category, today), savedKeyboard(tx.id));
-        await answerCallback(query.id, "Agregado");
-      } else {
-        await editMessage(chatId, message.message_id, skippedText(tx));
-        await answerCallback(query.id, "Omitido");
-      }
-      return;
+      return resolvePending(admin, query.id, chatId, message.message_id, merged ?? tx, parsed.action, {
+        userId: user.userId,
+        categories,
+        today,
+      });
     }
+  }
+}
+
+/** El movimiento del correo con el que se juntó un pendiente de recurrente, si lo hay. */
+async function mergedTarget(
+  admin: SupabaseClient,
+  txId: string,
+  userId: string,
+): Promise<(Transaction & { raw: unknown }) | null> {
+  const { data } = await admin.from("transactions").select("raw").eq("id", txId).eq("user_id", userId).maybeSingle();
+  const mergedInto = (data?.raw as { mergedInto?: string } | null)?.mergedInto;
+  if (!mergedInto) return null;
+  const { data: target } = await admin
+    .from("transactions")
+    .select(`${TX_COLUMNS}, raw`)
+    .eq("id", mergedInto)
+    .eq("user_id", userId)
+    .maybeSingle<Transaction & { raw: unknown }>();
+  return target;
+}
+
+/** Agregar o "Esta vez no" sobre un pendiente, desde los botones de Telegram. */
+async function resolvePending(
+  admin: SupabaseClient,
+  queryId: string,
+  chatId: number,
+  messageId: number,
+  tx: Transaction & { raw?: unknown },
+  action: "confirm" | "skip",
+  { userId, categories, today }: { userId: string; categories: Category[]; today: string },
+): Promise<void> {
+  const byId = (id: string | null) => categories.find((c) => c.id === id);
+  const confirm = action === "confirm";
+  // Como en la bandeja, se agrega con categoría (la de respaldo si no tenía).
+  const category = byId(tx.category_id) ?? categories.find((c) => c.id === fallbackCategory(tx.type, categories));
+  const { data: resolved } = await admin
+    .from("transactions")
+    .update(confirm ? { status: "confirmed", category_id: category?.id ?? null } : { status: "discarded" })
+    .eq("id", tx.id)
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .select("id");
+  if (!resolved?.length) {
+    await answerCallback(queryId, "Ya estaba resuelto.");
+    const text = tx.status === "discarded" ? skippedText(tx) : savedText(tx, byId(tx.category_id), today);
+    await editMessage(chatId, messageId, text).catch(() => {});
+    return;
+  }
+  if (confirm) {
+    if (tx.description && category) await learnCategory(admin, tx.description, category.id, userId);
+    // Si es el cobro del correo de un recurrente, la regla aprende su nombre y monto.
+    await learnFromCharge(admin, tx, userId);
+    await editMessage(chatId, messageId, savedText(tx, category, today), savedKeyboard(tx.id));
+    await answerCallback(queryId, "Agregado");
+  } else {
+    await editMessage(chatId, messageId, skippedText(tx));
+    await answerCallback(queryId, "Omitido");
   }
 }
 

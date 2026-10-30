@@ -3,8 +3,7 @@ import "server-only";
 import { requireUser } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
-import { frequencyLabel, type Frequency, type Recurring } from "@/lib/recurring";
-import { RECURRING_COLUMNS } from "@/lib/recurring-run";
+import { frequencyLabel, RECURRING_COLUMNS, type Frequency, type Recurring } from "@/lib/recurring";
 import { periodRange, type PeriodKind, type Report } from "@/lib/report";
 import { fetchReport, fetchSummary } from "@/lib/report-data";
 import { likePattern } from "@/lib/search";
@@ -62,19 +61,21 @@ export async function getTransaction(id: string): Promise<Transaction | null> {
 /** Un pendiente de la bandeja, con el movimiento al que se parece (si hay). */
 export interface PendingItem extends Transaction {
   provider: string | null;
-  /** "Cada mes, el día 1" si salió de un recurrente. */
+  /** "Cada mes, el día 1" si salió de un recurrente o es su cobro del correo. */
   frequency: string | null;
+  /** Monto del recurrente al que está unido (para avisar si el cobro cambió). */
+  ruleAmount: number | null;
   similar: Pick<Transaction, "id" | "description" | "amount" | "occurred_on" | "category_id"> | null;
 }
 
-type RuleRef = (Frequency & { starts_on: string }) | null;
+type RuleRef = (Frequency & { starts_on: string; amount: number }) | null;
 
 /** Importados del correo y recurrentes vencidos que esperan confirmación, del más reciente al más antiguo. */
 export async function getPending(): Promise<PendingItem[]> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from("transactions")
-    .select(`${TX_COLUMNS}, raw, rule:recurring_id(every, unit, starts_on)`)
+    .select(`${TX_COLUMNS}, raw, rule:recurring_id(every, unit, starts_on, amount)`)
     .eq("status", "pending")
     .order("occurred_on", { ascending: false })
     .order("occurred_at", { ascending: false, nullsFirst: false })
@@ -90,6 +91,8 @@ export async function getPending(): Promise<PendingItem[]> {
         .from("transactions")
         .select("id, description, amount, occurred_on, category_id")
         .in("id", similarIds)
+        // Lo descartado (o retirado al juntarse con su correo) ya no es un posible repetido.
+        .neq("status", "discarded")
     : { data: [] };
   const byId = new Map((similar ?? []).map((t) => [t.id, t]));
 
@@ -99,7 +102,8 @@ export async function getPending(): Promise<PendingItem[]> {
     return {
       ...tx,
       provider: meta.provider ?? null,
-      frequency: ref && tx.source === "recurring" ? frequencyLabel(ref.starts_on, ref) : null,
+      frequency: ref ? frequencyLabel(ref.starts_on, ref) : null,
+      ruleAmount: ref ? Number(ref.amount) : null,
       similar: meta.possibleDuplicateOf ? (byId.get(meta.possibleDuplicateOf) ?? null) : null,
     };
   });

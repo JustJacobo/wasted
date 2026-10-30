@@ -2,13 +2,9 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays } from "@/lib/dates";
-import { dueDates, type Recurring } from "@/lib/recurring";
-import { TX_COLUMNS, type Transaction } from "@/lib/types";
-
-const MAIL_SOURCES = ["email_bank", "email_invoice", "email_other"];
-
-export const RECURRING_COLUMNS =
-  "id, type, amount, description, category_id, every, unit, starts_on, next_on, paused";
+import { dueDates, RECURRING_COLUMNS, type Recurring } from "@/lib/recurring";
+import { alreadyLinked, mailForOccurrence } from "@/lib/recurring-link";
+import { MAIL_SOURCES, TX_COLUMNS, type Transaction } from "@/lib/types";
 
 /** Usuarios con algún recurrente vencido (para el cron). */
 export async function usersWithDue(admin: SupabaseClient, today: string): Promise<string[]> {
@@ -70,6 +66,28 @@ async function insertOccurrence(
   rule: Recurring,
   day: string,
 ): Promise<DueItem | null> {
+  // Esa fecha ya tiene su cobro (llegó del correo antes, o se unió a mano): nada que crear.
+  if (await alreadyLinked(admin, userId, rule, day)) return null;
+
+  // El cobro ya llegó del correo: se une a él en vez de crear otro pendiente. Si
+  // espera en la bandeja, toma el nombre y la categoría del recurrente y sigue
+  // siendo una sola tarjeta; si ya estaba confirmado, ya cuenta y no se toca.
+  const mail = await mailForOccurrence(admin, userId, rule, day);
+  if (mail?.strength === "same") {
+    const pending = mail.item.status === "pending";
+    await admin
+      .from("transactions")
+      .update({
+        recurring_id: rule.id,
+        ...(pending && rule.description ? { description: rule.description } : {}),
+        ...(pending && rule.category_id ? { category_id: rule.category_id } : {}),
+      })
+      .eq("id", mail.item.id)
+      .eq("user_id", userId)
+      .is("recurring_id", null);
+    return null;
+  }
+
   // ¿Ya se registró, o llegó del correo (aunque espere en la bandeja)? Mismo tipo y monto, ±1 día.
   const { data: similar } = await admin
     .from("transactions")
@@ -82,7 +100,8 @@ async function insertOccurrence(
     .gte("occurred_on", addDays(day, -1))
     .lte("occurred_on", addDays(day, 1))
     .limit(1);
-  const possibleDuplicateOf = similar?.[0]?.id ?? null;
+  // Un correo que quizás es este cobro (otro monto, mismo nombre) va como "¿Es el mismo cobro?".
+  const possibleDuplicateOf = mail?.item.id ?? similar?.[0]?.id ?? null;
 
   const { data, error } = await admin
     .from("transactions")

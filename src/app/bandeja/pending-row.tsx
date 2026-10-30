@@ -45,12 +45,17 @@ export function PendingRow({
 
   const category = categories.find((c) => c.id === categoryId);
   const similar = item.similar;
-  const recurring = item.source === "recurring";
-  const origin = [
-    PROVIDERS[item.provider ?? "otro"] ?? "Correo",
-    formatDay(item.occurred_on, today),
-    item.frequency && item.frequency.charAt(0).toLowerCase() + item.frequency.slice(1),
-  ].filter(Boolean);
+  // Cobro del correo unido a un recurrente: una sola tarjeta para los dos.
+  const linked = Boolean(item.recurring_id) && item.source !== "recurring";
+  const recurring = item.source === "recurring" || linked;
+  const origin = linked
+    ? ["Recurrente", formatDay(item.occurred_on, today), `del correo${item.merchant ? ` (${item.merchant})` : ""}`]
+    : [
+        PROVIDERS[item.provider ?? "otro"] ?? "Correo",
+        formatDay(item.occurred_on, today),
+        item.frequency && item.frequency.charAt(0).toLowerCase() + item.frequency.slice(1),
+      ].filter(Boolean);
+  const priceChanged = linked && item.ruleAmount !== null && item.ruleAmount !== Number(item.amount);
   const similarCategory = similar?.category_id
     ? categories.find((c) => c.id === similar.category_id)
     : undefined;
@@ -70,6 +75,13 @@ export function PendingRow({
           {formatCOP(Number(item.amount))}
         </span>
       </div>
+
+      {priceChanged && (
+        <p className="px-1 text-xs text-muted">
+          Antes era {formatCOP(item.ruleAmount!)}; al agregarlo, el recurrente pasa a{" "}
+          {formatCOP(Number(item.amount))}.
+        </p>
+      )}
 
       {similar && (
         <p className="rounded-xl bg-viz-warn/10 px-3 py-2 text-sm">

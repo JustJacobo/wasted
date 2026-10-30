@@ -6,6 +6,10 @@ import type { TxType } from "@/lib/types";
 
 export const UNITS = ["day", "week", "month", "year"] as const;
 
+/** Columnas de `recurring` que llenan un `Recurring`. */
+export const RECURRING_COLUMNS =
+  "id, type, amount, description, category_id, every, unit, starts_on, next_on, paused, match_hint";
+
 export type FrequencyUnit = (typeof UNITS)[number];
 
 export interface Frequency {
@@ -24,6 +28,8 @@ export interface Recurring extends Frequency {
   /** Próxima fecha que falta generar. */
   next_on: string;
   paused: boolean;
+  /** Cómo aparece el cobro en el correo ("google play"); se aprende al confirmarlo. */
+  match_hint: string | null;
 }
 
 /** Tope de "cada N" por unidad (la base de datos admite hasta 365). */

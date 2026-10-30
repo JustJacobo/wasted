@@ -36,6 +36,9 @@ export interface Transaction {
   created_at: string;
 }
 
+/** Fuentes de los movimientos importados del correo. */
+export const MAIL_SOURCES = ["email_bank", "email_invoice", "email_other"];
+
 /** Columnas de `transactions` que llenan un `Transaction`. */
 export const TX_COLUMNS =
   "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, recurring_id, created_at";
