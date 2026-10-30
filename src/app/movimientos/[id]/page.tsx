@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { getCategories, getTransaction } from "@/lib/data";
+import { getCategories, getRecurringRule, getTransaction } from "@/lib/data";
+import { todayIn } from "@/lib/dates";
 import { safeReturnPath } from "@/lib/search";
 import { EditForm } from "./edit-form";
+import { RepeatSection } from "./repeat-section";
 
 export default async function EditTransactionPage({
   params,
@@ -15,6 +17,7 @@ export default async function EditTransactionPage({
 
   const [transaction, categories] = await Promise.all([getTransaction(id), getCategories()]);
   if (!transaction) notFound();
+  const rule = transaction.recurring_id ? await getRecurringRule(transaction.recurring_id) : null;
 
   return (
     <main className="mx-auto max-w-lg px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
@@ -23,7 +26,21 @@ export default async function EditTransactionPage({
           ← Volver
         </Link>
       </header>
-      <EditForm transaction={transaction} categories={categories} returnTo={returnTo} />
+      <EditForm
+        transaction={transaction}
+        categories={categories}
+        returnTo={returnTo}
+        repeat={
+          transaction.status === "confirmed" && (
+            <RepeatSection
+              transactionId={transaction.id}
+              occurredOn={transaction.occurred_on}
+              rule={rule}
+              today={todayIn()}
+            />
+          )
+        }
+      />
     </main>
   );
 }

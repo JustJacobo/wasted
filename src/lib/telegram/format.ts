@@ -30,10 +30,13 @@ export function decodeId(encoded: string): string | null {
 }
 
 export type CallbackAction =
-  | { action: "categories" | "back" | "undo"; txId: string }
+  | { action: "categories" | "back" | "undo" | "confirm" | "skip"; txId: string }
   | { action: "set"; txId: string; categoryId: string };
 
-/** "k:<tx>" lista categorías, "s:<tx>:<cat>" la cambia, "b:<tx>" vuelve, "u:<tx>" deshace. */
+/**
+ * "k:<tx>" lista categorías, "s:<tx>:<cat>" la cambia, "b:<tx>" vuelve, "u:<tx>" deshace;
+ * para un pendiente, "p:<tx>" lo agrega y "n:<tx>" lo omite.
+ */
 export function parseCallback(data: string): CallbackAction | null {
   const [kind, tx, cat] = data.split(":");
   const txId = tx ? decodeId(tx) : null;
@@ -41,6 +44,8 @@ export function parseCallback(data: string): CallbackAction | null {
   if (kind === "k") return { action: "categories", txId };
   if (kind === "b") return { action: "back", txId };
   if (kind === "u") return { action: "undo", txId };
+  if (kind === "p") return { action: "confirm", txId };
+  if (kind === "n") return { action: "skip", txId };
   if (kind === "s") {
     const categoryId = cat ? decodeId(cat) : null;
     return categoryId ? { action: "set", txId, categoryId } : null;
@@ -104,6 +109,43 @@ export function categoryKeyboard(
   });
   rows.push([{ text: "← Volver", callback_data: `b:${id}` }]);
   return rows;
+}
+
+/** Un recurrente que venció y espera confirmación en la bandeja. */
+export function recurringDueText(
+  tx: Pick<Transaction, "type" | "amount" | "description" | "occurred_on">,
+  category: Pick<Category, "emoji" | "name"> | undefined,
+  today: string,
+  similar = false,
+): string {
+  const lines = [
+    `🔁 Por confirmar: ${tx.description ? `${escapeHtml(tx.description)} ` : ""}<b>${
+      tx.type === "income" ? "+" : ""
+    }${formatCOP(Number(tx.amount))}</b>`,
+    `${category ? `${escapeHtml(category.emoji)} ${escapeHtml(category.name)}` : "Sin categoría"} · ${formatDay(
+      tx.occurred_on,
+      today,
+    )}`,
+  ];
+  if (similar) lines.push("", "⚠️ Se parece a algo que ya registraste.");
+  return lines.join("\n");
+}
+
+export function pendingKeyboard(txId: string): InlineButton[][] {
+  const id = encodeId(txId);
+  return [
+    [
+      { text: "✓ Agregar", callback_data: `p:${id}` },
+      { text: "Esta vez no", callback_data: `n:${id}` },
+    ],
+  ];
+}
+
+/** Respuesta al omitir un recurrente desde Telegram. */
+export function skippedText(tx: Pick<Transaction, "type" | "amount" | "description">): string {
+  return `Omitido: ${typeLabel(tx.type).toLowerCase()} de ${formatCOP(Number(tx.amount))}${
+    tx.description ? ` · ${escapeHtml(tx.description)}` : ""
+  }`;
 }
 
 export function undoneText(tx: Pick<Transaction, "type" | "amount" | "description">): string {

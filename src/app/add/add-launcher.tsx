@@ -5,7 +5,7 @@ import { balance, crossedLevel, weekBefore } from "@/lib/budget";
 import { startOfWeek, todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
 import type { Category, Transaction, TxType, WeekBudget } from "@/lib/types";
-import { deleteTransaction, setCategory } from "../actions";
+import { deleteTransaction, setCategory, type Similar } from "../actions";
 import { AddSheet } from "./add-sheet";
 import { pulseMecha } from "./mecha-pulse";
 import { revealRow } from "./reveal-row";
@@ -98,7 +98,7 @@ export function AddLauncher({
     setOpen(true);
   }
 
-  function saved(transaction: Transaction, week: WeekBudget, similar?: string | null) {
+  function saved(transaction: Transaction, week: WeekBudget, similar?: Similar | null) {
     show({ kind: "saved", transaction, week, similar });
     close();
     revealRow(transaction.id);

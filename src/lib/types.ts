@@ -31,8 +31,14 @@ export interface Transaction {
   occurred_at: string | null;
   source: string;
   status: "confirmed" | "pending" | "discarded";
+  /** Recurrente del que salió o desde el que se creó; null si no tiene. */
+  recurring_id: string | null;
   created_at: string;
 }
+
+/** Columnas de `transactions` que llenan un `Transaction`. */
+export const TX_COLUMNS =
+  "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, recurring_id, created_at";
 
 export interface Totals {
   income: number;

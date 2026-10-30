@@ -81,6 +81,15 @@ export default async function SettingsPage() {
             ›
           </span>
         </Link>
+        <Link
+          href="/ajustes/recurrentes"
+          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
+        >
+          <span>Recurrentes</span>
+          <span aria-hidden className="text-muted">
+            ›
+          </span>
+        </Link>
       </section>
 
       <section className="space-y-2">

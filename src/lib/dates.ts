@@ -42,6 +42,26 @@ export function startOfMonth(day: string): string {
   return `${day.slice(0, 8)}01`;
 }
 
+export function lastDayOfMonth(day: string): string {
+  const [y, m] = day.split("-").map(Number);
+  const next = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
+  return addDays(next, -1);
+}
+
+/** Suma meses; si el día no existe en el mes destino (31 de noviembre) cae el último. */
+export function addMonths(day: string, months: number): string {
+  const [y, m, d] = day.split("-").map(Number);
+  const total = y * 12 + (m - 1) + months;
+  const first = `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}-01`;
+  const last = Number(lastDayOfMonth(first).slice(8));
+  return `${first.slice(0, 8)}${String(Math.min(d, last)).padStart(2, "0")}`;
+}
+
+/** Días de `from` a `to` (negativo si `to` es anterior). */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((toUtc(to).getTime() - toUtc(from).getTime()) / 86_400_000);
+}
+
 export function isValidDay(y: number, m: number, d: number): boolean {
   const date = new Date(Date.UTC(y, m - 1, d));
   return (

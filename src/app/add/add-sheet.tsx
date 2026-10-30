@@ -5,7 +5,7 @@ import { sortByUsage } from "@/lib/category-usage";
 import { todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
 import type { Category, Transaction, TxType, WeekBudget } from "@/lib/types";
-import { addTransaction } from "../actions";
+import { addTransaction, type Similar } from "../actions";
 import { AmountStep } from "./amount-step";
 import { CategoryStep } from "./category-step";
 import { TextStep } from "./text-step";
@@ -34,7 +34,7 @@ export function AddSheet({
   rules: CategoryRule[];
   usage: { category_id: string | null }[];
   onClose: () => void;
-  onSaved: (transaction: Transaction, week: WeekBudget, similar?: string | null) => void;
+  onSaved: (transaction: Transaction, week: WeekBudget, similar?: Similar | null) => void;
 }) {
   const [view, setView] = useState<View>("amount");
   const [direction, setDirection] = useState<keyof typeof ENTER_FROM>("forward");

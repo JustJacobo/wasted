@@ -6,7 +6,7 @@ import { canImportMail } from "@/lib/mail-import/sync";
 import { PendingRow } from "./pending-row";
 import { SyncButton } from "./sync-button";
 
-/** Movimientos importados del correo que esperan confirmación. */
+/** Movimientos del correo y recurrentes vencidos que esperan confirmación. */
 export default async function InboxPage() {
   const [{ email }, pending, categories] = await Promise.all([
     requireUser(),
@@ -14,6 +14,9 @@ export default async function InboxPage() {
     getCategories(),
   ]);
   const today = todayIn();
+  const fromMail = canImportMail(email);
+  const recurring = pending.some((p) => p.source === "recurring");
+  const imported = pending.some((p) => p.source !== "recurring");
 
   return (
     <main className="mx-auto max-w-lg space-y-4 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
@@ -26,12 +29,16 @@ export default async function InboxPage() {
 
       {pending.length === 0 ? (
         <p className="rounded-xl bg-surface px-5 py-10 text-center text-sm text-muted ring-1 ring-border">
-          Nada por revisar. Lo que llega claro del correo se registra solo.
+          Nada por revisar.{fromMail && " Lo que llega claro del correo se registra solo."}
         </p>
       ) : (
         <>
           <p className="px-1 text-sm text-muted">
-            Llegaron del correo, pero no son seguros o se parecen a algo que ya registraste.
+            {recurring && imported
+              ? "Recurrentes que vencieron y movimientos del correo que no son seguros o se parecen a algo que ya registraste."
+              : recurring
+                ? "Recurrentes que vencieron. Cuentan en tu saldo cuando los agregas."
+                : "Llegaron del correo, pero no son seguros o se parecen a algo que ya registraste."}
           </p>
           <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-border">
             {pending.map((item) => (
@@ -41,7 +48,7 @@ export default async function InboxPage() {
         </>
       )}
 
-      {canImportMail(email) && <SyncButton />}
+      {fromMail && <SyncButton />}
     </main>
   );
 }

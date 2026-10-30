@@ -36,3 +36,8 @@ export function formatCOPShort(amount: number): string {
   }
   return `${sign}$${abs}`;
 }
+
+/** "25000" → "25.000", para mostrar un monto mientras se escribe. */
+export function groupThousands(digits: string): string {
+  return digits ? Number(digits).toLocaleString("es-CO") : "";
+}

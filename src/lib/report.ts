@@ -1,4 +1,4 @@
-import { addDays, startOfMonth, startOfWeek } from "@/lib/dates";
+import { addDays, lastDayOfMonth, startOfMonth, startOfWeek } from "@/lib/dates";
 import type { TxType } from "@/lib/types";
 
 export type PeriodKind = "semana" | "mes";
@@ -45,12 +45,6 @@ export interface Report {
   /** Promedio diario de gasto sobre los días transcurridos del periodo. */
   dailyAverage: number;
   byCategory: CategorySlice[];
-}
-
-function lastDayOfMonth(day: string): string {
-  const [y, m] = day.split("-").map(Number);
-  const next = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
-  return addDays(next, -1);
 }
 
 export function periodRange(kind: PeriodKind, anchor: string): Range {

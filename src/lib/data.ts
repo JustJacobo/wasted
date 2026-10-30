@@ -3,13 +3,12 @@ import "server-only";
 import { requireUser } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
+import { frequencyLabel, type Frequency, type Recurring } from "@/lib/recurring";
+import { RECURRING_COLUMNS } from "@/lib/recurring-run";
 import { periodRange, type PeriodKind, type Report } from "@/lib/report";
 import { fetchReport, fetchSummary } from "@/lib/report-data";
 import { likePattern } from "@/lib/search";
-import type { Category, Summary, Transaction, TxType } from "@/lib/types";
-
-const TX_COLUMNS =
-  "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, created_at";
+import { TX_COLUMNS, type Category, type Summary, type Transaction, type TxType } from "@/lib/types";
 
 /**
  * Todas las categorías, incluidas las archivadas (para nombrar movimientos
@@ -63,15 +62,19 @@ export async function getTransaction(id: string): Promise<Transaction | null> {
 /** Un pendiente de la bandeja, con el movimiento al que se parece (si hay). */
 export interface PendingItem extends Transaction {
   provider: string | null;
+  /** "Cada mes, el día 1" si salió de un recurrente. */
+  frequency: string | null;
   similar: Pick<Transaction, "id" | "description" | "amount" | "occurred_on" | "category_id"> | null;
 }
 
-/** Movimientos importados que esperan confirmación, del más reciente al más antiguo. */
+type RuleRef = (Frequency & { starts_on: string }) | null;
+
+/** Importados del correo y recurrentes vencidos que esperan confirmación, del más reciente al más antiguo. */
 export async function getPending(): Promise<PendingItem[]> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from("transactions")
-    .select(`${TX_COLUMNS}, raw`)
+    .select(`${TX_COLUMNS}, raw, rule:recurring_id(every, unit, starts_on)`)
     .eq("status", "pending")
     .order("occurred_on", { ascending: false })
     .order("occurred_at", { ascending: false, nullsFirst: false })
@@ -90,11 +93,13 @@ export async function getPending(): Promise<PendingItem[]> {
     : { data: [] };
   const byId = new Map((similar ?? []).map((t) => [t.id, t]));
 
-  return data.map(({ raw, ...tx }) => {
+  return data.map(({ raw, rule, ...tx }) => {
     const meta = (raw ?? {}) as { provider?: string; possibleDuplicateOf?: string };
+    const ref = rule as unknown as RuleRef;
     return {
       ...tx,
       provider: meta.provider ?? null,
+      frequency: ref && tx.source === "recurring" ? frequencyLabel(ref.starts_on, ref) : null,
       similar: meta.possibleDuplicateOf ? (byId.get(meta.possibleDuplicateOf) ?? null) : null,
     };
   });
@@ -108,6 +113,26 @@ export async function getPendingCount(): Promise<number> {
     .eq("status", "pending");
   if (error) throw error;
   return count ?? 0;
+}
+
+/** Recurrentes del usuario: activos primero, por próxima fecha. */
+export async function getRecurring(): Promise<Recurring[]> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("recurring")
+    .select(RECURRING_COLUMNS)
+    .order("paused")
+    .order("next_on")
+    .order("created_at");
+  if (error) throw error;
+  return data;
+}
+
+export async function getRecurringRule(id: string): Promise<Recurring | null> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase.from("recurring").select(RECURRING_COLUMNS).eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
 export interface HistoryFilters {

@@ -4,14 +4,15 @@ import { CategoryIcon } from "@/components/category-icon";
 import { formatCOP } from "@/lib/money";
 import { budgetMessage, budgetStatus } from "@/lib/budget";
 import type { Category, Transaction, WeekBudget } from "@/lib/types";
+import type { Similar } from "../actions";
 
 export type Feedback =
   | {
       kind: "saved";
       transaction: Transaction;
       week?: WeekBudget;
-      /** Un movimiento igual que ya llegó del correo (posible repetido). */
-      similar?: string | null;
+      /** Un movimiento igual que ya llegó del correo o es recurrente (posible repetido). */
+      similar?: Similar | null;
     }
   | { kind: "error"; message: string };
 
@@ -66,9 +67,10 @@ export function SavedToast({
       {similar && (
         <p className="mt-1 px-1 text-xs text-foreground">
           <span aria-hidden className="mr-1">
-            📧
+            {similar.from === "recurring" ? "🔁" : "📧"}
           </span>
-          Parece repetido: ya llegó del correo ({similar}).
+          Parece repetido:{" "}
+          {similar.from === "recurring" ? "ya está como recurrente" : "ya llegó del correo"} ({similar.label}).
         </p>
       )}
       {warning && (

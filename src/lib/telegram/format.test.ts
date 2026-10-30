@@ -8,6 +8,8 @@ import {
   encodeId,
   escapeHtml,
   parseCallback,
+  pendingKeyboard,
+  recurringDueText,
   reportText,
   savedKeyboard,
   savedText,
@@ -35,6 +37,13 @@ describe("ids en callback_data", () => {
     expect(new TextEncoder().encode(data).length).toBeLessThanOrEqual(64);
     expect(parseCallback(data)).toEqual({ action: "set", txId: TX, categoryId: CAT });
     expect(parseCallback(savedKeyboard(TX)[0][1].callback_data)).toEqual({ action: "undo", txId: TX });
+  });
+
+  it("los botones de un pendiente lo agregan o lo omiten", () => {
+    const [[add, skip]] = pendingKeyboard(TX);
+    expect(parseCallback(add.callback_data)).toEqual({ action: "confirm", txId: TX });
+    expect(parseCallback(skip.callback_data)).toEqual({ action: "skip", txId: TX });
+    expect(new TextEncoder().encode(add.callback_data).length).toBeLessThanOrEqual(64);
   });
 
   it("organiza las categorías de a dos y marca la actual", () => {
@@ -139,5 +148,25 @@ describe("avisos de presupuesto", () => {
     expect(budgetAlertText({ income: 100_000, expense: 120_000, carry: 10_000 })).toBe(
       "🔴 Te pasaste $ 10.000 de lo disponible esta semana.\nSalió $ 120.000 y entró $ 100.000; saldo anterior $ 10.000.",
     );
+  });
+});
+
+describe("recurrentes", () => {
+  it("avisa lo que venció, escapado", () => {
+    const text = recurringDueText(
+      { type: "expense", amount: 800000, description: "Arriendo <apto>", occurred_on: "2026-11-01" },
+      { emoji: "🏠", name: "Vivienda" },
+      "2026-11-01",
+    );
+    expect(text).toBe("🔁 Por confirmar: Arriendo &lt;apto&gt; <b>$ 800.000</b>\n🏠 Vivienda · Hoy");
+  });
+
+  it("marca los ingresos con +", () => {
+    const text = recurringDueText(
+      { type: "income", amount: 200000, description: "", occurred_on: "2026-11-02" },
+      undefined,
+      "2026-11-02",
+    );
+    expect(text).toBe("🔁 Por confirmar: <b>+$ 200.000</b>\nSin categoría · Hoy");
   });
 });

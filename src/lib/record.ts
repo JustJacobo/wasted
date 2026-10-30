@@ -10,7 +10,7 @@ import {
 } from "@/lib/quick-add/categorize";
 import { occurredAt } from "@/lib/dates";
 import { parseQuickAdd, type QuickEntry } from "@/lib/quick-add/parse";
-import type { Transaction } from "@/lib/types";
+import { TX_COLUMNS, type Transaction } from "@/lib/types";
 
 export type RecordResult =
   | { ok: true; transaction: Transaction; entry: QuickEntry }
@@ -68,9 +68,7 @@ export async function recordQuickEntry(
       ...(userId ? { user_id: userId } : {}),
       ...(externalId ? { external_id: externalId } : {}),
     })
-    .select(
-      "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, created_at",
-    )
+    .select(TX_COLUMNS)
     .single();
   if (error?.code === "23505") return { ok: false, error: "Ya estaba registrado.", duplicate: true };
   if (error) return { ok: false, error: "No pude guardar el movimiento." };

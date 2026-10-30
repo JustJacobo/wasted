@@ -6,10 +6,11 @@ import { todayIn } from "@/lib/dates";
 import { appUrl } from "@/lib/app-url";
 import { canImportMail, syncMail, syncSummary } from "@/lib/mail-import/sync";
 import { memberInfo } from "@/lib/members";
+import { fallbackCategory } from "@/lib/quick-add/categorize";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
 import { fetchReport, fetchSummary, weekBudget } from "@/lib/report-data";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Category, Transaction } from "@/lib/types";
+import { TX_COLUMNS, type Category, type Transaction } from "@/lib/types";
 import { answerCallback, editMessage, sendMessage } from "./api";
 import {
   categoryKeyboard,
@@ -19,6 +20,7 @@ import {
   reportText,
   savedKeyboard,
   savedText,
+  skippedText,
   todayText,
   undoneText,
 } from "./format";
@@ -39,9 +41,6 @@ export interface TelegramUpdate {
     message?: { message_id: number; chat: { id: number; type: string } };
   };
 }
-
-const TX_COLUMNS =
-  "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, created_at";
 
 export const hashLinkCode = (code: string) => createHash("sha256").update(code).digest("hex");
 
@@ -150,7 +149,7 @@ async function linkChat(
   await sendMessage(chatId, `✓ Cuenta conectada.\n\n${helpText(user.firstName)}`);
 }
 
-async function categoriesFor(admin: SupabaseClient, userId: string): Promise<Category[]> {
+export async function categoriesFor(admin: SupabaseClient, userId: string): Promise<Category[]> {
   const { data } = await admin
     .from("categories")
     .select("id, key, name, emoji, icon, color, type, monthly_budget, sort, archived")
@@ -221,13 +220,17 @@ async function sendToday(admin: SupabaseClient, userId: string, chatId: number, 
   await sendMessage(chatId, todayText(data ?? [], categories));
 }
 
-/** /deshacer: borra el último movimiento creado en las últimas 24 horas. */
+/**
+ * /deshacer: borra el último movimiento que el usuario registró en las últimas
+ * 24 horas (no lo que llegó solo del correo o de un recurrente).
+ */
 async function undoLast(admin: SupabaseClient, userId: string, chatId: number) {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data: tx } = await admin
     .from("transactions")
     .select(TX_COLUMNS)
     .eq("user_id", userId)
+    .in("source", ["manual", "telegram", "shortcut"])
     .gte("created_at", since)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -310,6 +313,35 @@ async function handleCallback(
       await editMessage(chatId, message.message_id, undoneText(tx));
       await answerCallback(query.id, "Deshecho");
       return;
+    case "confirm":
+    case "skip": {
+      // Un pendiente de la bandeja (recurrente): solo se resuelve una vez.
+      const confirm = parsed.action === "confirm";
+      // Como en la bandeja, se agrega con categoría (la de respaldo si no tenía).
+      const category = byId(tx.category_id) ?? categories.find((c) => c.id === fallbackCategory(tx.type, categories));
+      const { data: resolved } = await admin
+        .from("transactions")
+        .update(confirm ? { status: "confirmed", category_id: category?.id ?? null } : { status: "discarded" })
+        .eq("id", tx.id)
+        .eq("user_id", user.userId)
+        .eq("status", "pending")
+        .select("id");
+      if (!resolved?.length) {
+        await answerCallback(query.id, "Ya estaba resuelto.");
+        const text = tx.status === "discarded" ? skippedText(tx) : savedText(tx, byId(tx.category_id), today);
+        await editMessage(chatId, message.message_id, text).catch(() => {});
+        return;
+      }
+      if (confirm) {
+        if (tx.description && category) await learnCategory(admin, tx.description, category.id, user.userId);
+        await editMessage(chatId, message.message_id, savedText(tx, category, today), savedKeyboard(tx.id));
+        await answerCallback(query.id, "Agregado");
+      } else {
+        await editMessage(chatId, message.message_id, skippedText(tx));
+        await answerCallback(query.id, "Omitido");
+      }
+      return;
+    }
   }
 }
 

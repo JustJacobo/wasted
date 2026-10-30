@@ -1,4 +1,4 @@
-import { EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
+import { Tray } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
@@ -15,6 +15,9 @@ import {
 } from "@/lib/data";
 import { todayIn } from "@/lib/dates";
 import { shouldAutoSync, syncMail } from "@/lib/mail-import/sync";
+import { generateDue } from "@/lib/recurring-run";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyRecurringDue } from "@/lib/telegram/notify";
 import type { PeriodKind } from "@/lib/report";
 import { ACCENT_COOKIE, MODE_COOKIE, parseAccent, parseMode } from "@/lib/theme";
 import { Logo } from "@/components/logo";
@@ -46,8 +49,15 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       getPendingCount(),
     ]);
 
-  // Revisa el correo después de responder, sin frenar la carga (máximo cada 10 min).
+  // Después de responder, sin frenar la carga: recurrentes vencidos (respaldo
+  // del cron diario) y el correo (máximo cada 10 min).
   after(async () => {
+    try {
+      const admin = createAdminClient();
+      await notifyRecurringDue(admin, userId, await generateDue(admin, userId, today), today);
+    } catch (error) {
+      console.error("recurrentes: fallo la generación al abrir", error);
+    }
     try {
       if (await shouldAutoSync(userId, email)) await syncMail(userId, email);
     } catch (error) {
@@ -82,7 +92,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 text-sm ring-1 ring-border active:scale-[0.99]"
               >
                 <span>
-                  <EnvelopeSimple aria-hidden className="mr-2 inline size-4 align-[-2px] text-muted" />
+                  <Tray aria-hidden className="mr-2 inline size-4 align-[-2px] text-muted" />
                   {pendingCount === 1
                     ? "1 movimiento por revisar"
                     : `${pendingCount} movimientos por revisar`}

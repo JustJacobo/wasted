@@ -44,7 +44,8 @@ export async function ingestMail(
       .eq("user_id", ctx.userId)
       .eq("type", type)
       .eq("amount", parsed.amount)
-      .eq("status", "confirmed")
+      // Lo confirmado y los recurrentes que esperan en la bandeja (Netflix ya vencido).
+      .or("status.eq.confirmed,and(status.eq.pending,source.eq.recurring)")
       .gte("occurred_on", addDays(parsed.occurredOn, -1))
       .lte("occurred_on", addDays(parsed.occurredOn, 1))
       .limit(1);

@@ -13,22 +13,31 @@ import { weekBudget } from "@/lib/report-data";
 import { addDays, atTime, occurredAt, todayIn } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import { notifyBudgetCrossing } from "@/lib/telegram/notify";
-import type { Transaction, WeekBudget } from "@/lib/types";
+import { TX_COLUMNS, type Transaction, type WeekBudget } from "@/lib/types";
+
+/** Un movimiento igual que ya llegó del correo o ya está como recurrente (posible repetido). */
+export interface Similar {
+  label: string;
+  from: "mail" | "recurring";
+}
 
 export type QuickAddState =
   | { status: "idle" }
-  | { status: "ok"; transaction: Transaction; week: WeekBudget; similar: string | null; at: number }
+  | { status: "ok"; transaction: Transaction; week: WeekBudget; similar: Similar | null; at: number }
   | { status: "error"; error: string; at: number };
 
+const MAIL_SOURCES = ["email_bank", "email_invoice", "email_other"];
+
 /**
- * Si el correo ya trajo un movimiento igual (tipo y monto, ±1 día), lo describe
- * para avisar en la confirmación; el usuario decide si deshace.
+ * Si el correo ya trajo un movimiento igual (tipo y monto, ±1 día), o ya está
+ * como recurrente (en la bandeja o confirmado), lo describe para avisar en la
+ * confirmación; el usuario decide si deshace.
  */
-async function similarFromMail(supabase: SupabaseClient, tx: Transaction): Promise<string | null> {
+async function similarImported(supabase: SupabaseClient, tx: Transaction): Promise<Similar | null> {
   const { data } = await supabase
     .from("transactions")
-    .select("description, merchant, amount")
-    .in("source", ["email_bank", "email_invoice", "email_other"])
+    .select("description, merchant, amount, source")
+    .in("source", [...MAIL_SOURCES, "recurring"])
     .in("status", ["confirmed", "pending"])
     .eq("type", tx.type)
     .eq("amount", tx.amount)
@@ -37,7 +46,11 @@ async function similarFromMail(supabase: SupabaseClient, tx: Transaction): Promi
     .lte("occurred_on", addDays(tx.occurred_on, 1))
     .limit(1)
     .maybeSingle();
-  return data ? `${data.merchant || data.description || "movimiento"} ${formatCOP(Number(data.amount))}` : null;
+  if (!data) return null;
+  return {
+    label: `${data.merchant || data.description || "movimiento"} ${formatCOP(Number(data.amount))}`,
+    from: data.source === "recurring" ? "recurring" : "mail",
+  };
 }
 
 export async function quickAdd(text: string): Promise<QuickAddState> {
@@ -49,7 +62,7 @@ export async function quickAdd(text: string): Promise<QuickAddState> {
   const today = todayIn();
   const [summary, similar] = await Promise.all([
     getSummary(today),
-    similarFromMail(supabase, result.transaction),
+    similarImported(supabase, result.transaction),
   ]);
   const week = weekBudget(summary);
   after(() => notifyBudgetCrossing(userId, result.transaction, week, today));
@@ -86,9 +99,7 @@ export async function addTransaction(
       occurred_at: occurredAt(occurredOn),
       source: "manual",
     })
-    .select(
-      "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, created_at",
-    )
+    .select(TX_COLUMNS)
     .single();
   if (error) return { status: "error", error: "No pude guardar el movimiento.", at: Date.now() };
 
@@ -98,7 +109,7 @@ export async function addTransaction(
   revalidatePath("/");
   revalidatePath("/movimientos");
   const today = todayIn();
-  const [summary, similar] = await Promise.all([getSummary(today), similarFromMail(supabase, data)]);
+  const [summary, similar] = await Promise.all([getSummary(today), similarImported(supabase, data)]);
   const week = weekBudget(summary);
   after(() => notifyBudgetCrossing(userId, data, week, today));
   return { status: "ok", transaction: data, week, similar, at: Date.now() };

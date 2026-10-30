@@ -4,20 +4,21 @@ import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CategoryIcon } from "@/components/category-icon";
 import { timeInputValue } from "@/lib/dates";
+import { groupThousands } from "@/lib/money";
 import type { Category, Transaction, TxType } from "@/lib/types";
 import { deleteTransaction, updateTransaction, type EditState } from "../../actions";
-
-const groupThousands = (digits: string) =>
-  digits ? Number(digits).toLocaleString("es-CO") : "";
 
 export function EditForm({
   transaction,
   categories,
   returnTo,
+  repeat,
 }: {
   transaction: Transaction;
   categories: Category[];
   returnTo: string;
+  /** Sección "Repetir" (va fuera del envío del formulario). */
+  repeat?: React.ReactNode;
 }) {
   const router = useRouter();
   const [state, formAction, saving] = useActionState<EditState, FormData>(updateTransaction, {});
@@ -135,6 +136,8 @@ export function EditForm({
           />
         </label>
       </div>
+
+      {repeat}
 
       {state.error && (
         <p role="alert" className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">

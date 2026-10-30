@@ -14,6 +14,7 @@ const PROVIDERS: Record<string, string> = {
   rappi: "Rappi",
   dian: "Factura",
   otro: "Correo",
+  recurrente: "Recurrente",
 };
 
 /** Un movimiento por confirmar: categoría editable, Agregar o Descartar. */
@@ -44,6 +45,12 @@ export function PendingRow({
 
   const category = categories.find((c) => c.id === categoryId);
   const similar = item.similar;
+  const recurring = item.source === "recurring";
+  const origin = [
+    PROVIDERS[item.provider ?? "otro"] ?? "Correo",
+    formatDay(item.occurred_on, today),
+    item.frequency && item.frequency.charAt(0).toLowerCase() + item.frequency.slice(1),
+  ].filter(Boolean);
   const similarCategory = similar?.category_id
     ? categories.find((c) => c.id === similar.category_id)
     : undefined;
@@ -54,9 +61,7 @@ export function PendingRow({
         <CategoryIcon category={category} className="size-5 shrink-0 text-xl text-muted" />
         <span className="min-w-0 flex-1">
           <span className="block truncate">{item.description || item.merchant || "Movimiento"}</span>
-          <span className="block truncate text-xs text-muted">
-            {PROVIDERS[item.provider ?? "otro"] ?? "Correo"} · {formatDay(item.occurred_on, today)}
-          </span>
+          <span className="block truncate text-xs text-muted">{origin.join(" · ")}</span>
         </span>
         <span
           className={`tabular shrink-0 font-medium ${item.type === "income" ? "text-accent-ink" : ""}`}
@@ -103,7 +108,7 @@ export function PendingRow({
           onClick={() => act(() => discardPending(item.id))}
           className="h-11 rounded-xl text-sm font-medium text-danger ring-1 ring-border transition-transform duration-150 ease-out active:scale-[0.97] disabled:opacity-50"
         >
-          {similar ? "Ya lo tenía" : "Descartar"}
+          {similar ? "Ya lo tenía" : recurring ? "Esta vez no" : "Descartar"}
         </button>
         <button
           type="button"

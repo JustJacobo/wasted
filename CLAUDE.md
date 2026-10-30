@@ -99,3 +99,8 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - `ingest.ts`: lo claro queda `confirmed`; lo de baja confianza o parecido a algo ya registrado (mismo tipo y monto, ±1 día) queda `pending` en `/bandeja`. Descartar lo deja `discarded` (conserva su `external_id`, así no vuelve). `mail_messages` registra cada correo procesado.
   - Se revisa al abrir la app (`after()`, cada 10 min como máximo), con "Revisar correo ahora", con el cron diario `/api/correo/sincronizar` y con `/correo` en Telegram.
   - En local: `MAIL_FIXTURES_DIR` (carpeta de `.eml`) y `MAIL_FIXTURES_USER` reemplazan a Gmail.
+- **Recurrentes** (arriendo, suscripciones, cuota semanal; tabla `recurring`):
+  - `src/lib/recurring.ts` (puro y testeado): frecuencia `every` + `unit` (día, semana, mes, año). Cada fecha se calcula desde `starts_on`, así un mensual del 31 cae el 30 en noviembre y vuelve al 31. `next_on` es la próxima por generar.
+  - `generateDue` (`src/lib/recurring-run.ts`, cliente de servicio) crea lo vencido como `pending` con `source = 'recurring'`, `recurring_id` y `external_id = rec:<regla>:<fecha>` (correr dos veces no duplica; lo omitido no vuelve). Si ya hay algo igual (±1 día, confirmado o pendiente del correo) lo marca `possibleDuplicateOf`; `ingest.ts` hace lo mismo al revés.
+  - Corre en el cron diario `/api/recurrentes/generar` (6:00) y en el `after()` del inicio; avisa por Telegram con [✓ Agregar] [Esta vez no] (callbacks `p:` y `n:`). Solo cuenta en el saldo cuando se confirma.
+  - Se crea desde un movimiento ("Repetir" en `/movimientos/[id]`: ese movimiento es la primera vez) o en Ajustes › Recurrentes, donde se edita, pausa (al reanudar no trae lo vencido en la pausa) o elimina (borra lo que generó sin confirmar).

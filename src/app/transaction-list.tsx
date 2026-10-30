@@ -60,6 +60,7 @@ export function TransactionList({
                   tx.occurred_at && formatTime(tx.occurred_at),
                   tx.description && (category?.name ?? "Sin categoría"),
                   tx.source.startsWith("email_") && "del correo",
+                  tx.source === "recurring" && "recurrente",
                 ].filter(Boolean);
                 return (
                   <li key={tx.id} data-tx-id={tx.id}>
