@@ -15,7 +15,7 @@ export async function userFromRequest(admin: SupabaseClient, request: Request): 
 
   const { data: row } = await admin
     .from("api_tokens")
-    .select("user_id")
+    .select("id, user_id")
     .eq("token_hash", hashToken(token))
     .maybeSingle();
   if (!row) return null;
@@ -23,7 +23,7 @@ export async function userFromRequest(admin: SupabaseClient, request: Request): 
   const user = await memberInfo(admin, row.user_id);
   if (user) {
     after(async () => {
-      await admin.from("api_tokens").update({ last_used_at: new Date().toISOString() }).eq("user_id", user.userId);
+      await admin.from("api_tokens").update({ last_used_at: new Date().toISOString() }).eq("id", row.id);
     });
   }
   return user;

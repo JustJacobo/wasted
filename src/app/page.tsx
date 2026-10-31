@@ -16,10 +16,7 @@ import {
   getUpcoming,
 } from "@/lib/data";
 import { todayIn } from "@/lib/dates";
-import { shouldAutoSync, syncMail } from "@/lib/mail-import/sync";
-import { generateDue } from "@/lib/recurring-run";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { notifyRecurringDue } from "@/lib/telegram/notify";
+import { onAppOpen } from "@/lib/on-open";
 import type { PeriodKind } from "@/lib/report";
 import { ACCENT_COOKIE, MODE_COOKIE, parseAccent, parseMode } from "@/lib/theme";
 import { Logo } from "@/components/logo";
@@ -55,21 +52,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       getMoneyOverview(),
     ]);
 
-  // Después de responder, sin frenar la carga: recurrentes vencidos (respaldo
-  // del cron diario) y el correo (máximo cada 10 min).
-  after(async () => {
-    try {
-      const admin = createAdminClient();
-      await notifyRecurringDue(admin, userId, await generateDue(admin, userId, today), today);
-    } catch (error) {
-      console.error("recurrentes: fallo la generación al abrir", error);
-    }
-    try {
-      if (await shouldAutoSync(userId, email)) await syncMail(userId, email);
-    } catch (error) {
-      console.error("correo: fallo la revisión automática", error);
-    }
-  });
+  // Después de responder, sin frenar la carga: recurrentes vencidos y correo.
+  after(() => onAppOpen(userId, email, today));
 
   // Dispositivo nuevo: sin cookies de apariencia, se trae lo guardado en la cuenta.
   const jar = await cookies();

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { requireUser } from "@/lib/auth";
+import { canImportMail } from "@/lib/mail-import/sync";
 import { todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
 import { frequencyLabel, RECURRING_COLUMNS, type Frequency, type Recurring } from "@/lib/recurring";
@@ -177,6 +178,49 @@ export async function getMoneyOverview(): Promise<{ owedToMe: number; iOwe: numb
   const { owedToMe, iOwe } = summarizeLoans(loans as Loan[], moves as BalanceMove[]);
   const saved = -(moves as BalanceMove[]).filter((m) => m.goal_id).reduce((sum, m) => sum + Number(m.amount), 0);
   return { owedToMe, iOwe, saved: Math.max(0, saved) };
+}
+
+/** Todo lo que muestra Ajustes: preferencias, conexiones, claves y personas con acceso. */
+export async function getSettings() {
+  const { supabase, email, name, role } = await requireUser();
+  const mail = canImportMail(email);
+  const [
+    { data: settings },
+    { data: telegram },
+    { data: mailSync },
+    { data: apiTokens },
+    { data: notifications },
+    { data: members },
+  ] = await Promise.all([
+    supabase.from("user_settings").select("report_weekly, report_monthly, accent, color_mode").maybeSingle(),
+    supabase.from("telegram_links").select("username").maybeSingle(),
+    mail
+      ? supabase.from("mail_sync").select("enabled, since, last_synced_at").maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("api_tokens").select("id, device, created_at, last_used_at").order("created_at"),
+    supabase
+      .from("notification_log")
+      .select("package, title, text, outcome, processed_at")
+      .order("processed_at", { ascending: false })
+      .limit(8),
+    role === "owner"
+      ? supabase.from("members").select("email, role, created_at").order("created_at")
+      : Promise.resolve({ data: [] }),
+  ]);
+  return {
+    email,
+    name,
+    role,
+    mail,
+    settings,
+    telegram,
+    mailSync,
+    // La de atajos (sin celular) y la de cada celular con la app.
+    apiToken: apiTokens?.find((key) => !key.device) ?? null,
+    devices: (apiTokens ?? []).filter((key) => key.device),
+    notifications: notifications ?? [],
+    members: members ?? [],
+  };
 }
 
 /** Recurrentes de los próximos días y los vencidos que esperan en la bandeja. */

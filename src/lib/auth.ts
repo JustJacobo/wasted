@@ -3,7 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { bearerSession, createClient } from "@/lib/supabase/server";
 
 export type Role = "owner" | "member";
 
@@ -25,7 +25,9 @@ export async function getRole(supabase: SupabaseClient, email: string | undefine
  */
 export const requireUser = cache(async () => {
   const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
+  // La app nativa manda su sesión por Bearer: se verifica ese JWT (firma y vigencia).
+  const token = await bearerSession();
+  const { data } = await supabase.auth.getClaims(token ?? undefined);
   const claims = data?.claims;
   if (!claims?.sub) redirect("/login");
 

@@ -118,7 +118,7 @@ export async function createTelegramLink(): Promise<{ url?: string; error?: stri
 export async function createApiToken(): Promise<{ token?: string; error?: string }> {
   const { supabase, userId } = await requireUser();
   const token = newToken();
-  await supabase.from("api_tokens").delete().eq("user_id", userId);
+  await supabase.from("api_tokens").delete().eq("user_id", userId).is("device", null);
   const { error } = await supabase.from("api_tokens").insert({ user_id: userId, token_hash: hashToken(token) });
   if (error) return { error: "No pude crear la clave." };
   revalidatePath("/ajustes");
@@ -128,7 +128,18 @@ export async function createApiToken(): Promise<{ token?: string; error?: string
 /** Revoca la clave: los atajos y widgets dejan de funcionar hasta crear otra. */
 export async function revokeApiToken(): Promise<void> {
   const { supabase, userId } = await requireUser();
-  await supabase.from("api_tokens").delete().eq("user_id", userId);
+  await supabase.from("api_tokens").delete().eq("user_id", userId).is("device", null);
+  revalidatePath("/ajustes");
+}
+
+/**
+ * Desconecta un celular: su widget y la lectura de notificaciones dejan de
+ * funcionar hasta que vuelva a iniciar sesión en la app.
+ */
+export async function revokeDeviceKey(id: string): Promise<void> {
+  const { supabase, userId } = await requireUser();
+  if (!z.uuid().safeParse(id).success) return;
+  await supabase.from("api_tokens").delete().eq("user_id", userId).eq("id", id).not("device", "is", null);
   revalidatePath("/ajustes");
 }
 

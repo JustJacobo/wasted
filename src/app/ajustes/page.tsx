@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
-import { canImportMail } from "@/lib/mail-import/sync";
+import { getSettings } from "@/lib/data";
 import { ACCENT_COOKIE, MODE_COOKIE, parseAccent, parseMode } from "@/lib/theme";
 import { SyncButton } from "../bandeja/sync-button";
+import { DeviceButton } from "./device-button";
 import { ThemePicker } from "./theme-picker";
 import { MailToggle } from "./mail-toggle";
 import { NotificationLog } from "./notification-log";
@@ -32,30 +32,10 @@ function lastSync(iso: string): string {
 }
 
 export default async function SettingsPage() {
-  const { supabase, email, name, role } = await requireUser();
-  const mail = canImportMail(email);
+  const { email, name, role, mail, settings, telegram, mailSync, apiToken, devices, notifications, members } =
+    await getSettings();
   // El tema que muestra Ajustes es el que pinta este dispositivo (cookies del layout).
   const jar = await cookies();
-  const [{ data: settings }, { data: telegram }, { data: mailSync }, { data: apiToken }, { data: notifications }] =
-    await Promise.all([
-      supabase.from("user_settings").select("report_weekly, report_monthly, accent, color_mode").maybeSingle(),
-      supabase.from("telegram_links").select("username").maybeSingle(),
-      mail
-        ? supabase.from("mail_sync").select("enabled, since, last_synced_at").maybeSingle()
-        : Promise.resolve({ data: null }),
-      supabase.from("api_tokens").select("last_used_at").maybeSingle(),
-      supabase
-        .from("notification_log")
-        .select("package, title, text, outcome, processed_at")
-        .order("processed_at", { ascending: false })
-        .limit(8),
-    ]);
-  const members =
-    role === "owner"
-      ? ((
-          await supabase.from("members").select("email, role, created_at").order("created_at")
-        ).data ?? [])
-      : [];
 
   return (
     <main className="mx-auto max-w-lg space-y-8 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
@@ -183,6 +163,21 @@ export default async function SettingsPage() {
             ↓
           </span>
         </a>
+        {devices.length > 0 && (
+          <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-border">
+            {devices.map((d) => (
+              <li key={d.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <span className="min-w-0">
+                  <span className="block truncate">{d.device}</span>
+                  <span className="block truncate text-sm text-muted">
+                    {d.last_used_at ? `Usado ${lastSync(d.last_used_at)}` : "Conectado, sin usar todavía"}
+                  </span>
+                </span>
+                <DeviceButton id={d.id} device={d.device ?? "el celular"} />
+              </li>
+            ))}
+          </ul>
+        )}
         <p className="px-1 text-xs text-muted">
           Ábrela desde las descargas y permite instalar apps de Chrome si Android lo pide. Trae un
           widget con lo que te queda y un botón para registrar sin abrir la app: conéctalo con tu
