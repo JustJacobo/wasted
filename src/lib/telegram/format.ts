@@ -195,7 +195,7 @@ function deltaLine(current: number, previous: number, periodName: string): strin
 export function reportText(
   kind: PeriodKind,
   report: Report,
-  { title, carry }: { title?: string; carry?: number } = {},
+  { title, carry, plan }: { title?: string; carry?: number; plan?: string | null } = {},
 ): string {
   const label =
     kind === "mes" ? formatMonth(report.range.start) : formatDayRange(report.range.start, report.range.end);
@@ -222,6 +222,7 @@ export function reportText(
   if (week) {
     const warning = budgetWarning(week);
     if (warning) lines.push(warning);
+    if (plan) lines.push(plan);
   }
 
   const top = report.byCategory.slice(0, 5);

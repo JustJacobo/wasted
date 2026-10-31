@@ -12,6 +12,7 @@ import {
   getReport,
   getRules,
   getSummary,
+  getUpcoming,
 } from "@/lib/data";
 import { todayIn } from "@/lib/dates";
 import { shouldAutoSync, syncMail } from "@/lib/mail-import/sync";
@@ -27,6 +28,7 @@ import { HomePager } from "./home-pager";
 import { ReportView } from "./reportes/report-view";
 import { SummaryCard } from "./summary-card";
 import { TransactionList } from "./transaction-list";
+import { UpcomingCharges } from "./upcoming-charges";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   const params = await searchParams;
@@ -38,7 +40,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const anchor = requested.success && requested.data <= today ? requested.data : today;
   const onDashboard = params.vista === "dashboard";
 
-  const [{ name, userId, email, supabase }, summary, categories, rules, transactions, report, pendingCount] =
+  const [{ name, userId, email, supabase }, summary, categories, rules, transactions, report, pendingCount, upcoming] =
     await Promise.all([
       requireUser(),
       getSummary(today),
@@ -47,6 +49,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       getRecentTransactions(),
       getReport(kind, anchor, today),
       getPendingCount(),
+      getUpcoming(today),
     ]);
 
   // Después de responder, sin frenar la carga: recurrentes vencidos (respaldo
@@ -85,7 +88,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               <Logo className="h-4 w-auto" title={null} />
               <p className="text-sm text-muted capitalize">Hola, {name.split(" ")[0]}</p>
             </div>
-            <SummaryCard summary={summary} today={today} />
+            <SummaryCard summary={summary} upcoming={upcoming} today={today} />
             {pendingCount > 0 && (
               <Link
                 href="/bandeja"
@@ -102,6 +105,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 </span>
               </Link>
             )}
+            <UpcomingCharges upcoming={upcoming} categories={categories} today={today} />
             <TransactionList transactions={transactions} categories={categories} today={today} />
             {transactions.length > 0 && (
               <Link

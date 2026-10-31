@@ -4,17 +4,28 @@ import { startOfWeek } from "@/lib/dates";
 import { formatCOP, sizeForLength } from "@/lib/money";
 import { REFILL_COOKIE } from "@/lib/theme";
 import type { Summary, WeekBudget } from "@/lib/types";
+import { weekPlan, weekPlanMessage, type UpcomingCharge } from "@/lib/week-plan";
 import { BudgetMeter } from "./budget-meter";
 import { GoToPanel } from "./home-pager";
 
 const monthName = new Intl.DateTimeFormat("es-CO", { month: "long", timeZone: "UTC" });
 
-export async function SummaryCard({ summary, today }: { summary: Summary; today: string }) {
+export async function SummaryCard({
+  summary,
+  upcoming,
+  today,
+}: {
+  summary: Summary;
+  upcoming: UpcomingCharge[];
+  today: string;
+}) {
   const { month, carry } = summary;
   const week: WeekBudget = { ...summary.week, carry };
   // El saldo no se reinicia cada lunes: lo que sobró o faltó pasa a esta semana.
   const hasBudget = budgetStatus(week).level !== "none";
   const left = balance(week);
+  const plan = weekPlan(week, today, upcoming);
+  const planMessage = weekPlanMessage(plan, today);
   const month_ = monthName.format(new Date(`${today}T12:00:00Z`));
   const hero = formatCOP(hasBudget ? left : week.expense);
   const monday = startOfWeek(today);
@@ -35,6 +46,14 @@ export async function SummaryCard({ summary, today }: { summary: Summary; today:
       >
         {hero}
       </p>
+      {planMessage && (
+        <p className="tabular mt-1 text-sm text-pretty">
+          {planMessage}
+          {plan.committed > 0 && plan.free > 0 && (
+            <span className="text-muted"> · {formatCOP(plan.committed)} reservados para cobros</span>
+          )}
+        </p>
+      )}
       <p className="tabular mt-2 text-sm text-muted">
         Esta semana entró <span className="text-foreground">{formatCOP(week.income)}</span> · salió{" "}
         <span className="text-foreground">{formatCOP(week.expense)}</span>

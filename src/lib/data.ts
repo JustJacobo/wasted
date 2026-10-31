@@ -5,9 +5,10 @@ import { todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
 import { frequencyLabel, RECURRING_COLUMNS, type Frequency, type Recurring } from "@/lib/recurring";
 import { periodRange, type PeriodKind, type Report } from "@/lib/report";
-import { fetchReport, fetchSummary } from "@/lib/report-data";
+import { fetchReport, fetchSummary, fetchUpcoming } from "@/lib/report-data";
 import { likePattern } from "@/lib/search";
 import { TX_COLUMNS, type Category, type Summary, type Transaction, type TxType } from "@/lib/types";
+import type { UpcomingCharge } from "@/lib/week-plan";
 
 /**
  * Todas las categorías, incluidas las archivadas (para nombrar movimientos
@@ -117,6 +118,12 @@ export async function getPendingCount(): Promise<number> {
     .eq("status", "pending");
   if (error) throw error;
   return count ?? 0;
+}
+
+/** Recurrentes de los próximos días y los vencidos que esperan en la bandeja. */
+export async function getUpcoming(today: string): Promise<UpcomingCharge[]> {
+  const { supabase } = await requireUser();
+  return fetchUpcoming(supabase, today);
 }
 
 /** Recurrentes del usuario: activos primero, por próxima fecha. */

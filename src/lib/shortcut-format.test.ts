@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { balanceSnapshot, shortcutSavedText } from "./shortcut-format";
+import { weekPlan } from "./week-plan";
 
 // Intl separa "$" del número con un espacio duro.
 const $ = (n: string) => `$ ${n}`;
@@ -67,5 +68,14 @@ describe("saldo para widgets", () => {
     const s = balanceSnapshot(week(12_000, 0));
     expect(s).toMatchObject({ nivel: "none", titulo: "Gastaste esta semana", teQuedan: 12_000 });
     expect(s.mensaje.split("\n")).toHaveLength(2);
+  });
+
+  it("con los recurrentes que vienen, dice cuánto se puede gastar por día", () => {
+    const w = week(50_000, 200_000, 30_000);
+    const today = "2026-10-28"; // miércoles: quedan 5 días
+    const s = balanceSnapshot(w, { plan: weekPlan(w, today, []), today });
+    expect(s).toMatchObject({ porDia: 36_000, comprometido: 0, proyeccion: `Puedes gastar ${$("36.000")} por día hasta el domingo` });
+    expect(s.mensaje.split("\n")[1]).toBe(s.proyeccion);
+    expect(balanceSnapshot(w).porDia).toBeNull();
   });
 });

@@ -127,6 +127,11 @@ describe("mensajes", () => {
     expect(withCarry).toContain("Saldo anterior $ 50.000");
     expect(withCarry).not.toContain("⚠️");
     expect(reportText("semana", report)).not.toContain("Te quedan");
+
+    const plan = "Puedes gastar $ 26.600 por día hasta el domingo";
+    expect(reportText("semana", report, { title: "Esta semana", carry: 50_000, plan })).toContain(plan);
+    // La proyección es de la semana en curso: el reporte programado (sin saldo) no la lleva.
+    expect(reportText("semana", report, { plan })).not.toContain(plan);
   });
 });
 

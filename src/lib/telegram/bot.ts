@@ -9,9 +9,10 @@ import { memberInfo } from "@/lib/members";
 import { fallbackCategory } from "@/lib/quick-add/categorize";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
 import { learnFromCharge } from "@/lib/recurring-link";
-import { fetchReport, fetchSummary, weekBudget } from "@/lib/report-data";
+import { fetchReport, fetchSummary, fetchUpcoming, weekBudget } from "@/lib/report-data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TX_COLUMNS, type Category, type Transaction } from "@/lib/types";
+import { weekPlan, weekPlanMessage } from "@/lib/week-plan";
 import { answerCallback, editMessage, sendMessage } from "./api";
 import {
   categoryKeyboard,
@@ -85,11 +86,13 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
     case "hoy":
       return sendToday(admin, user.userId, chatId, today);
     case "semana": {
-      const [report, { carry }] = await Promise.all([
+      const [report, summary, upcoming] = await Promise.all([
         fetchReport(admin, "semana", today, today, user.userId),
         fetchSummary(admin, today, user.userId),
+        fetchUpcoming(admin, today, user.userId),
       ]);
-      await sendMessage(chatId, reportText("semana", report, { title: "Esta semana", carry }));
+      const plan = weekPlanMessage(weekPlan(weekBudget(summary), today, upcoming), today);
+      await sendMessage(chatId, reportText("semana", report, { title: "Esta semana", carry: summary.carry, plan }));
       return;
     }
     case "mes": {

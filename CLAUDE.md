@@ -66,6 +66,11 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - Los gráficos son HTML/CSS a mano, en un solo tono `--viz`, validado con la skill `dataviz` para modo claro y oscuro.
   - Las variaciones llevan ▲▼ coloreado y el texto en tinta neutra.
   - Las cifras grandes ajustan su tamaño con `sizeForLength` (`src/lib/money.ts`) en vez de recortarse.
+- **Proyección y próximos movimientos** (`src/lib/week-plan.ts`, puro y testeado):
+  - `upcomingCharges` reúne lo que viene de los recurrentes en 7 días (`fetchUpcoming` en `report-data.ts`, `UPCOMING_DAYS`): las próximas fechas de cada regla activa y los pendientes con `recurring_id` de la bandeja. Una fecha que ya tiene un movimiento unido cerca (`linkWindow`) se omite para no contarla dos veces.
+  - `weekPlan` descuenta del saldo lo comprometido hasta el domingo (gastos menos ingresos recurrentes) y lo reparte en los días que faltan (`perDay`, redondeado a $100). Desde el martes también mira el ritmo de la semana (`runsOutOn`).
+  - `weekPlanMessage` es la frase: "Puedes gastar $X por día hasta el domingo", "A este ritmo te alcanza hasta el jueves" o "Lo que queda ya está comprometido en cobros de esta semana".
+  - Sale en el inicio (debajo de "Te quedan", y la lista `upcoming-charges.tsx`), en `/semana` de Telegram y en `/api/atajos/saldo` (`porDia`, `comprometido`, `proyeccion`).
 - **Exportar a CSV** (solo exportar; no hay importación):
   - `src/lib/export-csv.ts` (puro y testeado): punto y coma y BOM para que Excel en español lo abra con doble clic (Google Sheets lo detecta solo). El monto lleva signo (gastos en negativo) y la hora es la de Colombia. Los textos que empiezan por `= + - @` llevan un apóstrofo para que Excel no los ejecute como fórmula: los comercios vienen de correos ajenos.
   - `GET /movimientos/exportar` (Route Handler; la sesión la piden el proxy y `requireUser`): sin `todo` es el mes del Historial con sus filtros (`historyParams` en `src/app/movimientos/params.ts`, compartido con la página); `?todo=1` trae todo lo confirmado (`getAllTransactions`, en páginas de 1000).
