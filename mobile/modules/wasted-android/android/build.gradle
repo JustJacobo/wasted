@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'app.wasted'
+version = '1.0.0'
+
+// Widget, registro rápido y lectura de notificaciones (Java), más el puente con la app.
+android {
+  namespace "app.wasted.android.kit"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+dependencies {
+  implementation 'com.facebook.react:react-android'
+}

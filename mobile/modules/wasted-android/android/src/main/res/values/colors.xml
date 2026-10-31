@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Papel y tinta, como src/app/globals.css. -->
+<resources>
+    <color name="paper">#F6F5F1</color>
+    <color name="surface">#FDFCFA</color>
+    <color name="ink">#161513</color>
+    <color name="muted">#6B6860</color>
+    <color name="border">#E4E2DC</color>
+    <color name="danger">#C62828</color>
+    <!-- Fondo del ícono: el mismo del PNG de /icons/512, igual en claro y oscuro. -->
+    <color name="icon_background">#161513</color>
+    <!-- La barra de estado de la TWA en modo oscuro (no depende del tema del sistema). -->
+    <color name="paper_dark">#0F0E0D</color>
+</resources>

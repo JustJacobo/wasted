@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Al mantener pulsado el ícono de la app. El plugin with-app-shortcuts lo copia a res/xml de la app
+     (el ícono @mipmap/ic_launcher es de la app, no del módulo) y lo enlaza en MainActivity. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:icon="@mipmap/ic_launcher" android:shortcutId="registrar" android:shortcutShortLabel="@string/shortcut_add">
+        <intent android:action="android.intent.action.VIEW" android:targetClass="app.wasted.android.QuickAddActivity" android:targetPackage="app.wasted.android" />
+    </shortcut>
+    <shortcut android:icon="@mipmap/ic_launcher" android:shortcutId="notificaciones" android:shortcutShortLabel="@string/shortcut_notifications">
+        <intent android:action="android.intent.action.VIEW" android:data="wasted://notificaciones" android:targetClass="app.wasted.android.MainActivity" android:targetPackage="app.wasted.android" />
+    </shortcut>
+    <shortcut android:icon="@mipmap/ic_launcher" android:shortcutId="gasto" android:shortcutShortLabel="@string/shortcut_expense">
+        <intent android:action="android.intent.action.VIEW" android:data="wasted://registrar?tipo=gasto" android:targetClass="app.wasted.android.MainActivity" android:targetPackage="app.wasted.android" />
+    </shortcut>
+    <shortcut android:icon="@mipmap/ic_launcher" android:shortcutId="ingreso" android:shortcutShortLabel="@string/shortcut_income">
+        <intent android:action="android.intent.action.VIEW" android:data="wasted://registrar?tipo=ingreso" android:targetClass="app.wasted.android.MainActivity" android:targetPackage="app.wasted.android" />
+    </shortcut>
+</shortcuts>

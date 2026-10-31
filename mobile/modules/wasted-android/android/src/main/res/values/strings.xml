@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Widget -->
+    <string name="widget_description">Lo que te queda y un botón para registrar sin abrir la app.</string>
+    <string name="widget_title_default">Te quedan</string>
+    <string name="widget_register">+ Registrar</string>
+    <string name="widget_refresh">Actualizar</string>
+    <string name="widget_refresh_symbol" translatable="false">↻</string>
+    <string name="widget_not_connected">Conecta el widget</string>
+    <string name="widget_not_connected_detail">Abre Wasted e inicia sesión</string>
+    <string name="widget_loading">Cargando…</string>
+    <string name="widget_offline">Sin conexión · %1$s</string>
+
+    <!-- Registrar -->
+    <string name="add_title">¿Qué registras?</string>
+    <string name="add_hint">6k uber · +200k cuota semanal</string>
+    <string name="add_save">Guardar</string>
+    <string name="add_saving">Guardando…</string>
+    <string name="add_save_button">Guardar como botón</string>
+    <string name="add_remove_button">¿Quitar el botón “%1$s”?</string>
+    <string name="add_remove">Quitar</string>
+    <string name="add_offline">Sin conexión. Revisa el internet e intenta de nuevo.</string>
+    <string name="add_not_connected">Abre Wasted e inicia sesión: el widget, este cuadro y las notificaciones se conectan solos.</string>
+    <string name="open_wasted">Abrir Wasted</string>
+
+    <!-- Notificaciones de pagos -->
+    <string name="notifications_service">Wasted: registrar pagos</string>
+    <string name="shortcut_notifications">Pagos automáticos</string>
+
+    <string name="cancel">Cancelar</string>
+    <string name="close">Cerrar</string>
+
+    <!-- Accesos al mantener pulsado el ícono -->
+    <string name="shortcut_add">Registrar rápido</string>
+    <string name="shortcut_expense">Gasto</string>
+    <string name="shortcut_income">Ingreso</string>
+</resources>

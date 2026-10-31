@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lo nativo de Wasted que no es React Native: se fusiona con el manifiesto de la app. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Para mostrar cuáles de las apps de pagos están instaladas (Packages.WATCHED). -->
+    <queries>
+        <package android:name="com.nequi.MobileApp" />
+        <package android:name="com.nu.production" />
+        <package android:name="com.didiglobal.passenger" />
+        <package android:name="com.sdu.didi.psnger" />
+        <package android:name="com.ubercab" />
+        <package android:name="com.yandex.yango" />
+    </queries>
+
+    <application>
+        <!-- Cuadro "¿Qué registras?" del widget y del acceso directo. -->
+        <activity
+            android:name="app.wasted.android.QuickAddActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/shortcut_add"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Wasted.Dialog" />
+
+        <!-- Lee solo las notificaciones de Packages.WATCHED, con el permiso que da el usuario. -->
+        <service
+            android:name="app.wasted.android.NotificationReader"
+            android:exported="true"
+            android:label="@string/notifications_service"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Mismo nombre de clase que en la app anterior: el widget que ya está en la pantalla sigue. -->
+        <receiver
+            android:name="app.wasted.android.BalanceWidget"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+    </application>
+</manifest>

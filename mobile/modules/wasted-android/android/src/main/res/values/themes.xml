@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ventana pequeña sobre lo que haya en pantalla: el registro rápido. -->
+    <style name="Theme.Wasted.Dialog" parent="@android:style/Theme.Material.Light.Dialog.NoActionBar">
+        <item name="android:windowBackground">@drawable/dialog_background</item>
+        <item name="android:colorAccent">@color/ink</item>
+        <item name="android:textColorPrimary">@color/ink</item>
+        <item name="android:windowMinWidthMajor">90%</item>
+        <item name="android:windowMinWidthMinor">90%</item>
+        <item name="android:windowSoftInputMode">stateVisible|adjustResize</item>
+    </style>
+</resources>

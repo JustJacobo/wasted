@@ -1,10 +1,13 @@
-# Publica el APK de Android en GitHub Releases al subir un tag android-vX.Y.Z:
-#   git tag android-v1.1.0 && git push origin android-v1.1.0
+# Publica el APK de Android (la app nativa de mobile/) en GitHub Releases al
+# subir un tag android-vX.Y.Z:
+#   git tag android-v2.0.0 && git push origin android-v2.0.0
 # El enlace estable es https://github.com/JustJacobo/wasted/releases/latest/download/wasted.apk
+# Las de prueba (android-v2.0.0-beta.1) salen como prerelease: el enlace estable
+# no cambia y su versionCode queda por debajo de la final (ver app.config.ts).
 #
 # Secretos del repo: ANDROID_KEYSTORE_BASE64 (el .jks en base64), ANDROID_KEYSTORE_PASSWORD,
 # ANDROID_KEY_ALIAS y ANDROID_KEY_PASSWORD. Tiene que ser el mismo keystore de siempre:
-# si no, el APK no se instala encima y la TWA muestra la barra de dirección.
+# si no, el APK no se instala encima de la versión anterior.
 name: APK de Android
 
 on:
@@ -24,9 +27,15 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: android
+        working-directory: mobile
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
 
       - uses: actions/setup-java@v6
         with:
@@ -40,12 +49,19 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          if [[ ! "$TAG" =~ ^android-v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-            echo "::error::El tag debe ser android-vX.Y.Z (llegó '$TAG')"
+          if [[ ! "$TAG" =~ ^android-v([0-9]+)\.([0-9]+)\.([0-9]+)(-beta\.([0-9]+))?$ ]]; then
+            echo "::error::El tag debe ser android-vX.Y.Z o android-vX.Y.Z-beta.N (llegó '$TAG')"
+            exit 1
+          fi
+          if [ -n "${BASH_REMATCH[5]}" ] && [ "${BASH_REMATCH[5]}" -ge 100 ]; then
+            echo "::error::Las betas van de 1 a 99"
             exit 1
           fi
           echo "name=${TAG#android-v}" >> "$GITHUB_OUTPUT"
-          echo "code=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 + BASH_REMATCH[3] ))" >> "$GITHUB_OUTPUT"
+          echo "beta=${BASH_REMATCH[5]}" >> "$GITHUB_OUTPUT"
+
+      - name: Dependencias
+        run: npm ci
 
       - name: Keystore
         env:
@@ -59,6 +75,7 @@ jobs:
             exit 1
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/wasted.jks"
+          # Lo lee el plugin plugins/with-release-signing.js.
           {
             echo "storeFile=$RUNNER_TEMP/wasted.jks"
             echo "storePassword=$STORE_PASSWORD"
@@ -66,16 +83,21 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > keystore.properties
 
+      # Sin .env: la app apunta a producción (src/core/config.ts).
+      - name: Generar el proyecto Android
+        env:
+          WASTED_VERSION: ${{ steps.version.outputs.name }}
+        run: npx expo prebuild --platform android --clean --no-install
+
       - name: Compilar
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease \
-            -PversionName=${{ steps.version.outputs.name }} \
-            -PversionCode=${{ steps.version.outputs.code }}
+        working-directory: mobile/android
+        env:
+          WASTED_VERSION: ${{ steps.version.outputs.name }}
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
 
       - name: Comprobar la firma contra assetlinks.json
         run: |
-          APK=app/build/outputs/apk/release/app-release.apk
+          APK=android/app/build/outputs/apk/release/app-release.apk
           APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
           GOT=$("$APKSIGNER" verify --print-certs "$APK" | grep -m1 'SHA-256 digest' | awk '{print $NF}' \
             | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')
@@ -91,9 +113,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
           VERSION: ${{ steps.version.outputs.name }}
+          BETA: ${{ steps.version.outputs.beta }}
         run: |
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" "$RUNNER_TEMP/wasted.apk" --clobber
+          elif [ -n "$BETA" ]; then
+            gh release create "$TAG" "$RUNNER_TEMP/wasted.apk" \
+              --title "Wasted Android $VERSION (prueba)" \
+              --notes "Versión de prueba. Se instala encima de la app que ya tienes; al abrirla, entra de nuevo con tu cuenta." \
+              --prerelease
           else
             gh release create "$TAG" "$RUNNER_TEMP/wasted.apk" \
               --title "Wasted Android $VERSION" \

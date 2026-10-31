@@ -58,3 +58,11 @@ supabase/.branches
 /android/keystore.properties
 *.jks
 *.keystore
+
+# app nativa (Expo): dependencias y proyectos nativos generados (prebuild)
+/mobile/node_modules
+/mobile/.expo
+/mobile/android
+/mobile/ios
+/mobile/dist
+/mobile/keystore.properties
