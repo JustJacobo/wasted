@@ -76,9 +76,18 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - `GET /movimientos/exportar` (Route Handler; la sesión la piden el proxy y `requireUser`): sin `todo` es el mes del Historial con sus filtros (`historyParams` en `src/app/movimientos/params.ts`, compartido con la página); `?todo=1` trae todo lo confirmado (`getAllTransactions`, en páginas de 1000).
   - Se baja con "CSV" en el Historial y "Exportar a CSV" en Ajustes. Son `<a>` sin `download`: `<Link>` precargaría el archivo y, si la sesión venció, `download` guardaría la página de /login.
 - **Saldo y presupuesto** (`src/lib/budget.ts`, puro y testeado): el saldo no se reinicia cada lunes.
-  - `carry` es lo que sobró o faltó antes del lunes (función SQL `totals_before`, llamada desde `fetchSummary`).
-  - Lo disponible en la semana es `carry` + lo que entró. "Te quedan" es lo disponible menos lo que salió, es decir, el saldo total.
+  - `carry` es lo que sobró o faltó antes del lunes (función SQL `totals_before`, llamada desde `fetchSummary`; incluye lo movido a préstamos y metas).
+  - Lo disponible en la semana es `carry` + lo que entró + `moved` (préstamos y metas de la semana, con signo). "Te quedan" es lo disponible menos lo que salió, es decir, el saldo total.
   - La mecha y los avisos del 80% y del 100% miden el gasto de la semana contra lo disponible (`WeekBudget`).
+- **Préstamos y metas** (plata que no es gasto ni ingreso; tablas `loans`, `goals` y `balance_moves`):
+  - Cada `balance_moves` guarda su efecto en el saldo: prestar o apartar es negativo; que te paguen, que te presten o sacar de una meta es positivo. Mueve "Te quedan" pero los reportes, el Historial y el CSV no lo ven (solo leen `transactions`). RLS: un movimiento solo apunta a préstamos o metas del mismo usuario.
+  - `src/lib/money-moves.ts` (puro y testeado): `parseMoneyMove` entiende "le presté 20k a juan", "juan me prestó 50k", "juan me pagó 10k", "le pagué 50k a juan", "aparté 50k para el viaje", "saqué 20k del viaje"; `summarizeLoans`, `summarizeGoals` y los mensajes.
+  - `src/lib/record-move.ts`: `recordMoneyMove` va antes de `recordQuickEntry` en el modo ⌨, Telegram y los atajos.
+    - Siguen siendo un ingreso o gasto normal: los pagos sin préstamo abierto con esa persona ("me pagó el jefe"), "saqué" sin meta y "guardé 15k parqueadero" (sin "para"/"en" solo cuenta si la meta existe; con "para" o "en" la crea). Pagar a alguien necesita "le" ("le pagué 50k a Juan"): "pagué 80k luz" es la factura.
+    - Un pago no puede pasar de lo pendiente ni sacar de lo apartado. Un préstamo se cierra solo (`closed_at`) cuando lo pendiente llega a 0.
+    - Telegram confirma con ↩️ Deshacer (callback `m:<movimiento>`, `undoMove`), que no deshace si el préstamo o la meta quedarían en negativo (ya se sacó o ya te pagaron).
+    - Desde las pantallas, los pagos van por `loanId` y las metas por `goalId` (no por nombre).
+  - `/prestamos` (te deben / debes, pagos parciales, historial) y `/metas` (apartar, sacar sin pasar de lo apartado, meta con barra de avance; archivar solo vacía). En el inicio, `money-rows.tsx` y la línea "Préstamos y metas" bajo lo de la semana.
 - **Aprendizaje**: cuando el usuario corrige una categoría, `learnCategory` guarda la descripción plegada (sin tildes, en minúsculas) como regla.
 - **Telegram** (`src/lib/telegram/`, webhook en `src/app/api/telegram/route.ts`):
   - El webhook valida `X-Telegram-Bot-Api-Secret-Token`, que se deriva del token del bot (`webhookSecret`). `ensureWebhook` lo registra (con los comandos) al tocar "Conectar Telegram" si no apunta a esta app; `/api/telegram/setup` (con `CRON_SECRET`) hace lo mismo a mano.

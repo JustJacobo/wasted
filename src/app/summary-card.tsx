@@ -58,6 +58,15 @@ export async function SummaryCard({
         Esta semana entró <span className="text-foreground">{formatCOP(week.income)}</span> · salió{" "}
         <span className="text-foreground">{formatCOP(week.expense)}</span>
       </p>
+      {week.moved !== 0 && (
+        <p className="tabular mt-0.5 text-sm text-muted">
+          Préstamos y metas{" "}
+          <span className="text-foreground">
+            {week.moved < 0 ? "-" : "+"}
+            {formatCOP(Math.abs(week.moved))}
+          </span>
+        </p>
+      )}
       {carry !== 0 && (
         <p className="tabular mt-0.5 text-sm text-muted">
           Saldo anterior <span className="text-foreground">{formatCOP(carry)}</span>

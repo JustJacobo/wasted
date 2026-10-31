@@ -36,7 +36,7 @@ const charge = (changes: Partial<UpcomingCharge>): UpcomingCharge => ({
   ...changes,
 });
 
-const week = (income: number, expense: number, carry = 0) => ({ income, expense, carry });
+const week = (income: number, expense: number, carry = 0, moved = 0) => ({ income, expense, carry, moved });
 
 describe("próximos cobros", () => {
   it("trae la próxima fecha de cada regla activa dentro de la ventana", () => {

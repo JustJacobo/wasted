@@ -8,6 +8,9 @@ import { canImportMail, syncMail, syncSummary } from "@/lib/mail-import/sync";
 import { memberInfo } from "@/lib/members";
 import { fallbackCategory } from "@/lib/quick-add/categorize";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
+import { recordMoneyMove, undoMove } from "@/lib/record-move";
+import { balance } from "@/lib/budget";
+import { formatCOP } from "@/lib/money";
 import { learnFromCharge } from "@/lib/recurring-link";
 import { fetchReport, fetchSummary, fetchUpcoming, weekBudget } from "@/lib/report-data";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -18,6 +21,7 @@ import {
   categoryKeyboard,
   escapeHtml,
   helpText,
+  moveKeyboard,
   NOT_LINKED_TEXT,
   parseCallback,
   reportText,
@@ -92,7 +96,7 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
         fetchUpcoming(admin, today, user.userId),
       ]);
       const plan = weekPlanMessage(weekPlan(weekBudget(summary), today, upcoming), today);
-      await sendMessage(chatId, reportText("semana", report, { title: "Esta semana", carry: summary.carry, plan }));
+      await sendMessage(chatId, reportText("semana", report, { title: "Esta semana", carry: summary.carry, moved: summary.week.moved, plan }));
       return;
     }
     case "mes": {
@@ -171,11 +175,28 @@ async function record(
   text: string,
   now: Date,
 ): Promise<void> {
+  // Telegram reintenta si no respondemos a tiempo: el mismo mensaje no se registra dos veces.
+  const externalId = `tg:${chatId}:${messageId}`;
+  const move = await recordMoneyMove(admin, text.slice(0, 200), { userId, externalId, now });
+  if (move) {
+    if (!move.ok) {
+      if (!move.duplicate) await sendMessage(chatId, escapeHtml(move.error));
+      return;
+    }
+    const week = weekBudget(await fetchSummary(admin, todayIn(now), userId));
+    await sendMessage(
+      chatId,
+      `${escapeHtml(move.message)}.
+Te quedan <b>${formatCOP(balance(week))}</b>`,
+      moveKeyboard(move.moveId),
+    );
+    return;
+  }
+
   const result = await recordQuickEntry(admin, text.slice(0, 200), {
     source: "telegram",
     userId,
-    // Telegram reintenta si no respondemos a tiempo: el mismo mensaje no se registra dos veces.
-    externalId: `tg:${chatId}:${messageId}`,
+    externalId,
     now,
   });
   if (!result.ok) {
@@ -262,6 +283,17 @@ async function handleCallback(
   const user = await linkedUser(admin, chatId);
   if (!user) {
     await answerCallback(query.id, "Este chat no está conectado a Wasted.");
+    return;
+  }
+
+  if (parsed.action === "undoMove") {
+    const result = await undoMove(admin, parsed.moveId, user.userId);
+    if (result === "blocked") {
+      await answerCallback(query.id, "Ya no se puede deshacer: después hubo otros movimientos.");
+      return;
+    }
+    await answerCallback(query.id, result === "done" ? "Deshecho" : "Ya no existía");
+    await editMessage(chatId, message.message_id, result === "done" ? "↩️ Deshecho." : "Ese movimiento ya no existe.").catch(() => {});
     return;
   }
 

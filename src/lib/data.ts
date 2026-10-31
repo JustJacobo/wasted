@@ -6,6 +6,7 @@ import type { CategoryRule } from "@/lib/quick-add/categorize";
 import { frequencyLabel, RECURRING_COLUMNS, type Frequency, type Recurring } from "@/lib/recurring";
 import { periodRange, type PeriodKind, type Report } from "@/lib/report";
 import { fetchReport, fetchSummary, fetchUpcoming } from "@/lib/report-data";
+import { summarizeGoals, summarizeLoans, type BalanceMove, type Goal, type Loan } from "@/lib/money-moves";
 import { likePattern } from "@/lib/search";
 import { TX_COLUMNS, type Category, type Summary, type Transaction, type TxType } from "@/lib/types";
 import type { UpcomingCharge } from "@/lib/week-plan";
@@ -118,6 +119,64 @@ export async function getPendingCount(): Promise<number> {
     .eq("status", "pending");
   if (error) throw error;
   return count ?? 0;
+}
+
+const MOVE_COLUMNS = "id, loan_id, goal_id, amount, occurred_on, created_at";
+
+/** Préstamos con lo pendiente y su historial; abiertos primero. */
+export async function getLoans() {
+  const { supabase } = await requireUser();
+  const [{ data: loans, error }, { data: moves, error: movesError }] = await Promise.all([
+    supabase.from("loans").select("id, person, direction, created_at, closed_at").order("created_at", { ascending: false }).limit(300),
+    supabase
+      .from("balance_moves")
+      .select(MOVE_COLUMNS)
+      .not("loan_id", "is", null)
+      .order("occurred_on", { ascending: false })
+      .limit(5000),
+  ]);
+  if (error) throw error;
+  if (movesError) throw movesError;
+  return summarizeLoans(loans as Loan[], moves as BalanceMove[]);
+}
+
+/** Metas con lo apartado; activas primero. */
+export async function getGoals() {
+  const { supabase } = await requireUser();
+  const [{ data: goals, error }, { data: moves, error: movesError }] = await Promise.all([
+    supabase.from("goals").select("id, name, target, archived, created_at").order("created_at", { ascending: false }),
+    supabase
+      .from("balance_moves")
+      .select(MOVE_COLUMNS)
+      .not("goal_id", "is", null)
+      .order("occurred_on", { ascending: false })
+      .limit(5000),
+  ]);
+  if (error) throw error;
+  if (movesError) throw movesError;
+  return summarizeGoals(goals as Goal[], moves as BalanceMove[]);
+}
+
+/** Para el inicio: cuánto te deben, cuánto debes y cuánto hay apartado en metas. */
+export async function getMoneyOverview(): Promise<{ owedToMe: number; iOwe: number; saved: number }> {
+  const { supabase } = await requireUser();
+  // Solo lo abierto: préstamos sin saldar y metas activas (las archivadas están vacías).
+  const [{ data: loans, error }, { data: goals, error: goalsError }] = await Promise.all([
+    supabase.from("loans").select("id, person, direction, created_at, closed_at").is("closed_at", null),
+    supabase.from("goals").select("id").eq("archived", false),
+  ]);
+  if (error) throw error;
+  if (goalsError) throw goalsError;
+  if (!loans.length && !goals.length) return { owedToMe: 0, iOwe: 0, saved: 0 };
+  const owners = [
+    ...loans.map((l) => `loan_id.eq.${l.id}`),
+    ...goals.map((g) => `goal_id.eq.${g.id}`),
+  ].join(",");
+  const { data: moves, error: movesError } = await supabase.from("balance_moves").select(MOVE_COLUMNS).or(owners);
+  if (movesError) throw movesError;
+  const { owedToMe, iOwe } = summarizeLoans(loans as Loan[], moves as BalanceMove[]);
+  const saved = -(moves as BalanceMove[]).filter((m) => m.goal_id).reduce((sum, m) => sum + Number(m.amount), 0);
+  return { owedToMe, iOwe, saved: Math.max(0, saved) };
 }
 
 /** Recurrentes de los próximos días y los vencidos que esperan en la bandeja. */

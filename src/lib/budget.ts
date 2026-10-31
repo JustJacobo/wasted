@@ -11,20 +11,26 @@ export interface BudgetStatus {
 
 export const WARNING_AT = 0.8;
 
-/** Lo disponible esta semana: el saldo con que arrancó más lo que entró. */
-export const available = ({ carry, income }: WeekBudget) => carry + income;
+/**
+ * Lo disponible esta semana: el saldo con que arrancó más lo que entró, y lo
+ * movido a préstamos y metas (prestar o apartar lo baja sin contar como gasto).
+ */
+export const available = ({ carry, income, moved }: WeekBudget) => carry + income + moved;
 
 /** El saldo total: lo disponible menos lo que salió esta semana. */
 export const balance = (week: WeekBudget) => available(week) - week.expense;
 
 /**
  * El presupuesto no se reinicia: lo que sobró (o faltó) antes del lunes se
- * suma a lo que entró esta semana. Sin nada disponible y sin deuda anterior no
- * hay presupuesto con el cual comparar.
+ * suma a lo que entró esta semana. Sin saldo anterior ni ingresos no hay
+ * presupuesto con el cual comparar; si los hay y no queda nada disponible (por
+ * ejemplo, se prestó todo), ya se pasó.
  */
 export function budgetStatus(week: WeekBudget): BudgetStatus {
   const budget = available(week);
-  if (budget <= 0) return week.carry < 0 ? { ratio: 1, level: "over" } : { ratio: 0, level: "none" };
+  if (budget <= 0) {
+    return week.carry === 0 && week.income === 0 ? { ratio: 0, level: "none" } : { ratio: 1, level: "over" };
+  }
   const ratio = week.expense / budget;
   const level = ratio >= 1 ? "over" : ratio >= WARNING_AT ? "warning" : "ok";
   return { ratio, level };

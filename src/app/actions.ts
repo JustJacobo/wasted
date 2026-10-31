@@ -8,6 +8,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireUser } from "@/lib/auth";
 import { safeReturnPath } from "@/lib/search";
 import { learnCategory, recordQuickEntry } from "@/lib/record";
+import { recordMoneyMove } from "@/lib/record-move";
+import { balance } from "@/lib/budget";
 import { getSummary } from "@/lib/data";
 import { weekBudget } from "@/lib/report-data";
 import { addDays, atTime, occurredAt, todayIn } from "@/lib/dates";
@@ -24,6 +26,8 @@ export interface Similar {
 export type QuickAddState =
   | { status: "idle" }
   | { status: "ok"; transaction: Transaction; week: WeekBudget; similar: Similar | null; at: number }
+  /** Un préstamo, un pago o una meta ("le presté 20k a juan"): no es un movimiento. */
+  | { status: "moved"; message: string; at: number }
   | { status: "error"; error: string; at: number };
 
 /**
@@ -53,6 +57,15 @@ async function similarImported(supabase: SupabaseClient, tx: Transaction): Promi
 
 export async function quickAdd(text: string): Promise<QuickAddState> {
   const { supabase, userId } = await requireUser();
+  const move = await recordMoneyMove(supabase, text.slice(0, 200));
+  if (move) {
+    if (!move.ok) return { status: "error", error: move.error, at: Date.now() };
+    revalidatePath("/");
+    revalidatePath("/prestamos");
+    revalidatePath("/metas");
+    const week = weekBudget(await getSummary(todayIn()));
+    return { status: "moved", message: `${move.message}. Te quedan ${formatCOP(balance(week))}.`, at: Date.now() };
+  }
   const result = await recordQuickEntry(supabase, text.slice(0, 200));
   if (!result.ok) return { status: "error", error: result.error, at: Date.now() };
   revalidatePath("/");

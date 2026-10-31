@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { available, balance, budgetMessage, budgetStatus, crossedLevel, weekBefore } from "./budget";
 
-const week = (expense: number, income: number, carry = 0) => ({ expense, income, carry });
+const week = (expense: number, income: number, carry = 0, moved = 0) => ({ expense, income, carry, moved });
 
 describe("budgetStatus", () => {
   it("sin ingresos ni saldo anterior no hay presupuesto", () => {

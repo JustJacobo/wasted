@@ -4,7 +4,7 @@ import { weekPlan } from "./week-plan";
 
 // Intl separa "$" del número con un espacio duro.
 const $ = (n: string) => `$ ${n}`;
-const week = (expense: number, income: number, carry = 0) => ({ expense, income, carry });
+const week = (expense: number, income: number, carry = 0, moved = 0) => ({ expense, income, carry, moved });
 const TODAY = "2026-10-26";
 const expense = { type: "expense" as const, amount: 6000, description: "uber", occurred_on: TODAY };
 

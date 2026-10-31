@@ -1,8 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { formatDay, todayIn } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
+import { isGoalIntent, parseMoneyMove } from "@/lib/money-moves";
 import { matchCategory, type CategoryRule } from "@/lib/quick-add/categorize";
 import { parseQuickAdd } from "@/lib/quick-add/parse";
 import type { Category, Transaction, WeekBudget } from "@/lib/types";
@@ -20,9 +22,18 @@ export function TextStep({
 }) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   const preview = useMemo(() => parseQuickAdd(text), [text]);
+  // Solo lo que seguro es préstamo o meta; un pago o "saqué" puede terminar siendo un gasto normal.
+  const move = useMemo(() => {
+    const intent = parseMoneyMove(text);
+    if (!intent) return null;
+    if (isGoalIntent(intent)) return intent.kind === "save" && intent.canCreate ? intent : null;
+    return intent.kind === "lend" || intent.kind === "borrow" ? intent : null;
+  }, [text]);
   const previewCategory = useMemo(() => {
     if (!preview) return null;
     const id = matchCategory(preview.description, preview.type, categories, rules);
@@ -38,10 +49,17 @@ export function TextStep({
       return;
     }
     setError(null);
+    setDone(null);
     startTransition(async () => {
       const result = await quickAdd(value);
       if (result.status === "ok") onSaved(result.transaction, result.week, result.similar);
       else if (result.status === "error") setError(result.error);
+      else if (result.status === "moved") {
+        // Préstamo o meta: no hay movimiento que mostrar; queda la confirmación aquí.
+        setDone(result.message);
+        setText("");
+        router.refresh();
+      }
     });
   }
 
@@ -80,7 +98,11 @@ export function TextStep({
       <p className="tabular h-4 truncate px-1 text-xs text-muted" aria-live="polite">
         {pending
           ? "Guardando…"
-          : preview
+          : move
+            ? isGoalIntent(move)
+              ? `Apartar para ${move.goal} · ${formatCOP(move.amount)}`
+              : `Préstamo · ${move.person || "¿con quién?"} · ${formatCOP(move.amount)}`
+            : preview
             ? `${preview.type === "income" ? "Ingreso" : "Gasto"} · ${formatCOP(preview.amount)}` +
               ` · ${formatDay(preview.occurredOn, todayIn())}` +
               (previewCategory ? ` · ${previewCategory.name}` : "")
@@ -89,6 +111,11 @@ export function TextStep({
       {error && (
         <p role="alert" className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
+        </p>
+      )}
+      {done && (
+        <p role="status" className="rounded-xl bg-surface px-4 py-3 text-sm ring-1 ring-border">
+          {done}
         </p>
       )}
     </form>

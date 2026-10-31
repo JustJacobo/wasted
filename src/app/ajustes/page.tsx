@@ -100,6 +100,24 @@ export default async function SettingsPage() {
             ›
           </span>
         </Link>
+        <Link
+          href="/prestamos"
+          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
+        >
+          <span>Préstamos</span>
+          <span aria-hidden className="text-muted">
+            ›
+          </span>
+        </Link>
+        <Link
+          href="/metas"
+          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
+        >
+          <span>Metas</span>
+          <span aria-hidden className="text-muted">
+            ›
+          </span>
+        </Link>
         {/* Un archivo de un Route Handler, no una página: <Link> lo precargaría en cada visita. */}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a

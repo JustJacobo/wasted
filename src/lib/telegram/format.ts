@@ -31,16 +31,19 @@ export function decodeId(encoded: string): string | null {
 
 export type CallbackAction =
   | { action: "categories" | "back" | "undo" | "confirm" | "skip"; txId: string }
-  | { action: "set"; txId: string; categoryId: string };
+  | { action: "set"; txId: string; categoryId: string }
+  | { action: "undoMove"; moveId: string };
 
 /**
  * "k:<tx>" lista categorías, "s:<tx>:<cat>" la cambia, "b:<tx>" vuelve, "u:<tx>" deshace;
- * para un pendiente, "p:<tx>" lo agrega y "n:<tx>" lo omite.
+ * para un pendiente, "p:<tx>" lo agrega y "n:<tx>" lo omite; "m:<mov>" deshace un
+ * préstamo, pago o meta.
  */
 export function parseCallback(data: string): CallbackAction | null {
   const [kind, tx, cat] = data.split(":");
   const txId = tx ? decodeId(tx) : null;
   if (!txId) return null;
+  if (kind === "m") return { action: "undoMove", moveId: txId };
   if (kind === "k") return { action: "categories", txId };
   if (kind === "b") return { action: "back", txId };
   if (kind === "u") return { action: "undo", txId };
@@ -80,6 +83,11 @@ function budgetWarning(week: WeekBudget): string | null {
   const status = budgetStatus(week);
   if (status.level !== "warning" && status.level !== "over") return null;
   return `⚠️ ${budgetMessage(status, week)}`;
+}
+
+/** Bajo la confirmación de un préstamo, un pago o una meta. */
+export function moveKeyboard(moveId: string): InlineButton[][] {
+  return [[{ text: "↩️ Deshacer", callback_data: `m:${encodeId(moveId)}` }]];
 }
 
 export function savedKeyboard(txId: string): InlineButton[][] {
@@ -195,7 +203,12 @@ function deltaLine(current: number, previous: number, periodName: string): strin
 export function reportText(
   kind: PeriodKind,
   report: Report,
-  { title, carry, plan }: { title?: string; carry?: number; plan?: string | null } = {},
+  {
+    title,
+    carry,
+    moved = 0,
+    plan,
+  }: { title?: string; carry?: number; moved?: number; plan?: string | null } = {},
 ): string {
   const label =
     kind === "mes" ? formatMonth(report.range.start) : formatDayRange(report.range.start, report.range.end);
@@ -203,7 +216,7 @@ export function reportText(
   const net = report.income - report.expense;
   const week: WeekBudget | null =
     kind === "semana" && carry !== undefined
-      ? { income: report.income, expense: report.expense, carry }
+      ? { income: report.income, expense: report.expense, carry, moved }
       : null;
 
   const lines = [
@@ -245,7 +258,9 @@ export function budgetAlertText(week: WeekBudget): string | null {
   if (status.level === "over") {
     return `🔴 ${budgetMessage(status, week)}.\nSalió ${formatCOP(week.expense)} y entró ${formatCOP(
       week.income,
-    )}${week.carry ? `; saldo anterior ${formatCOP(week.carry)}` : ""}.`;
+    )}${week.carry ? `; saldo anterior ${formatCOP(week.carry)}` : ""}${
+      week.moved ? `; préstamos y metas ${week.moved < 0 ? "-" : "+"}${formatCOP(Math.abs(week.moved))}` : ""
+    }.`;
   }
   if (status.level === "warning") {
     return `⚠️ ${budgetMessage(status, week)}.\nTe quedan ${formatCOP(balance(week))}.`;
@@ -262,6 +277,8 @@ export function helpText(name?: string): string {
     "• <b>25k almuerzo</b>",
     "• <b>ayer 12.000 uber</b>",
     "• <b>+300k cuota semanal</b> (el + lo marca como ingreso)",
+    "• <b>le presté 20k a Juan</b> · <b>Juan me pagó 20k</b> (préstamos)",
+    "• <b>aparté 50k para el viaje</b> (metas)",
     "",
     "/hoy · lo de hoy",
     "/semana · cómo vas esta semana",

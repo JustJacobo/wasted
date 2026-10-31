@@ -52,7 +52,7 @@ function sumSince(rows: { type: "expense" | "income"; amount: number; occurred_o
 
 /**
  * Ingresos y gastos confirmados de la semana (lunes a hoy) y del mes en curso,
- * más el saldo con que arrancó la semana.
+ * lo movido a préstamos y metas en la semana, y el saldo con que arrancó.
  */
 export async function fetchSummary(
   supabase: SupabaseClient,
@@ -69,18 +69,27 @@ export async function fetchSummary(
     .eq("status", "confirmed")
     .gte("occurred_on", since)
     .lte("occurred_on", today);
-  if (userId) query = query.eq("user_id", userId);
-  const [{ data, error }, { data: before, error: beforeError }] = await Promise.all([
-    query,
-    supabase.rpc("totals_before", { p_before: week, p_user: userId ?? null }).single<Totals>(),
-  ]);
+  let movesQuery = supabase.from("balance_moves").select("amount").gte("occurred_on", week).lte("occurred_on", today);
+  if (userId) {
+    query = query.eq("user_id", userId);
+    movesQuery = movesQuery.eq("user_id", userId);
+  }
+  const [{ data, error }, { data: moves, error: movesError }, { data: before, error: beforeError }] =
+    await Promise.all([
+      query,
+      movesQuery,
+      supabase
+        .rpc("totals_before", { p_before: week, p_user: userId ?? null })
+        .single<Totals & { moved: number }>(),
+    ]);
   if (error) throw error;
+  if (movesError) throw movesError;
   if (beforeError) throw beforeError;
 
   return {
-    week: sumSince(data, week),
+    week: { ...sumSince(data, week), moved: (moves ?? []).reduce((sum, m) => sum + Number(m.amount), 0) },
     month: sumSince(data, month),
-    carry: Number(before.income) - Number(before.expense),
+    carry: Number(before.income) - Number(before.expense) + Number(before.moved),
   };
 }
 

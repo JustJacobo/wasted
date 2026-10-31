@@ -79,12 +79,12 @@ describe("mensajes", () => {
 
   it("agrega el aviso de presupuesto solo a gastos en 80% o más", () => {
     const tx = { type: "expense" as const, amount: 1000, description: "", occurred_on: "2026-10-23" };
-    expect(savedText(tx, undefined, "2026-10-23", { income: 100_000, expense: 50_000, carry: 0 })).not.toContain("⚠️");
-    expect(savedText(tx, undefined, "2026-10-23", { income: 100_000, expense: 85_000, carry: 0 })).toContain(
+    expect(savedText(tx, undefined, "2026-10-23", { income: 100_000, expense: 50_000, carry: 0, moved: 0 })).not.toContain("⚠️");
+    expect(savedText(tx, undefined, "2026-10-23", { income: 100_000, expense: 85_000, carry: 0, moved: 0 })).toContain(
       "⚠️ Cuidado: llevas 85% de lo disponible esta semana",
     );
     expect(
-      savedText({ ...tx, type: "income" }, undefined, "2026-10-23", { income: 100_000, expense: 85_000, carry: 0 }),
+      savedText({ ...tx, type: "income" }, undefined, "2026-10-23", { income: 100_000, expense: 85_000, carry: 0, moved: 0 }),
     ).not.toContain("⚠️");
   });
 
@@ -137,7 +137,7 @@ describe("mensajes", () => {
 
 describe("avisos de presupuesto", () => {
   it("avisa solo al cruzar un umbral", () => {
-    const w = (expense: number, income: number, carry = 0) => ({ expense, income, carry });
+    const w = (expense: number, income: number, carry = 0) => ({ expense, income, carry, moved: 0 });
     expect(crossedBudget(w(70, 100), w(85, 100))).toBe(true);
     expect(crossedBudget(w(85, 100), w(90, 100))).toBe(false);
     expect(crossedBudget(w(90, 100), w(110, 100))).toBe(true);
@@ -146,11 +146,11 @@ describe("avisos de presupuesto", () => {
   });
 
   it("dice cuánto queda o cuánto se pasó", () => {
-    expect(budgetAlertText({ income: 100_000, expense: 85_000, carry: 0 })).toContain("Te quedan $ 15.000");
-    expect(budgetAlertText({ income: 100_000, expense: 120_000, carry: 0 })).toContain("Te pasaste $ 20.000");
-    expect(budgetAlertText({ income: 100_000, expense: 10_000, carry: 0 })).toBeNull();
-    expect(budgetAlertText({ income: 100_000, expense: 130_000, carry: 50_000 })).toContain("Te quedan $ 20.000");
-    expect(budgetAlertText({ income: 100_000, expense: 120_000, carry: 10_000 })).toBe(
+    expect(budgetAlertText({ income: 100_000, expense: 85_000, carry: 0, moved: 0 })).toContain("Te quedan $ 15.000");
+    expect(budgetAlertText({ income: 100_000, expense: 120_000, carry: 0, moved: 0 })).toContain("Te pasaste $ 20.000");
+    expect(budgetAlertText({ income: 100_000, expense: 10_000, carry: 0, moved: 0 })).toBeNull();
+    expect(budgetAlertText({ income: 100_000, expense: 130_000, carry: 50_000, moved: 0 })).toContain("Te quedan $ 20.000");
+    expect(budgetAlertText({ income: 100_000, expense: 120_000, carry: 10_000, moved: 0 })).toBe(
       "🔴 Te pasaste $ 10.000 de lo disponible esta semana.\nSalió $ 120.000 y entró $ 100.000; saldo anterior $ 10.000.",
     );
   });

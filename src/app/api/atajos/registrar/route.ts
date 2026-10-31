@@ -2,7 +2,10 @@ import { revalidatePath } from "next/cache";
 import { after, type NextRequest } from "next/server";
 import { userFromRequest } from "@/lib/api-auth";
 import { todayIn } from "@/lib/dates";
+import { balance } from "@/lib/budget";
+import { formatCOP } from "@/lib/money";
 import { recordQuickEntry } from "@/lib/record";
+import { recordMoneyMove } from "@/lib/record-move";
 import { fetchSummary, weekBudget } from "@/lib/report-data";
 import { shortcutSavedText } from "@/lib/shortcut-format";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -44,6 +47,16 @@ export async function POST(request: NextRequest) {
   if (!text) return respond(request, { ok: false, mensaje: HELP });
 
   const now = new Date();
+  // "le presté 20k a juan", "aparté 50k para el viaje": préstamos y metas no son movimientos.
+  const move = await recordMoneyMove(admin, text, { userId: user.userId, now });
+  if (move) {
+    if (!move.ok) return respond(request, { ok: false, mensaje: move.error });
+    const week = weekBudget(await fetchSummary(admin, todayIn(now), user.userId));
+    revalidatePath("/");
+    return respond(request, { ok: true, mensaje: `${move.message}
+Te quedan ${formatCOP(balance(week))}`, id: move.moveId });
+  }
+
   const result = await recordQuickEntry(admin, text, { source: "shortcut", userId: user.userId, now });
   if (!result.ok) return respond(request, { ok: false, mensaje: result.error });
 

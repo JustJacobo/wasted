@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import {
   active,
   getCategories,
+  getMoneyOverview,
   getPendingCount,
   getRecentTransactions,
   getReport,
@@ -25,6 +26,7 @@ import { Logo } from "@/components/logo";
 import { AppearanceSync } from "./appearance-sync";
 import { AddLauncher } from "./add/add-launcher";
 import { HomePager } from "./home-pager";
+import { MoneyRows } from "./money-rows";
 import { ReportView } from "./reportes/report-view";
 import { SummaryCard } from "./summary-card";
 import { TransactionList } from "./transaction-list";
@@ -40,7 +42,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const anchor = requested.success && requested.data <= today ? requested.data : today;
   const onDashboard = params.vista === "dashboard";
 
-  const [{ name, userId, email, supabase }, summary, categories, rules, transactions, report, pendingCount, upcoming] =
+  const [{ name, userId, email, supabase }, summary, categories, rules, transactions, report, pendingCount, upcoming, money] =
     await Promise.all([
       requireUser(),
       getSummary(today),
@@ -50,6 +52,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       getReport(kind, anchor, today),
       getPendingCount(),
       getUpcoming(today),
+      getMoneyOverview(),
     ]);
 
   // Después de responder, sin frenar la carga: recurrentes vencidos (respaldo
@@ -105,6 +108,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 </span>
               </Link>
             )}
+            <MoneyRows {...money} />
             <UpcomingCharges upcoming={upcoming} categories={categories} today={today} />
             <TransactionList transactions={transactions} categories={categories} today={today} />
             {transactions.length > 0 && (

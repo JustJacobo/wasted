@@ -51,14 +51,22 @@ export interface Totals {
   expense: number;
 }
 
+/**
+ * La semana: ingresos, gastos y lo movido a préstamos y metas, con su efecto en
+ * el saldo (prestar o apartar resta; que te paguen o sacar de una meta suma).
+ */
+export interface WeekTotals extends Totals {
+  moved: number;
+}
+
 /** La semana en curso más el saldo con que arrancó (lo que sobró o faltó antes del lunes). */
-export interface WeekBudget extends Totals {
+export interface WeekBudget extends WeekTotals {
   carry: number;
 }
 
 export interface Summary {
-  week: Totals;
+  week: WeekTotals;
   month: Totals;
-  /** Ingresos menos gastos confirmados antes del lunes de esta semana. */
+  /** Ingresos menos gastos confirmados, más lo movido, antes del lunes de esta semana. */
   carry: number;
 }
