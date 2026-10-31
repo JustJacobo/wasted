@@ -437,3 +437,20 @@ additional_redirect_urls = [
   # App nativa (mobile/): Google y el enlace mágico vuelven aquí.
   "wasted://auth/callback",
 ]
+
+# Google está activo en producción. Sin esto, config push lo apagaría (en local
+# está en false) y pondría el client_id sin resolver. El client_id es público; el
+# secreto vive solo en el dashboard (config push no lo envía).
+[remotes.production.auth.external.google]
+enabled = true
+client_id = "894877929103-r9e7ep9r9o4l8s7fml4btanl6qr7j73t.apps.googleusercontent.com"
+skip_nonce_check = false
+
+# Vector Buckets no está activo en producción.
+[remotes.production.storage.vector]
+enabled = false
+
+# Valores del pooler en producción (config push no los cambia; se ven en el dashboard).
+[remotes.production.db.pooler]
+default_pool_size = 15
+max_client_conn = 200

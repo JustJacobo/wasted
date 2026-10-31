@@ -39,6 +39,10 @@ npm run typecheck    # tsc --noEmit
 npm run lint
 npx supabase start   # Postgres/Auth local en Docker (Docker Desktop debe estar abierto)
 npx supabase db reset  # recrea la BD local aplicando supabase/migrations
+
+# App nativa (desde mobile/)
+npx tsc --noEmit && npx eslint src modules plugins
+npx expo start --dev-client --port 8081   # Metro para la build debug
 ```
 
 ## Arquitectura
@@ -47,7 +51,7 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
 - **Supabase**: Postgres + Auth (Google y enlace mágico) + RLS por `user_id`. El esquema está en `supabase/migrations/`. Un trigger sobre `auth.users` crea las categorías y la cuenta por defecto. Los montos se guardan como `bigint` en pesos y las fechas como `date` en hora de Colombia (`src/lib/dates.ts`).
 - **Auth**: `requireUser()` en `src/lib/auth.ts` es la puerta de toda página y Server Action. Solo entran correos de la tabla `members` (los dueños invitan desde /ajustes); RLS además exige `is_member()`.
 - **Registro en la web (vía principal)**: `src/app/add/`. `AddLauncher` muestra la barra "− Gasto / + Ingreso" y abre `AddSheet` al entrar a la app.
-  - El sheet tiene 2 pasos: monto con teclado propio (`src/lib/amount-keypad.ts`) y luego categoría, que al tocarla guarda con la Server Action `addTransaction`.
+  - El sheet tiene 2 pasos: monto con teclado propio (`src/lib/amount-keypad.ts`) y luego fecha (hoy por defecto) y categoría; "Agregar gasto · <categoría>" guarda con la Server Action `addTransaction`.
   - Las categorías salen ordenadas por uso (`src/lib/category-usage.ts`).
   - El sheet agrega una entrada al historial para que Atrás lo cierre.
   - `?nuevo=gasto|ingreso` (accesos directos del manifest) elige el tipo inicial.
@@ -97,23 +101,24 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - Los reportes programados salen por correo y por Telegram; registrar desde la web avisa por Telegram al cruzar el 80% o el 100% de lo disponible en la semana (`notify.ts`, dentro de `after()`).
   - En local: `TELEGRAM_API_URL` apunta a un servidor falso del Bot API.
 - **Atajos y widgets** (Atajos y Scriptable en iPhone, HTTP Shortcuts en Android; guía en `/ajustes/atajos`):
-  - Clave personal `wst_…` creada en Ajustes. En `api_tokens` queda solo su hash (`src/lib/api-token.ts`), una por usuario.
+  - Clave personal `wst_…` creada en Ajustes. En `api_tokens` queda solo su hash (`src/lib/api-token.ts`): una de atajos por usuario (`device` nulo) y una por celular con la app.
   - `userFromRequest` (`src/lib/api-auth.ts`) lee `Authorization: Bearer`, busca el hash con el cliente de servicio y verifica `members` en cada llamada (`memberInfo`, `src/lib/members.ts`).
   - `POST /api/atajos/registrar` (JSON `texto`, formulario o texto plano) pasa por `recordQuickEntry` con `source = 'shortcut'`. `GET /api/atajos/saldo` da el saldo para widgets.
   - Con `?formato=texto` responden solo el mensaje, para mostrarlo tal cual. Los textos son puros y testeados en `src/lib/shortcut-format.ts`.
-- **App de Android** (`android/`, Gradle 9.4 + AGP 9.2, Java, sin Kotlin; se instala como APK, sin tienda):
-  - Es una TWA (`androidbrowserhelper`): abre la web en Chrome a pantalla completa, así que el login con Google funciona y cada despliegue llega solo. Un WebView (Capacitor) no sirve porque Google bloquea su login ahí.
-  - `public/.well-known/assetlinks.json` tiene la huella del certificado de release (el proxy deja pasar `.well-known/` sin sesión). Si cambia el keystore, hay que actualizar la huella o vuelve la barra de dirección.
-  - Lo nativo usa la API de atajos con la clave `wst_…`:
-    - `BalanceWidget` muestra "Te quedan" y se actualiza cada 30 min, con ↻ y al registrar.
-    - `QuickAddActivity` es el cuadro "¿Qué registras?" con botones fijos guardados en el teléfono.
-    - `ConnectActivity` recibe `wasted://conectar?clave=…` desde Ajustes y siempre muestra la cuenta y pide confirmar antes de guardar.
-    - `NotificationReader` (`NotificationListenerService`) lee solo las notificaciones de `Packages.WATCHED` (Nequi, Nu, DiDi, Uber, Yango; la misma lista que `WATCHED_PACKAGES` del servidor) y las manda a `/api/notificaciones`. Sin señal quedan en una cola (`NotificationQueue`, en `Prefs`) que sale con la siguiente notificación o al actualizar el widget.
-    - `NotificationsActivity` (`wasted://notificaciones` desde Ajustes, o el acceso "Pagos automáticos") muestra qué apps están instaladas (`<queries>` en el manifiesto) y lleva al permiso. Android 13+ lo bloquea en apps instaladas por APK hasta "Permitir ajustes restringidos" en la información de la app.
-  - Publicar: subir un tag `android-vX.Y.Z`. `.github/workflows/android-release.yml` compila con el keystore de los secretos del repo (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`), pasa `-PversionName`/`-PversionCode` (1.2.3 → 10203), falla si la huella no coincide con `assetlinks.json` y sube `wasted.apk` al Release. Ajustes y el README enlazan a `releases/latest/download/wasted.apk`.
-  - Compilar en local (para probar): `cd android && gradlew assembleRelease` con `JAVA_HOME` en el JBR de Android Studio.
-  - La variante debug (`app.wasted.android.debug`) apunta a `http://10.0.2.2:3000` (`npm run dev` visto desde el emulador).
-  - Firma: el keystore está en `%USERPROFILE%\.wasted\` y la contraseña en `android/keystore.properties`; los dos quedan fuera de git. Sin ese keystore no se pueden instalar actualizaciones encima: hay que respaldarlo.
+- **App nativa de Android** (`mobile/`, Expo SDK 58 + React Native 0.88 + Expo Router; se instala como APK, sin tienda). Reemplaza a la TWA de `android/`, que se retira con la 2.0.0:
+  - Mismo paquete (`app.wasted.android`) y mismo keystore que la TWA: se instala encima. `public/.well-known/assetlinks.json` guarda la huella y el workflow la verifica.
+  - Los datos van por `POST /api/app/<op>` (`src/app/api/app/ops.ts`, lista blanca): las mismas consultas y Server Actions de la web. La sesión de Supabase viaja como `Authorization: Bearer` (`bearerSession` en `src/lib/supabase/server.ts`; `requireUser` verifica el JWT y `members`). Las claves `wst_` no sirven como sesión.
+  - Login: Google en la pestaña del sistema (`expo-web-browser`) y enlace mágico, los dos con PKCE (`expo-crypto` da WebCrypto a Hermes) y vuelta por `wasted://auth/callback` (en la lista de redirects de Supabase, local y producción).
+  - La lógica pura se importa de `src/lib` como `@/lib/...` (alias en `mobile/tsconfig.json`, `watchFolders` en `metro.config.js`). Desde la app no se importa nada `server-only`; los tipos de las respuestas se redefinen en `mobile/`.
+  - Después de escribir, `refreshAfterWrite()` (`mobile/src/core/query.ts`) deja viejo todo lo leído, como `revalidatePath` en la web.
+  - Lo nativo vive en el módulo local `mobile/modules/wasted-android` (Java del widget, el registro rápido y el lector de notificaciones, más el puente `WastedAndroidModule.kt`):
+    - Cada celular tiene su clave `wst_` (columna `device` de `api_tokens`): `connectDevice` (`mobile/src/core/device.ts`) la pide con `createDeviceKey` al entrar y `signOut` la revoca. Ajustes (web y app) lista los celulares. Si el widget recibe 401 borra la clave y la app crea otra al abrirse.
+    - `BalanceWidget` muestra "Te quedan" (cada 30 min, con ↻ y cuando el inicio trae datos nuevos). `QuickAddActivity` es el cuadro "¿Qué registras?" con botones fijos.
+    - `NotificationReader` lee solo `Packages.WATCHED` (la misma lista que `WATCHED_PACKAGES` del servidor) y manda a `/api/notificaciones`, con cola sin señal (`NotificationQueue`). El permiso se da en la pantalla "Pagos automáticos" (`mobile/src/app/(app)/notificaciones.tsx`, también `wasted://notificaciones`). Android 13+ lo bloquea en apps instaladas por APK hasta "Permitir ajustes restringidos".
+    - Los accesos del ícono están en `mobile/plugins/shortcuts.xml` (el plugin `with-app-shortcuts` los copia a la app).
+  - Publicar: tag `android-vX.Y.Z` (o `android-vX.Y.Z-beta.N`, que sale como prerelease y queda por debajo de la final: 2.0.0-beta.3 → 19903). `.github/workflows/android-release.yml` hace `expo prebuild`, firma con los secretos del repo (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`; el plugin `with-release-signing` lee `mobile/keystore.properties`), verifica la huella y sube `wasted.apk`. Ajustes y el README enlazan a `releases/latest/download/wasted.apk`.
+  - En local (Windows): la ruta del repo pasa el límite de 260 caracteres de CMake, así que se compila desde una copia corta (`robocopy mobile C:\w\mobile` y `src\lib` a `C:\w\src\lib`) con `JAVA_HOME` en el JBR de Android Studio. La debug usa `mobile/.env.development.local` (API y Supabase en `10.0.2.2`, el computador visto desde el emulador); Metro corre desde `mobile/`.
+  - Firma: el keystore está en `%USERPROFILE%\.wasted\` y la contraseña en `mobile/keystore.properties` (copia de `android/keystore.properties`); los dos quedan fuera de git. Sin ese keystore no se pueden instalar actualizaciones encima: hay que respaldarlo.
 - **Importar del correo** (`src/lib/mail-import/`; solo el buzón de `GMAIL_USER`, por IMAP con la contraseña de aplicación):
   - `source.ts` busca en Gmail (`X-GM-RAW`) desde el lunes en que se activó, salta los Message-ID ya procesados y convierte el HTML a texto con `html.ts` (separa las celdas de las tablas).
   - `parsers.ts` (puro y testeado con textos reales): Nequi (Bre-B, PSE, Cívica), Uber, Rappi, facturas DIAN (XML dentro del ZIP, con límite de tamaño) y un genérico por "Total". Las transferencias propias (tu nombre o el pago a la tarjeta Nu) no cuentan.
