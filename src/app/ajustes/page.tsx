@@ -93,6 +93,21 @@ export default async function SettingsPage() {
             ›
           </span>
         </Link>
+        {/* Un archivo de un Route Handler, no una página: <Link> lo precargaría en cada visita. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a
+          href="/movimientos/exportar?todo=1"
+          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
+        >
+          <span>Exportar a CSV</span>
+          <span aria-hidden className="text-muted">
+            ↓
+          </span>
+        </a>
+        <p className="px-1 text-xs text-muted">
+          El CSV trae todos tus movimientos confirmados y se abre en Excel o Google Sheets. Para un
+          solo mes, usa el botón CSV del Historial.
+        </p>
       </section>
 
       <section className="space-y-2">

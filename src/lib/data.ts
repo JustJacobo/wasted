@@ -170,6 +170,27 @@ export async function getTransactionsForMonth(filters: HistoryFilters): Promise<
   return data;
 }
 
+/** Todos los movimientos confirmados, del más antiguo al más reciente (para exportar). */
+export async function getAllTransactions(): Promise<Transaction[]> {
+  const { supabase } = await requireUser();
+  const page = 1000; // lo máximo que Supabase devuelve por consulta
+  const all: Transaction[] = [];
+  for (let from = 0; ; from += page) {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select(TX_COLUMNS)
+      .eq("status", "confirmed")
+      .order("occurred_on")
+      .order("occurred_at", { nullsFirst: true })
+      .order("created_at")
+      .order("id")
+      .range(from, from + page - 1);
+    if (error) throw error;
+    all.push(...data);
+    if (data.length < page) return all;
+  }
+}
+
 /** Reporte del periodo que contiene `anchor`, comparado con el anterior. */
 export async function getReport(kind: PeriodKind, anchor: string, today: string): Promise<Report> {
   const { supabase } = await requireUser();

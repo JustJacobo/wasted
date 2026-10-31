@@ -1,41 +1,28 @@
+import { DownloadSimple } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
-import { z } from "zod";
 import { getCategories, getTransactionsForMonth } from "@/lib/data";
 import { addDays, formatMonth, todayIn } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import { TransactionList } from "../transaction-list";
 import { HistoryFilters } from "./history-filters";
-
-const TYPES = { todos: null, gasto: "expense", ingreso: "income" } as const;
-type TypeParam = keyof typeof TYPES;
+import { historyParams } from "./params";
 
 export default async function HistoryPage({ searchParams }: PageProps<"/movimientos">) {
-  const params = await searchParams;
   const today = todayIn();
-  const current = today.slice(0, 7);
+  const { current, month, typeKey, categoryId, query, filters } = historyParams(await searchParams, today);
 
-  const monthParam = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).safeParse(params.mes);
-  const month = monthParam.success && monthParam.data <= current ? monthParam.data : current;
-  const typeKey: TypeParam =
-    typeof params.tipo === "string" && params.tipo in TYPES ? (params.tipo as TypeParam) : "todos";
-  const cat = z.uuid().safeParse(params.cat);
-  const categoryId = cat.success ? cat.data : null;
-  const query = typeof params.q === "string" ? params.q.slice(0, 100) : "";
+  const [transactions, categories] = await Promise.all([getTransactionsForMonth(filters), getCategories()]);
 
-  const [transactions, categories] = await Promise.all([
-    getTransactionsForMonth({ month, type: TYPES[typeKey], categoryId, query }),
-    getCategories(),
-  ]);
-
-  const href = (changes: Record<string, string | null>) => {
+  const search = (changes: Record<string, string | null>) => {
     const next = new URLSearchParams();
     const merged = { mes: month, tipo: typeKey, cat: categoryId, q: query || null, ...changes };
     for (const [k, v] of Object.entries(merged)) {
       if (v && !(k === "tipo" && v === "todos") && !(k === "mes" && v === current)) next.set(k, v);
     }
     const qs = next.toString();
-    return qs ? `/movimientos?${qs}` : "/movimientos";
+    return qs ? `?${qs}` : "";
   };
+  const href = (changes: Record<string, string | null>) => `/movimientos${search(changes)}`;
   const prevMonth = addDays(`${month}-01`, -1).slice(0, 7);
   const nextMonth = addDays(`${month}-28`, 7).slice(0, 7);
   const filtered = typeKey !== "todos" || categoryId !== null || query !== "";
@@ -94,21 +81,34 @@ export default async function HistoryPage({ searchParams }: PageProps<"/movimien
 
       <HistoryFilters categories={categories} categoryId={categoryId} query={query} />
 
-      <p className="tabular px-1 text-sm text-muted" aria-live="polite">
-        {transactions.length} {transactions.length === 1 ? "movimiento" : "movimientos"}
-        {expense > 0 && (
-          <>
-            {" · Gastos "}
-            <span className="text-foreground">{formatCOP(expense)}</span>
-          </>
+      <div className="flex items-center justify-between gap-3 px-1">
+        <p className="tabular min-w-0 text-sm text-muted" aria-live="polite">
+          {transactions.length} {transactions.length === 1 ? "movimiento" : "movimientos"}
+          {expense > 0 && (
+            <>
+              {" · Gastos "}
+              <span className="text-foreground">{formatCOP(expense)}</span>
+            </>
+          )}
+          {income > 0 && (
+            <>
+              {" · Ingresos "}
+              <span className="text-foreground">{formatCOP(income)}</span>
+            </>
+          )}
+        </p>
+        {transactions.length > 0 && (
+          // Sin `download`: si la sesión venció, el enlace lleva a /login en vez de bajar esa página.
+          <a
+            href={`/movimientos/exportar${search({})}`}
+            aria-label={`Descargar ${filtered ? "lo filtrado de " : ""}${formatMonth(`${month}-01`)} en CSV`}
+            className="-my-3 -mr-2 inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm text-muted transition-transform duration-150 ease-ui active:scale-[0.97]"
+          >
+            <DownloadSimple aria-hidden className="size-4" />
+            CSV
+          </a>
         )}
-        {income > 0 && (
-          <>
-            {" · Ingresos "}
-            <span className="text-foreground">{formatCOP(income)}</span>
-          </>
-        )}
-      </p>
+      </div>
 
       <TransactionList
         transactions={transactions}

@@ -52,7 +52,7 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - El sheet agrega una entrada al historial para que Atrás lo cierre.
   - `?nuevo=gasto|ingreso` (accesos directos del manifest) elige el tipo inicial.
   - El ⌨ del sheet abre el modo texto secundario (`text-step.tsx`).
-- **Registro por texto** (modo ⌨, Telegram y futuro WhatsApp): todo pasa por `recordQuickEntry()` en `src/lib/record.ts`. El flujo es:
+- **Registro por texto** (modo ⌨, Telegram y atajos): todo pasa por `recordQuickEntry()` en `src/lib/record.ts`. El flujo es:
   1. `parseQuickAdd` (`src/lib/quick-add/parse.ts`) interpreta montos como `25k`, `1.5M`, `20 lucas` o `$25.000`, fechas como `ayer`, `el lunes` o `15/10`, y decide si es gasto o ingreso (`+` o palabras clave).
   2. `matchCategory` busca en las reglas aprendidas (`category_rules`) y luego en las palabras clave integradas (`keywords.ts`, indexadas por `categories.key`).
   3. Si nada coincide, `suggestCategory` le pregunta a Claude Haiku (`src/lib/ai/categorize.ts`, se omite sin `ANTHROPIC_API_KEY`).
@@ -66,6 +66,10 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
   - Los gráficos son HTML/CSS a mano, en un solo tono `--viz`, validado con la skill `dataviz` para modo claro y oscuro.
   - Las variaciones llevan ▲▼ coloreado y el texto en tinta neutra.
   - Las cifras grandes ajustan su tamaño con `sizeForLength` (`src/lib/money.ts`) en vez de recortarse.
+- **Exportar a CSV** (solo exportar; no hay importación):
+  - `src/lib/export-csv.ts` (puro y testeado): punto y coma y BOM para que Excel en español lo abra con doble clic (Google Sheets lo detecta solo). El monto lleva signo (gastos en negativo) y la hora es la de Colombia. Los textos que empiezan por `= + - @` llevan un apóstrofo para que Excel no los ejecute como fórmula: los comercios vienen de correos ajenos.
+  - `GET /movimientos/exportar` (Route Handler; la sesión la piden el proxy y `requireUser`): sin `todo` es el mes del Historial con sus filtros (`historyParams` en `src/app/movimientos/params.ts`, compartido con la página); `?todo=1` trae todo lo confirmado (`getAllTransactions`, en páginas de 1000).
+  - Se baja con "CSV" en el Historial y "Exportar a CSV" en Ajustes. Son `<a>` sin `download`: `<Link>` precargaría el archivo y, si la sesión venció, `download` guardaría la página de /login.
 - **Saldo y presupuesto** (`src/lib/budget.ts`, puro y testeado): el saldo no se reinicia cada lunes.
   - `carry` es lo que sobró o faltó antes del lunes (función SQL `totals_before`, llamada desde `fetchSummary`).
   - Lo disponible en la semana es `carry` + lo que entró. "Te quedan" es lo disponible menos lo que salió, es decir, el saldo total.
