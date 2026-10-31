@@ -6,6 +6,7 @@ import { ACCENT_COOKIE, MODE_COOKIE, parseAccent, parseMode } from "@/lib/theme"
 import { SyncButton } from "../bandeja/sync-button";
 import { ThemePicker } from "./theme-picker";
 import { MailToggle } from "./mail-toggle";
+import { NotificationLog } from "./notification-log";
 import { InviteForm } from "./invite-form";
 import { ReportToggles } from "./report-toggles";
 import { RemoveButton } from "./remove-button";
@@ -35,14 +36,20 @@ export default async function SettingsPage() {
   const mail = canImportMail(email);
   // El tema que muestra Ajustes es el que pinta este dispositivo (cookies del layout).
   const jar = await cookies();
-  const [{ data: settings }, { data: telegram }, { data: mailSync }, { data: apiToken }] = await Promise.all([
-    supabase.from("user_settings").select("report_weekly, report_monthly, accent, color_mode").maybeSingle(),
-    supabase.from("telegram_links").select("username").maybeSingle(),
-    mail
-      ? supabase.from("mail_sync").select("enabled, since, last_synced_at").maybeSingle()
-      : Promise.resolve({ data: null }),
-    supabase.from("api_tokens").select("last_used_at").maybeSingle(),
-  ]);
+  const [{ data: settings }, { data: telegram }, { data: mailSync }, { data: apiToken }, { data: notifications }] =
+    await Promise.all([
+      supabase.from("user_settings").select("report_weekly, report_monthly, accent, color_mode").maybeSingle(),
+      supabase.from("telegram_links").select("username").maybeSingle(),
+      mail
+        ? supabase.from("mail_sync").select("enabled, since, last_synced_at").maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabase.from("api_tokens").select("last_used_at").maybeSingle(),
+      supabase
+        .from("notification_log")
+        .select("package, title, text, outcome, processed_at")
+        .order("processed_at", { ascending: false })
+        .limit(8),
+    ]);
   const members =
     role === "owner"
       ? ((
@@ -162,6 +169,26 @@ export default async function SettingsPage() {
           Ábrela desde las descargas y permite instalar apps de Chrome si Android lo pide. Trae un
           widget con lo que te queda y un botón para registrar sin abrir la app: conéctalo con tu
           clave de abajo.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="px-1 text-sm text-muted">Notificaciones del teléfono</h2>
+        {notifications && notifications.length > 0 && <NotificationLog entries={notifications} when={lastSync} />}
+        <a
+          href="wasted://notificaciones"
+          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
+        >
+          <span>Configurar en la app de Android</span>
+          <span aria-hidden className="text-muted">
+            ›
+          </span>
+        </a>
+        <p className="px-1 text-xs text-muted">
+          La app de Android lee los avisos de pagos de Nequi, Nu, DiDi, Uber y Yango, nunca chats ni
+          otras apps. Lo claro se registra solo, lo dudoso queda en Por revisar y lo que pasas entre
+          tus cuentas no cuenta. Un mismo pago que llega por la tarjeta y por el correo queda una sola
+          vez.
         </p>
       </section>
 

@@ -6,6 +6,8 @@ export interface MemberInfo {
   userId: string;
   email: string;
   firstName?: string;
+  /** Nombre completo de Google: sirve para reconocer transferencias a uno mismo. */
+  name: string;
 }
 
 /**
@@ -20,5 +22,5 @@ export async function memberInfo(admin: SupabaseClient, userId: string): Promise
   if (!member) return null;
   const meta = data.user!.user_metadata ?? {};
   const name = String(meta.full_name ?? meta.name ?? "");
-  return { userId, email, firstName: name.split(" ")[0] || undefined };
+  return { userId, email, name, firstName: name.split(" ")[0] || undefined };
 }

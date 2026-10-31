@@ -67,10 +67,15 @@ export function SavedToast({
       {similar && (
         <p className="mt-1 px-1 text-xs text-foreground">
           <span aria-hidden className="mr-1">
-            {similar.from === "recurring" ? "🔁" : "📧"}
+            {similar.from === "recurring" ? "🔁" : similar.from === "notification" ? "🔔" : "📧"}
           </span>
           Parece repetido:{" "}
-          {similar.from === "recurring" ? "ya está como recurrente" : "ya llegó del correo"} ({similar.label}).
+          {similar.from === "recurring"
+            ? "ya está como recurrente"
+            : similar.from === "notification"
+              ? "ya llegó por una notificación"
+              : "ya llegó del correo"}{" "}
+          ({similar.label}).
         </p>
       )}
       {warning && (

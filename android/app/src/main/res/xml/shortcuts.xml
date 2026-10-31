@@ -12,6 +12,15 @@
     </shortcut>
     <shortcut
         android:icon="@mipmap/ic_launcher"
+        android:shortcutId="notificaciones"
+        android:shortcutShortLabel="@string/shortcut_notifications">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="app.wasted.android.NotificationsActivity"
+            android:targetPackage="app.wasted.android" />
+    </shortcut>
+    <shortcut
+        android:icon="@mipmap/ic_launcher"
         android:shortcutId="gasto"
         android:shortcutShortLabel="@string/shortcut_expense">
         <intent

@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, daysBetween } from "@/lib/dates";
 import { RECURRING_COLUMNS, type Recurring } from "@/lib/recurring";
 import { bestMatch, linkWindow, matchCharge, usefulHint, type MatchStrength } from "@/lib/recurring-match";
-import { MAIL_SOURCES, type Transaction, type TxType } from "@/lib/types";
+import { IMPORTED_SOURCES, type Transaction, type TxType } from "@/lib/types";
 
 // Enlaza los cobros del correo con los recurrentes, para que un mismo cobro
 // quede como un solo movimiento. Cliente de servicio: todo filtra por `userId`.
@@ -14,7 +14,7 @@ const MAX_DAYS = 3;
 
 export type Raw = Record<string, unknown> | null;
 
-export interface MailCharge {
+export interface ImportedCharge {
   type: TxType;
   amount: number;
   occurredOn: string;
@@ -25,7 +25,7 @@ export interface MailCharge {
   body: string;
 }
 
-export type MailLink =
+export type ChargeLink =
   /** Ya hay un pendiente del recurrente para esa fecha. */
   | { kind: "pending"; strength: MatchStrength; rule: Recurring; placeholder: { id: string; raw: Raw } }
   /** El correo llegó antes de que el recurrente venciera. */
@@ -35,11 +35,11 @@ const chargeText = (...parts: (string | null | undefined)[]) => parts.filter(Boo
 const rawText = (raw: Raw) => [raw?.subject, raw?.text].filter((v): v is string => typeof v === "string");
 
 /** ¿Es este correo el cobro de un recurrente? El mejor candidato, o null. */
-export async function linkForMail(
+export async function linkForCharge(
   admin: SupabaseClient,
   userId: string,
-  charge: MailCharge,
-): Promise<MailLink | null> {
+  charge: ImportedCharge,
+): Promise<ChargeLink | null> {
   const from = addDays(charge.occurredOn, -MAX_DAYS);
   const to = addDays(charge.occurredOn, MAX_DAYS);
   const c = {
@@ -91,24 +91,24 @@ export async function linkForMail(
   return due?.strength === "same" ? { kind: "due", strength: "same", rule: due.item } : null;
 }
 
-export interface MailTx {
+export interface ImportedTx {
   id: string;
   status: Transaction["status"];
 }
 
 /** Un movimiento del correo, todavía sin recurrente, que sea el cobro de esta fecha. */
-export async function mailForOccurrence(
+export async function importedForOccurrence(
   admin: SupabaseClient,
   userId: string,
   rule: Recurring,
   day: string,
-): Promise<{ item: MailTx; strength: MatchStrength } | null> {
+): Promise<{ item: ImportedTx; strength: MatchStrength } | null> {
   const days = linkWindow(rule);
   const { data } = await admin
     .from("transactions")
     .select("id, type, amount, occurred_on, merchant, description, status, raw")
     .eq("user_id", userId)
-    .in("source", MAIL_SOURCES)
+    .in("source", IMPORTED_SOURCES)
     .is("recurring_id", null)
     .in("status", ["pending", "confirmed"])
     .eq("type", rule.type)
@@ -116,7 +116,7 @@ export async function mailForOccurrence(
     .lte("occurred_on", addDays(day, days));
   return bestMatch(
     (data ?? []).map((t) => ({
-      item: { id: t.id, status: t.status } as MailTx,
+      item: { id: t.id, status: t.status } as ImportedTx,
       strength: matchCharge(rule, day, {
         type: t.type,
         amount: t.amount,
@@ -159,7 +159,7 @@ export async function learnFromCharge(
   tx: Pick<Transaction, "recurring_id" | "source" | "merchant" | "amount"> & { raw?: unknown },
   userId?: string,
 ): Promise<void> {
-  if (!tx.recurring_id || !MAIL_SOURCES.includes(tx.source)) return;
+  if (!tx.recurring_id || !IMPORTED_SOURCES.includes(tx.source)) return;
   const hint = usefulHint(tx.merchant, (tx.raw as Raw)?.provider as string | undefined);
   let query = client
     .from("recurring")

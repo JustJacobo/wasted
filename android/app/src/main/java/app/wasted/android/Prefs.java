@@ -4,10 +4,12 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 /** Lo que el widget recuerda en el teléfono (preferencias privadas de la app). */
 final class Prefs {
@@ -17,6 +19,12 @@ final class Prefs {
     private static final String BALANCE_AT = "balance_at";
     private static final String BUTTONS = "buttons";
     private static final int MAX_BUTTONS = 12;
+    private static final String READ_NOTIFICATIONS = "read_notifications";
+    private static final String QUEUE = "notification_queue";
+    private static final String SEEN = "notification_seen";
+    private static final String SENT_AT = "notification_sent_at";
+    /** Una notificación igual dentro de este margen es la misma, publicada otra vez. */
+    private static final long SEEN_FOR_MS = 10 * 60 * 1000;
 
     private Prefs() {}
 
@@ -78,5 +86,69 @@ final class Prefs {
 
     private static void saveButtons(Context context, List<String> list) {
         prefs(context).edit().putString(BUTTONS, new JSONArray(list).toString()).apply();
+    }
+
+    /** Leer las notificaciones de pagos (se puede pausar sin quitar el permiso). */
+    static boolean readNotifications(Context context) {
+        return prefs(context).getBoolean(READ_NOTIFICATIONS, true);
+    }
+
+    static void setReadNotifications(Context context, boolean read) {
+        prefs(context).edit().putBoolean(READ_NOTIFICATIONS, read).apply();
+    }
+
+    /** Notificaciones que esperan señal para salir. */
+    static JSONArray queue(Context context) {
+        try {
+            return new JSONArray(prefs(context).getString(QUEUE, "[]"));
+        } catch (JSONException e) {
+            return new JSONArray();
+        }
+    }
+
+    static void setQueue(Context context, JSONArray queue) {
+        prefs(context).edit().putString(QUEUE, queue.toString()).commit();
+    }
+
+    static long notificationsSentAt(Context context) {
+        return prefs(context).getLong(SENT_AT, 0);
+    }
+
+    static void setNotificationsSentAt(Context context, long at) {
+        prefs(context).edit().putLong(SENT_AT, at).apply();
+    }
+
+    /** true si es nueva; false si la misma llegó hace poco (se volvió a publicar). */
+    static synchronized boolean markSeen(Context context, String content) {
+        long now = System.currentTimeMillis();
+        String hash = Integer.toHexString(content.hashCode()) + ":" + content.length();
+        JSONObject seen;
+        try {
+            seen = new JSONObject(prefs(context).getString(SEEN, "{}"));
+        } catch (JSONException e) {
+            seen = new JSONObject();
+        }
+        boolean fresh = now - seen.optLong(hash, 0) > SEEN_FOR_MS;
+        JSONObject kept = new JSONObject();
+        for (Iterator<String> keys = seen.keys(); keys.hasNext(); ) {
+            String k = keys.next();
+            long at = seen.optLong(k, 0);
+            if (now - at <= SEEN_FOR_MS) {
+                try {
+                    kept.put(k, at);
+                } catch (JSONException ignored) {
+                    // Nunca pasa con una clave de texto y un número.
+                }
+            }
+        }
+        if (fresh) {
+            try {
+                kept.put(hash, now);
+            } catch (JSONException ignored) {
+                // Igual que arriba.
+            }
+        }
+        prefs(context).edit().putString(SEEN, kept.toString()).apply();
+        return fresh;
     }
 }

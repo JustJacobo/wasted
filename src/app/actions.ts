@@ -13,12 +13,12 @@ import { weekBudget } from "@/lib/report-data";
 import { addDays, atTime, occurredAt, todayIn } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import { notifyBudgetCrossing } from "@/lib/telegram/notify";
-import { MAIL_SOURCES, TX_COLUMNS, type Transaction, type WeekBudget } from "@/lib/types";
+import { IMPORTED_SOURCES, TX_COLUMNS, type Transaction, type WeekBudget } from "@/lib/types";
 
-/** Un movimiento igual que ya llegó del correo o ya está como recurrente (posible repetido). */
+/** Un movimiento igual que ya llegó solo o ya está como recurrente (posible repetido). */
 export interface Similar {
   label: string;
-  from: "mail" | "recurring";
+  from: "mail" | "notification" | "recurring";
 }
 
 export type QuickAddState =
@@ -27,7 +27,7 @@ export type QuickAddState =
   | { status: "error"; error: string; at: number };
 
 /**
- * Si el correo ya trajo un movimiento igual (tipo y monto, ±1 día), o ya está
+ * Si el correo o una notificación ya trajo un movimiento igual (tipo y monto, ±1 día), o ya está
  * como recurrente (en la bandeja o confirmado), lo describe para avisar en la
  * confirmación; el usuario decide si deshace.
  */
@@ -35,7 +35,7 @@ async function similarImported(supabase: SupabaseClient, tx: Transaction): Promi
   const { data } = await supabase
     .from("transactions")
     .select("description, merchant, amount, source")
-    .in("source", [...MAIL_SOURCES, "recurring"])
+    .in("source", [...IMPORTED_SOURCES, "recurring"])
     .in("status", ["confirmed", "pending"])
     .eq("type", tx.type)
     .eq("amount", tx.amount)
@@ -47,7 +47,7 @@ async function similarImported(supabase: SupabaseClient, tx: Transaction): Promi
   if (!data) return null;
   return {
     label: `${data.merchant || data.description || "movimiento"} ${formatCOP(Number(data.amount))}`,
-    from: data.source === "recurring" ? "recurring" : "mail",
+    from: data.source === "recurring" || data.source === "notification" ? data.source : "mail",
   };
 }
 

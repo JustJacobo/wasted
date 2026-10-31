@@ -35,6 +35,22 @@
     <string name="connect_invalid">Esa clave no es válida. Crea una nueva en Wasted → Ajustes → Atajos y widgets.</string>
     <string name="connect_done">Widget conectado</string>
 
+    <!-- Notificaciones de pagos -->
+    <string name="notifications_service">Wasted: registrar pagos</string>
+    <string name="notifications_title">Registrar pagos de las notificaciones</string>
+    <string name="notifications_intro">Wasted lee solo los avisos de pagos de estas apps, nunca chats ni otras apps. Lo claro se registra solo, lo dudoso queda en Por revisar y lo que pasas entre tus cuentas no cuenta.</string>
+    <string name="notifications_app_installed">✓ %1$s</string>
+    <string name="notifications_app_missing">– %1$s (no está instalada)</string>
+    <string name="notifications_access">Dar acceso a las notificaciones</string>
+    <string name="notifications_no_access">Falta el permiso: toca el botón y activa Wasted.</string>
+    <string name="notifications_restricted_help">Si Android dice “Ajuste restringido”: abre la información de la app, toca ⋮ (arriba a la derecha) → “Permitir ajustes restringidos” y vuelve a dar el acceso.</string>
+    <string name="notifications_app_info">Abrir información de la app</string>
+    <string name="notifications_toggle">Registrar pagos de las notificaciones</string>
+    <string name="notifications_on">Activo. Los próximos pagos se registran solos.</string>
+    <string name="notifications_on_since">Activo. Último envío: %1$s.</string>
+    <string name="notifications_paused">En pausa: las notificaciones no se leen.</string>
+    <string name="shortcut_notifications">Pagos automáticos</string>
+
     <string name="cancel">Cancelar</string>
     <string name="close">Cerrar</string>
 

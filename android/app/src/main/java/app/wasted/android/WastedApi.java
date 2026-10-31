@@ -8,6 +8,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -59,6 +60,30 @@ final class WastedApi {
                 out.write(payload);
             }
             return read(connection).trim();
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    /** Manda notificaciones de pagos (POST /api/notificaciones); el servidor decide qué registrar. */
+    static void notifications(String key, JSONArray items) throws IOException {
+        byte[] payload;
+        try {
+            payload = new JSONObject().put("notificaciones", items).toString().getBytes(StandardCharsets.UTF_8);
+        } catch (JSONException e) {
+            throw new IOException("No se pudo armar el envío", e);
+        }
+        HttpURLConnection connection = open("/api/notificaciones", key);
+        try {
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+            connection.setFixedLengthStreamingMode(payload.length);
+            try (OutputStream out = connection.getOutputStream()) {
+                out.write(payload);
+            }
+            // Un 4xx (algo que el servidor no acepta) no se reintenta: read() solo lanza con 401 y 5xx.
+            read(connection);
         } finally {
             connection.disconnect();
         }

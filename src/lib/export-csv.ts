@@ -11,12 +11,13 @@ import { MAIL_SOURCES, type Category, type Transaction } from "@/lib/types";
 const SEPARATOR = ";";
 
 /** Sin la marca BOM, Excel lee el archivo como Latin-1 y daña las tildes. */
-const BOM = "﻿";
+const BOM = String.fromCharCode(0xfeff);
 
 const HEADER = ["Fecha", "Hora", "Tipo", "Categoría", "Descripción", "Comercio", "Monto", "Origen", "Recurrente"];
 
 const SOURCES: Record<string, string> = {
   manual: "A mano",
+  notification: "Notificación",
   telegram: "Telegram",
   shortcut: "Atajo",
   recurring: "Recurrente",

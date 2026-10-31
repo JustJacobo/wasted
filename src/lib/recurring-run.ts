@@ -3,8 +3,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays } from "@/lib/dates";
 import { dueDates, RECURRING_COLUMNS, type Recurring } from "@/lib/recurring";
-import { alreadyLinked, mailForOccurrence } from "@/lib/recurring-link";
-import { MAIL_SOURCES, TX_COLUMNS, type Transaction } from "@/lib/types";
+import { alreadyLinked, importedForOccurrence } from "@/lib/recurring-link";
+import { IMPORTED_SOURCES, TX_COLUMNS, type Transaction } from "@/lib/types";
 
 /** Usuarios con algún recurrente vencido (para el cron). */
 export async function usersWithDue(admin: SupabaseClient, today: string): Promise<string[]> {
@@ -72,7 +72,7 @@ async function insertOccurrence(
   // El cobro ya llegó del correo: se une a él en vez de crear otro pendiente. Si
   // espera en la bandeja, toma el nombre y la categoría del recurrente y sigue
   // siendo una sola tarjeta; si ya estaba confirmado, ya cuenta y no se toca.
-  const mail = await mailForOccurrence(admin, userId, rule, day);
+  const mail = await importedForOccurrence(admin, userId, rule, day);
   if (mail?.strength === "same") {
     const pending = mail.item.status === "pending";
     await admin
@@ -95,7 +95,7 @@ async function insertOccurrence(
     .eq("user_id", userId)
     .eq("type", rule.type)
     .eq("amount", rule.amount)
-    .or(`status.eq.confirmed,and(status.eq.pending,source.in.(${MAIL_SOURCES.join(",")}))`)
+    .or(`status.eq.confirmed,and(status.eq.pending,source.in.(${IMPORTED_SOURCES.join(",")}))`)
     .or(`recurring_id.is.null,recurring_id.neq.${rule.id}`)
     .gte("occurred_on", addDays(day, -1))
     .lte("occurred_on", addDays(day, 1))

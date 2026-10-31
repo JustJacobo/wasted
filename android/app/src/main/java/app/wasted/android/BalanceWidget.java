@@ -60,6 +60,8 @@ public class BalanceWidget extends AppWidgetProvider {
         }
         NETWORK.execute(() -> {
             try {
+                // Lo que quedó sin enviar por falta de señal sale antes de pedir el saldo.
+                NotificationQueue.flush(app);
                 Prefs.setBalance(app, WastedApi.balance(key).toString());
             } catch (WastedApi.InvalidKeyException e) {
                 Prefs.clearKey(app);
@@ -130,9 +132,13 @@ public class BalanceWidget extends AppWidgetProvider {
         }
     }
 
-    /** "Esta semana entró … · salió …", o la hora del último dato si lleva rato sin actualizar. */
+    /**
+     * "Puedes gastar $X por día hasta el domingo" (o "Esta semana entró … · salió …"
+     * si no hay proyección), o la hora del último dato si lleva rato sin actualizar.
+     */
     private static String detail(Context context, JSONObject s) {
-        String detail = s.optString("detalle");
+        String projection = s.isNull("proyeccion") ? "" : s.optString("proyeccion");
+        String detail = projection.isEmpty() ? s.optString("detalle") : projection;
         long at = Prefs.balanceAt(context);
         if (at > 0 && System.currentTimeMillis() - at > 45 * DateUtils.MINUTE_IN_MILLIS) {
             CharSequence when = DateUtils.getRelativeTimeSpanString(at, System.currentTimeMillis(),

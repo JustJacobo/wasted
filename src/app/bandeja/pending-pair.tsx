@@ -74,14 +74,14 @@ export function PendingPair({
           Number(recurring.amount),
         )}
         {line(
-          "Del correo",
+          mail.source === "notification" ? "Notificación" : "Del correo",
           mail.merchant || mail.description || "Movimiento",
           formatDay(mail.occurred_on, today),
           Number(mail.amount),
         )}
       </div>
       <p className="px-1 text-xs text-muted">
-        Si es el mismo, se agrega una vez con el monto y la fecha del correo
+        Si es el mismo, se agrega una vez con el monto y la fecha {mail.source === "notification" ? "de la notificación" : "del correo"}
         {amountChanged && ` y el recurrente pasa a ${formatCOP(Number(mail.amount))}`}.
       </p>
 

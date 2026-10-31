@@ -39,6 +39,9 @@ export interface Transaction {
 /** Fuentes de los movimientos importados del correo. */
 export const MAIL_SOURCES = ["email_bank", "email_invoice", "email_other"];
 
+/** Lo que llega solo: del correo o de las notificaciones del teléfono (app de Android). */
+export const IMPORTED_SOURCES = [...MAIL_SOURCES, "notification"];
+
 /** Columnas de `transactions` que llenan un `Transaction`. */
 export const TX_COLUMNS =
   "id, type, amount, description, merchant, category_id, account_id, occurred_on, occurred_at, source, status, recurring_id, created_at";

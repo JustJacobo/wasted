@@ -32,7 +32,7 @@ const tx = (changes: Partial<Transaction>): Transaction => ({
   ...changes,
 });
 
-const lines = (csv: string) => csv.replace(/^﻿/, "").split("\r\n");
+const lines = (csv: string) => csv.replace(/^\uFEFF/, "").split("\r\n");
 
 describe("celdas", () => {
   it("deja el texto simple tal cual y los números sin formato", () => {
@@ -59,8 +59,8 @@ describe("celdas", () => {
 describe("archivo", () => {
   it("empieza con BOM, separa con punto y coma y termina cada fila con CRLF", () => {
     const csv = toCsv([["a", 1], ["b", null]]);
-    expect(csv.startsWith("﻿")).toBe(true);
-    expect(csv).toBe("﻿a;1\r\nb;\r\n");
+    expect(csv.startsWith("\uFEFF")).toBe(true);
+    expect(csv).toBe("\uFEFFa;1\r\nb;\r\n");
   });
 });
 

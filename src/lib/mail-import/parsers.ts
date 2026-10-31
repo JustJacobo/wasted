@@ -110,10 +110,10 @@ export function isOwnName(counterparty: string, ownerName: string): boolean {
   return hits >= Math.min(2, own.length);
 }
 
-const titleCase = (s: string) =>
+export const titleCase = (s: string) =>
   s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_, sep: string, ch: string) => sep + ch.toUpperCase());
 
-function cleanMerchant(name: string): string {
+export function cleanMerchant(name: string): string {
   return name.replace(/\s+/g, " ").replace(/[.,;:]+$/, "").trim().slice(0, 80);
 }
 

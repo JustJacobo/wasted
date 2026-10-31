@@ -99,6 +99,8 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
     - `BalanceWidget` muestra "Te quedan" y se actualiza cada 30 min, con ↻ y al registrar.
     - `QuickAddActivity` es el cuadro "¿Qué registras?" con botones fijos guardados en el teléfono.
     - `ConnectActivity` recibe `wasted://conectar?clave=…` desde Ajustes y siempre muestra la cuenta y pide confirmar antes de guardar.
+    - `NotificationReader` (`NotificationListenerService`) lee solo las notificaciones de `Packages.WATCHED` (Nequi, Nu, DiDi, Uber, Yango; la misma lista que `WATCHED_PACKAGES` del servidor) y las manda a `/api/notificaciones`. Sin señal quedan en una cola (`NotificationQueue`, en `Prefs`) que sale con la siguiente notificación o al actualizar el widget.
+    - `NotificationsActivity` (`wasted://notificaciones` desde Ajustes, o el acceso "Pagos automáticos") muestra qué apps están instaladas (`<queries>` en el manifiesto) y lleva al permiso. Android 13+ lo bloquea en apps instaladas por APK hasta "Permitir ajustes restringidos" en la información de la app.
   - Publicar: subir un tag `android-vX.Y.Z`. `.github/workflows/android-release.yml` compila con el keystore de los secretos del repo (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`), pasa `-PversionName`/`-PversionCode` (1.2.3 → 10203), falla si la huella no coincide con `assetlinks.json` y sube `wasted.apk` al Release. Ajustes y el README enlazan a `releases/latest/download/wasted.apk`.
   - Compilar en local (para probar): `cd android && gradlew assembleRelease` con `JAVA_HOME` en el JBR de Android Studio.
   - La variante debug (`app.wasted.android.debug`) apunta a `http://10.0.2.2:3000` (`npm run dev` visto desde el emulador).
@@ -106,9 +108,18 @@ npx supabase db reset  # recrea la BD local aplicando supabase/migrations
 - **Importar del correo** (`src/lib/mail-import/`; solo el buzón de `GMAIL_USER`, por IMAP con la contraseña de aplicación):
   - `source.ts` busca en Gmail (`X-GM-RAW`) desde el lunes en que se activó, salta los Message-ID ya procesados y convierte el HTML a texto con `html.ts` (separa las celdas de las tablas).
   - `parsers.ts` (puro y testeado con textos reales): Nequi (Bre-B, PSE, Cívica), Uber, Rappi, facturas DIAN (XML dentro del ZIP, con límite de tamaño) y un genérico por "Total". Las transferencias propias (tu nombre o el pago a la tarjeta Nu) no cuentan.
-  - `ingest.ts`: lo claro queda `confirmed`; lo de baja confianza o parecido a algo ya registrado (mismo tipo y monto, ±1 día) queda `pending` en `/bandeja`. Descartar lo deja `discarded` (conserva su `external_id`, así no vuelve). `mail_messages` registra cada correo procesado.
+  - `ingest.ts` pasa por `ingestCharge` (ver "Lo que llega solo") y anota cada correo en `mail_messages`. Descartar en la bandeja lo deja `discarded` (conserva su `external_id`, así no vuelve).
   - Se revisa al abrir la app (`after()`, cada 10 min como máximo), con "Revisar correo ahora", con el cron diario `/api/correo/sincronizar` y con `/correo` en Telegram.
   - En local: `MAIL_FIXTURES_DIR` (carpeta de `.eml`) y `MAIL_FIXTURES_USER` reemplazan a Gmail.
+- **Notificaciones del teléfono** (`POST /api/notificaciones`, con la clave `wst_`; las manda la app de Android, una o un lote de hasta 50):
+  - `src/lib/notifications/parsers.ts` (puro y testeado): formatos estrictos (pagaste/compraste en, compra aprobada por, enviaste a, recibiste de) se registran solos; lo demás con un monto va a la bandeja con confianza `low` (los viajes de DiDi/Uber/Yango, por ahora). No cuentan: tu nombre como contraparte, Colchón/Bolsillos/Metas, pagar la tarjeta, pasar entre Nu y Nequi. Rechazadas, códigos y publicidad se ignoran.
+  - `src/lib/notifications/ingest.ts`: solo guarda las de apps de la lista; `notification_log` (id = hash de paquete, hora y texto) evita repetirlas, también si la app la vuelve a publicar con otra hora (mismo texto, ±10 min). Ajustes muestra las últimas 8 con su resultado.
+  - Los textos reales quedan en `notification_log`: de ahí salen los formatos nuevos (los de DiDi/Uber/Yango aún no se conocen).
+- **Lo que llega solo** (correo y notificaciones; `src/lib/ingest-charge.ts`, `IMPORTED_SOURCES`):
+  - `ingestCharge` busca candidatos del mismo tipo, ±1 día y monto ±10 % y decide con `sameCharge` (`src/lib/charge-match.ts`, puro y testeado):
+    - Con otro aviso automático de **otro canal** (`channel`: correo o notificación + app), monto exacto y un nombre en común ("UBER *TRIP" y "Uber"): es el mismo cobro. No se crea otro; el que estaba anota el canal en `raw.twins` (un aviso por canal) y, si esperaba solo por baja confianza, se confirma.
+    - Mismo canal con monto exacto, o lo registrado a mano con monto exacto o hasta 10 % de diferencia y el mismo nombre o categoría: va a la bandeja como posible repetido (`possibleDuplicateOf`). Nunca se une solo con algo registrado a mano.
+  - Después, el enlace con recurrentes (`linkForCharge`) y la inserción, igual para las dos fuentes.
 - **Recurrentes** (arriendo, suscripciones, cuota semanal; tabla `recurring`):
   - `src/lib/recurring.ts` (puro y testeado): frecuencia `every` + `unit` (día, semana, mes, año). Cada fecha se calcula desde `starts_on`, así un mensual del 31 cae el 30 en noviembre y vuelve al 31. `next_on` es la próxima por generar.
   - `generateDue` (`src/lib/recurring-run.ts`, cliente de servicio) crea lo vencido como `pending` con `source = 'recurring'`, `recurring_id` y `external_id = rec:<regla>:<fecha>` (correr dos veces no duplica; lo omitido no vuelve). Si ya hay algo igual (±1 día, confirmado) lo marca `possibleDuplicateOf`.

@@ -10,6 +10,9 @@ import { confirmPending, discardPending } from "./actions";
 
 const PROVIDERS: Record<string, string> = {
   nequi: "Nequi",
+  nu: "Nu",
+  didi: "DiDi",
+  yango: "Yango",
   uber: "Uber",
   rappi: "Rappi",
   dian: "Factura",
@@ -45,13 +48,16 @@ export function PendingRow({
 
   const category = categories.find((c) => c.id === categoryId);
   const similar = item.similar;
-  // Cobro del correo unido a un recurrente: una sola tarjeta para los dos.
+  // Cobro del correo (o de una notificación) unido a un recurrente: una sola tarjeta para los dos.
+  const fromPhone = item.source === "notification";
   const linked = Boolean(item.recurring_id) && item.source !== "recurring";
   const recurring = item.source === "recurring" || linked;
   const origin = linked
-    ? ["Recurrente", formatDay(item.occurred_on, today), `del correo${item.merchant ? ` (${item.merchant})` : ""}`]
+    ? ["Recurrente", formatDay(item.occurred_on, today), `${fromPhone ? "de una notificación" : "del correo"}${item.merchant ? ` (${item.merchant})` : ""}`]
     : [
-        PROVIDERS[item.provider ?? "otro"] ?? "Correo",
+        fromPhone
+          ? `Notificación de ${PROVIDERS[item.provider ?? ""] ?? "tu teléfono"}`
+          : (PROVIDERS[item.provider ?? "otro"] ?? "Correo"),
         formatDay(item.occurred_on, today),
         item.frequency && item.frequency.charAt(0).toLowerCase() + item.frequency.slice(1),
       ].filter(Boolean);

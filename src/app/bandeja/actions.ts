@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { syncMail, syncSummary } from "@/lib/mail-import/sync";
 import { learnCategory } from "@/lib/record";
 import { learnFromCharge, retirePlaceholder, type Raw } from "@/lib/recurring-link";
-import { MAIL_SOURCES } from "@/lib/types";
+import { IMPORTED_SOURCES } from "@/lib/types";
 
 function revalidate() {
   revalidatePath("/");
@@ -107,7 +107,7 @@ export async function mergePending(
     })
     .eq("id", parsed.data.mailTxId)
     .eq("status", "pending")
-    .in("source", MAIL_SOURCES)
+    .in("source", IMPORTED_SOURCES)
     // No se lleva un correo que ya es el cobro de otro recurrente.
     .or(`recurring_id.is.null,recurring_id.eq.${placeholder.recurring_id}`)
     .select("description, recurring_id, source, merchant, amount, raw")

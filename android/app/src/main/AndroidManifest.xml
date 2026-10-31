@@ -3,6 +3,16 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Para mostrar cuáles de las apps de pagos están instaladas (Packages.WATCHED). -->
+    <queries>
+        <package android:name="com.nequi.MobileApp" />
+        <package android:name="com.nu.production" />
+        <package android:name="com.didiglobal.passenger" />
+        <package android:name="com.sdu.didi.psnger" />
+        <package android:name="com.ubercab" />
+        <package android:name="com.yandex.yango" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
@@ -90,6 +100,36 @@
                     android:scheme="wasted" />
             </intent-filter>
         </activity>
+
+        <!-- Registrar pagos de las notificaciones: wasted://notificaciones desde Ajustes. -->
+        <activity
+            android:name=".NotificationsActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/shortcut_notifications"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Wasted.Dialog"
+            android:windowSoftInputMode="stateHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="notificaciones"
+                    android:scheme="wasted" />
+            </intent-filter>
+        </activity>
+
+        <!-- Lee solo las notificaciones de Packages.WATCHED, con el permiso que da el usuario. -->
+        <service
+            android:name=".NotificationReader"
+            android:exported="true"
+            android:label="@string/notifications_service"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
 
         <receiver
             android:name=".BalanceWidget"

@@ -38,7 +38,7 @@ function cards(pending: PendingItem[]): Card[] {
   return out;
 }
 
-/** Movimientos del correo y recurrentes vencidos que esperan confirmación. */
+/** Movimientos del correo o de notificaciones y recurrentes vencidos que esperan confirmación. */
 export default async function InboxPage() {
   const [{ email }, pending, categories] = await Promise.all([
     requireUser(),
@@ -49,6 +49,11 @@ export default async function InboxPage() {
   const fromMail = canImportMail(email);
   const recurring = pending.some((p) => p.recurring_id);
   const imported = pending.some((p) => !p.recurring_id);
+  const origin = pending.some((p) => p.source === "notification")
+    ? pending.some((p) => p.source.startsWith("email_"))
+      ? "del correo y de notificaciones"
+      : "de notificaciones"
+    : "del correo";
 
   return (
     <main className="mx-auto max-w-lg space-y-4 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
@@ -67,10 +72,10 @@ export default async function InboxPage() {
         <>
           <p className="px-1 text-sm text-muted">
             {recurring && imported
-              ? "Recurrentes que vencieron y movimientos del correo que no son seguros o se parecen a algo que ya registraste."
+              ? `Recurrentes que vencieron y movimientos ${origin} que no son seguros o se parecen a algo que ya registraste.`
               : recurring
                 ? "Recurrentes que vencieron. Cuentan en tu saldo cuando los agregas."
-                : "Llegaron del correo, pero no son seguros o se parecen a algo que ya registraste."}
+                : `Llegaron ${origin}, pero no son seguros o se parecen a algo que ya registraste.`}
           </p>
           <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-border">
             {cards(pending).map((card) =>
