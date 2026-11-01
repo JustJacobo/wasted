@@ -89,11 +89,13 @@ jobs:
           WASTED_VERSION: ${{ steps.version.outputs.name }}
         run: npx expo prebuild --platform android --clean --no-install
 
+      # Solo 64 bits: los celulares de 32 bits ya casi no existen y su código
+      # nativo sumaba 16 MB al APK.
       - name: Compilar
         working-directory: mobile/android
         env:
           WASTED_VERSION: ${{ steps.version.outputs.name }}
-        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
 
       - name: Comprobar la firma contra assetlinks.json
         run: |
