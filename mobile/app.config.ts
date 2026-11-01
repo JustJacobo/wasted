@@ -27,6 +27,14 @@ const config: ExpoConfig = {
       monochromeImage: "./assets/images/android-icon-monochrome.png",
     },
     predictiveBackGestureEnabled: true,
+    // La plantilla de Expo agrega estos permisos aunque la app no los use. Mostrarse
+    // encima de otras apps junto con leer notificaciones de bancos es lo que hacen
+    // los troyanos bancarios, y Play Protect bloquea la instalación del APK.
+    blockedPermissions: [
+      "android.permission.SYSTEM_ALERT_WINDOW",
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.WRITE_EXTERNAL_STORAGE",
+    ],
   },
   plugins: [
     "expo-router",
