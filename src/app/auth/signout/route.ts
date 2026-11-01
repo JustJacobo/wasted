@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // Solo esta sesión: salir en el computador no cierra la app del celular.
+  await supabase.auth.signOut({ scope: "local" });
   return NextResponse.redirect(new URL("/login", request.url), { status: 303 });
 }

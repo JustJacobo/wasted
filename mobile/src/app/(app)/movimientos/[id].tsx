@@ -134,7 +134,12 @@ function EditForm({ data }: { data: TransactionData & { transaction: Transaction
         text: "Borrar",
         style: "destructive",
         onPress: async () => {
-          await api("deleteTransaction", { id: tx.id }).catch(() => {});
+          try {
+            await api("deleteTransaction", { id: tx.id });
+          } catch (e) {
+            setError(e instanceof ApiError ? e.message : "No pude borrar el movimiento.");
+            return;
+          }
           await refresh();
           router.back();
         },

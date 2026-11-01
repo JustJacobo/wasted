@@ -31,8 +31,8 @@ export async function api<T>(op: string, input?: unknown): Promise<T> {
   }
   const body = (await response.json().catch(() => null)) as { ok: boolean; data?: T; error?: string } | null;
   if (!response.ok || !body?.ok) {
-    // Sesión vencida o revocada: se cierra y la app vuelve al login.
-    if (response.status === 401) await supabase.auth.signOut().catch(() => {});
+    // Sesión vencida o revocada: se cierra y la app vuelve al login (y el widget se desconecta).
+    if (response.status === 401) await supabase.auth.signOut({ scope: "local" }).catch(() => {});
     throw new ApiError(body?.error ?? "Algo falló. Intenta de nuevo.", response.status);
   }
   return body.data as T;

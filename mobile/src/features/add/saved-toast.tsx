@@ -41,14 +41,21 @@ export function SavedToast({ feedback, categories }: { feedback: Feedback; categ
   const status = budgetStatus(week);
   const warning = transaction.type === "expense" && (status.level === "warning" || status.level === "over") ? budgetMessage(status, week) : null;
 
+  // Si falla, el aviso lo dice: el movimiento sigue como estaba.
+  const failed = (message: string) => () => showFeedback({ kind: "moved", message });
+
   function undo() {
     showFeedback(null);
-    api("deleteTransaction", { id: transaction.id }).finally(refresh);
+    api("deleteTransaction", { id: transaction.id })
+      .catch(failed("No pude deshacer: el movimiento sigue registrado."))
+      .finally(refresh);
   }
 
   function changeCategory(categoryId: string) {
     keepFeedback({ ...feedback, transaction: { ...transaction, category_id: categoryId } } as Feedback);
-    api("setCategory", { id: transaction.id, categoryId }).finally(refresh);
+    api("setCategory", { id: transaction.id, categoryId })
+      .catch(failed("No pude cambiar la categoría."))
+      .finally(refresh);
   }
 
   return (

@@ -53,6 +53,16 @@ export async function disconnectDevice(): Promise<void> {
   if (!WastedAndroid) return;
   const current = await stored();
   if (current) await api("revokeDeviceKey", { id: current.id }).catch(() => {});
+  await forgetDevice();
+}
+
+/**
+ * Sin sesión (vencida o cerrada en otro lado) el widget no sigue con esa cuenta.
+ * La clave queda en el servidor hasta que se vuelva a entrar en este celular:
+ * createDeviceKey reemplaza la del mismo nombre.
+ */
+export async function forgetDevice(): Promise<void> {
+  if (!WastedAndroid) return;
   WastedAndroid.setKey(null);
   await AsyncStorage.removeItem(STORED);
 }

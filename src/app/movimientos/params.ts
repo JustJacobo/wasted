@@ -13,7 +13,7 @@ export function historyParams(params: Record<string, string | string[] | undefin
   const monthParam = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).safeParse(params.mes);
   const month = monthParam.success && monthParam.data <= current ? monthParam.data : current;
   const typeKey: TypeParam =
-    typeof params.tipo === "string" && params.tipo in TYPES ? (params.tipo as TypeParam) : "todos";
+    typeof params.tipo === "string" && Object.hasOwn(TYPES, params.tipo) ? (params.tipo as TypeParam) : "todos";
   const cat = z.uuid().safeParse(params.cat);
   const categoryId = cat.success ? cat.data : null;
   const query = typeof params.q === "string" ? params.q.slice(0, 100) : "";

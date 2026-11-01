@@ -69,7 +69,12 @@ function form(fields: Record<string, string | number | null | undefined>): FormD
   return data;
 }
 
-type Op = (input: unknown) => Promise<unknown>;
+/** El error que lanza redirect() en una Server Action. */
+export const isRedirect = (error: unknown) =>
+  typeof (error as { digest?: unknown })?.digest === "string" &&
+  (error as { digest: string }).digest.startsWith("NEXT_REDIRECT");
+
+type Op =(input: unknown) => Promise<unknown>;
 const op = <S extends z.ZodType>(schema: S, run: (input: z.output<S>) => Promise<unknown>): Op => async (input) =>
   run(schema.parse(input ?? {}));
 
@@ -80,9 +85,9 @@ export const OPS: Record<string, Op> = {
     return { userId, email, name, role };
   }),
   home: op(Empty, async () => {
-    const { userId, email, name } = await requireUser();
+    const { supabase, userId, email, name } = await requireUser();
     const today = todayIn();
-    const [summary, categories, rules, transactions, pendingCount, upcoming, money, settings] = await Promise.all([
+    const [summary, categories, rules, transactions, pendingCount, upcoming, money, { data: saved }] = await Promise.all([
       getSummary(today),
       getCategories(),
       getRules(),
@@ -90,7 +95,7 @@ export const OPS: Record<string, Op> = {
       getPendingCount(),
       getUpcoming(today),
       getMoneyOverview(),
-      getSettings(),
+      supabase.from("user_settings").select("accent, color_mode").maybeSingle(),
     ]);
     // Como al abrir la web: recurrentes vencidos y correo, sin frenar la respuesta.
     after(() => onAppOpen(userId, email, today));
@@ -104,7 +109,7 @@ export const OPS: Record<string, Op> = {
       pendingCount,
       upcoming,
       money,
-      appearance: { accent: settings.settings?.accent ?? null, mode: settings.settings?.color_mode ?? null },
+      appearance: { accent: saved?.accent ?? null, mode: saved?.color_mode ?? null },
     };
   }),
   report: op(z.object({ kind: z.enum(["semana", "mes"]), anchor: z.iso.date().optional() }), async ({ kind, anchor }) => {
@@ -172,7 +177,12 @@ export const OPS: Record<string, Op> = {
       occurred_on: z.iso.date(),
       occurred_time: z.string().optional(),
     }),
-    (fields) => updateTransaction({}, form(fields)),
+    // Al guardar, la acción de la web redirige al Historial: para la app eso es un éxito.
+    (fields) =>
+      updateTransaction({}, form(fields)).catch((error) => {
+        if (isRedirect(error)) return {};
+        throw error;
+      }),
   ),
 
   // Bandeja

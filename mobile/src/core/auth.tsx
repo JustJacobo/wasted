@@ -2,7 +2,7 @@ import type { Session } from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
 import { createContext, useContext, useEffect, useState } from "react";
 import { AUTH_REDIRECT } from "./config";
-import { disconnectDevice } from "./device";
+import { disconnectDevice, forgetDevice } from "./device";
 import { queryClient } from "./query";
 import { supabase } from "./supabase";
 
@@ -21,7 +21,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => setValue({ session: data.session, ready: true }));
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       // Lo guardado era de la cuenta que salió: otra cuenta no debe verlo ni un instante.
-      if (event === "SIGNED_OUT") queryClient.clear();
+      if (event === "SIGNED_OUT") {
+        queryClient.clear();
+        forgetDevice().catch(() => {});
+      }
       setValue({ session, ready: true });
     });
     return () => data.subscription.unsubscribe();
@@ -75,5 +78,6 @@ export async function sendMagicLink(email: string): Promise<string | null> {
 /** Desconecta el widget de este celular y cierra la sesión. */
 export async function signOut(): Promise<void> {
   await disconnectDevice().catch(() => {});
-  await supabase.auth.signOut();
+  // Solo esta sesión: la web y los otros celulares siguen abiertos.
+  await supabase.auth.signOut({ scope: "local" });
 }

@@ -11,10 +11,14 @@ import { respond, UNAUTHORIZED } from "../atajos/respond";
 
 export const maxDuration = 60;
 
+// Un texto larguísimo se recorta en vez de rechazar el lote entero: el teléfono
+// no reintenta un 400 y se perderían también las demás notificaciones.
+const Text = z.string().default("").transform((text) => text.slice(0, 4000));
+
 const Notification = z.object({
   paquete: z.string().min(1).max(100),
-  titulo: z.string().max(4000).default(""),
-  texto: z.string().max(4000).default(""),
+  titulo: Text,
+  texto: Text,
   /** Hora de la notificación en milisegundos (`StatusBarNotification.getPostTime()`). */
   publicada: z.number().int().positive(),
 });
