@@ -67,8 +67,11 @@ final class WastedApi {
         }
     }
 
-    /** Manda notificaciones de pagos (POST /api/notificaciones); el servidor decide qué registrar. */
-    static void notifications(Context context, String key, JSONArray items) throws IOException {
+    /**
+     * Manda notificaciones de pagos (POST /api/notificaciones); el servidor decide qué registrar.
+     * Devuelve las preguntas "¿Qué fue?" de las transferencias a personas que quedaron sin categoría.
+     */
+    static JSONArray notifications(Context context, String key, JSONArray items) throws IOException {
         byte[] payload;
         try {
             payload = new JSONObject().put("notificaciones", items).toString().getBytes(StandardCharsets.UTF_8);
@@ -85,7 +88,38 @@ final class WastedApi {
                 out.write(payload);
             }
             // Un 4xx (algo que el servidor no acepta) no se reintenta: read() solo lanza con 401 y 5xx.
-            read(connection);
+            String body = read(connection);
+            try {
+                JSONArray questions = new JSONObject(body).optJSONArray("preguntas");
+                return questions == null ? new JSONArray() : questions;
+            } catch (JSONException e) {
+                return new JSONArray();
+            }
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    /** Pone la categoría de una transferencia a una persona (POST /api/atajos/clasificar). */
+    static void classify(Context context, String key, String transactionId, String categoryId) throws IOException {
+        byte[] payload;
+        try {
+            payload = new JSONObject().put("id", transactionId).put("categoria", categoryId).toString().getBytes(StandardCharsets.UTF_8);
+        } catch (JSONException e) {
+            throw new IOException("No se pudo armar el envío", e);
+        }
+        HttpURLConnection connection = open(context, "/api/atajos/clasificar", key);
+        try {
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+            connection.setFixedLengthStreamingMode(payload.length);
+            try (OutputStream out = connection.getOutputStream()) {
+                out.write(payload);
+            }
+            int status = connection.getResponseCode();
+            if (status == HttpURLConnection.HTTP_UNAUTHORIZED) throw new InvalidKeyException();
+            if (status >= 400) throw new IOException("No se pudo clasificar (" + status + ")");
         } finally {
             connection.disconnect();
         }

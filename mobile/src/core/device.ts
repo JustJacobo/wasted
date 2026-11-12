@@ -36,16 +36,24 @@ async function stored(): Promise<Stored | null> {
 /** Id de la clave de este celular (para marcarlo en la lista de Ajustes). */
 export const currentDeviceKeyId = async () => (await stored())?.id ?? null;
 
-/** Con sesión: deja lista la clave de este celular para la cuenta que entró. */
-export async function connectDevice(userId: string): Promise<void> {
-  if (!WastedAndroid) return;
-  WastedAndroid.configure(API_URL);
-  const current = await stored();
-  if (current?.userId === userId && WastedAndroid.getKey()) return;
-  const result = await api<{ id?: string; token?: string }>("createDeviceKey", { device: deviceName() });
-  if (!result.id || !result.token) return;
-  WastedAndroid.setKey(result.token);
-  await AsyncStorage.setItem(STORED, JSON.stringify({ id: result.id, userId } satisfies Stored));
+/** Por qué falló la última conexión de este celular (null si quedó conectado). Lo muestra Ajustes. */
+export let lastConnectError: string | null = null;
+
+/** Con sesión: deja lista la clave de este celular para la cuenta que entró. Devuelve el motivo si falla. */
+export async function connectDevice(userId: string): Promise<string | null> {
+  if (!WastedAndroid) return null;
+  try {
+    WastedAndroid.configure(API_URL);
+    const current = await stored();
+    if (current?.userId === userId && WastedAndroid.getKey()) return (lastConnectError = null);
+    const result = await api<{ id?: string; token?: string; error?: string }>("createDeviceKey", { device: deviceName() });
+    if (!result.id || !result.token) return (lastConnectError = result.error ?? "El servidor no devolvió la clave.");
+    WastedAndroid.setKey(result.token);
+    await AsyncStorage.setItem(STORED, JSON.stringify({ id: result.id, userId } satisfies Stored));
+    return (lastConnectError = null);
+  } catch (e) {
+    return (lastConnectError = e instanceof Error ? e.message : "No se pudo conectar.");
+  }
 }
 
 /** Al salir (con la sesión todavía abierta): revoca la clave y la borra del celular. */

@@ -2,15 +2,9 @@
 <!-- Lo nativo de Wasted que no es React Native: se fusiona con el manifiesto de la app. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Para mostrar cuáles de las apps de pagos están instaladas (Packages.WATCHED). -->
-    <queries>
-        <package android:name="com.nequi.MobileApp" />
-        <package android:name="com.nu.production" />
-        <package android:name="com.didiglobal.passenger" />
-        <package android:name="com.sdu.didi.psnger" />
-        <package android:name="com.ubercab" />
-        <package android:name="com.yandex.yango" />
-    </queries>
+    <!-- Android 13+: para preguntar "¿Qué fue?" con botones cuando llega una transferencia a una persona. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
 
     <application>
         <!-- Cuadro "¿Qué registras?" del widget y del acceso directo. -->
@@ -32,6 +26,11 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!-- Botones de la notificación "¿Qué fue?": ponen la categoría sin abrir la app. -->
+        <receiver
+            android:name="app.wasted.android.ClassifyReceiver"
+            android:exported="false" />
 
         <!-- Mismo nombre de clase que en la app anterior: el widget que ya está en la pantalla sigue. -->
         <receiver

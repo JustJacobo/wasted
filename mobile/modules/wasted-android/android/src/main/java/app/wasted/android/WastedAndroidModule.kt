@@ -4,7 +4,6 @@ import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -50,21 +49,6 @@ class WastedAndroidModule : Module() {
     Function("readNotifications") { Prefs.readNotifications(context) }
 
     Function("setReadNotifications") { read: Boolean -> Prefs.setReadNotifications(context, read) }
-
-    /** Nombres de las apps de pagos de la lista que están instaladas. */
-    Function("installedPayApps") {
-      Packages.WATCHED.entries
-        .filter { (pkg, _) ->
-          try {
-            context.packageManager.getPackageInfo(pkg, 0)
-            true
-          } catch (_: PackageManager.NameNotFoundException) {
-            false
-          }
-        }
-        .map { it.value }
-        .distinct()
-    }
 
     /** La pantalla de Android con el interruptor de Wasted (o la lista, si el fabricante no la tiene). */
     Function("openNotificationSettings") {

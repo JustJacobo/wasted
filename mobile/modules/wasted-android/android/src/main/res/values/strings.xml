@@ -28,6 +28,12 @@
     <string name="notifications_service">Wasted: registrar pagos</string>
     <string name="shortcut_notifications">Pagos automáticos</string>
 
+    <!-- ¿Qué fue? (transferencias a personas) -->
+    <string name="classify_channel">Transferencias por clasificar</string>
+    <string name="classify_channel_description">Pregunta qué fue una transferencia a una persona, con un botón por categoría.</string>
+    <string name="classify_title">¿Qué fue?</string>
+    <string name="classify_failed">No se pudo guardar. Ábrelo en Wasted.</string>
+
     <string name="cancel">Cancelar</string>
     <string name="close">Cerrar</string>
 

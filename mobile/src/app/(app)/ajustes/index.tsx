@@ -8,7 +8,8 @@ import { api } from "@/core/api";
 import { WastedAndroid } from "../../../../modules/wasted-android";
 import { signOut } from "@/core/auth";
 import { API_URL } from "@/core/config";
-import { currentDeviceKeyId } from "@/core/device";
+import { connectDevice, currentDeviceKeyId, lastConnectError } from "@/core/device";
+import type { Me } from "@/core/types";
 import { shareCsv } from "@/core/share-csv";
 import { useAction } from "@/core/use-action";
 import { useTheme } from "@/theme/theme";
@@ -89,7 +90,21 @@ export default function SettingsScreen() {
   const [exporting, setExporting] = useState(false);
   const [telegramError, setTelegramError] = useState<string | null>(null);
   const [thisDevice, setThisDevice] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(lastConnectError);
+  const me = useQuery({ queryKey: ["me"], queryFn: () => api<Me>("me"), staleTime: Infinity });
   const data = query.data;
+
+  /** Vuelve a pedir la clave de este celular (el widget, el registro rápido y las notificaciones la usan). */
+  async function reconnect() {
+    if (!me.data) return;
+    setConnecting(true);
+    const error = await connectDevice(me.data.userId);
+    setConnectError(error);
+    setThisDevice(await currentDeviceKeyId());
+    await query.refetch();
+    setConnecting(false);
+  }
 
   useEffect(() => {
     currentDeviceKeyId().then(setThisDevice);
@@ -231,6 +246,15 @@ export default function SettingsScreen() {
 
           {WastedAndroid && (
             <Section title="Este celular" note="Lee los avisos de pagos de Nequi, Nu, DiDi, Uber y Yango, nunca chats ni otras apps.">
+              {!thisDevice && (
+                <Card style={{ padding: 16, gap: 12 }}>
+                  <Text size={14}>
+                    Este celular no está conectado: el widget, el registro rápido y los pagos automáticos no funcionan.
+                    {connectError ? ` Motivo: ${connectError}` : ""}
+                  </Text>
+                  <Button label={connecting ? "Conectando…" : "Reintentar"} variant="primary" disabled={connecting || !me.data} onPress={reconnect} />
+                </Card>
+              )}
               <LinkRow label="Pagos automáticos" onPress={() => go("/notificaciones")} />
               <LinkRow label="Registro rápido" onPress={() => WastedAndroid?.openQuickAdd()} />
             </Section>

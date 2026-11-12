@@ -9,7 +9,6 @@ interface WastedAndroidModule {
   hasNotificationAccess(): boolean;
   readNotifications(): boolean;
   setReadNotifications(read: boolean): void;
-  installedPayApps(): string[];
   openNotificationSettings(): void;
   openAppDetails(): void;
   openQuickAdd(): void;

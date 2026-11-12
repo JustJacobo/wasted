@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import { AppState, Switch, View } from "react-native";
+import { AppState, PermissionsAndroid, Platform, Switch, View } from "react-native";
 import { WastedAndroid } from "../../../modules/wasted-android";
 import { api } from "@/core/api";
 import { useTheme } from "@/theme/theme";
@@ -43,9 +43,12 @@ function readStatus() {
   return {
     granted: WastedAndroid?.hasNotificationAccess() ?? false,
     reading: WastedAndroid?.readNotifications() ?? false,
-    installed: new Set(WastedAndroid?.installedPayApps() ?? []),
   };
 }
+
+/** Android 13+ pide permiso para que Wasted muestre avisos ("¿Qué fue?" con botones). */
+const NEEDS_POST_PERMISSION = Platform.OS === "android" && Number(Platform.Version) >= 33;
+const POST = PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS;
 
 /**
  * Pagos automáticos: el permiso de Android para leer las notificaciones de las
@@ -56,7 +59,20 @@ export default function NotificationsScreen() {
   const { colors } = useTheme();
   const [status, setStatus] = useState(readStatus);
   const log = useQuery({ queryKey: ["settings"], queryFn: () => api<{ notifications: LogEntry[] }>("settings") });
-  const refresh = useCallback(() => setStatus(readStatus()), []);
+  const [canNotify, setCanNotify] = useState(!NEEDS_POST_PERMISSION);
+  const refresh = useCallback(() => {
+    setStatus(readStatus());
+    if (NEEDS_POST_PERMISSION) PermissionsAndroid.check(POST).then(setCanNotify).catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (NEEDS_POST_PERMISSION) PermissionsAndroid.check(POST).then(setCanNotify).catch(() => {});
+  }, []);
+
+  async function allowNotify() {
+    const result = await PermissionsAndroid.request(POST);
+    if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) WastedAndroid?.openAppDetails();
+    refresh();
+  }
 
   // El permiso se da en la pantalla de Android: al volver se lee de nuevo.
   useEffect(() => {
@@ -86,11 +102,8 @@ export default function NotificationsScreen() {
           {APPS.map((app, i) => (
             <View key={app}>
               {i > 0 && <Divider />}
-              <View style={{ minHeight: 48, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View style={{ minHeight: 48, paddingHorizontal: 16, justifyContent: "center" }}>
                 <Text>{app}</Text>
-                <Text size={14} tone="muted">
-                  {status.installed.has(app) ? "Instalada" : "No está instalada"}
-                </Text>
               </View>
             </View>
           ))}
@@ -116,6 +129,14 @@ export default function NotificationsScreen() {
             <Text size={12} tone="muted" style={{ paddingHorizontal: 4 }}>
               {status.reading ? "Activo. Los próximos pagos se registran solos." : "En pausa: las notificaciones no se leen."}
             </Text>
+            {status.reading && !canNotify && (
+              <View style={{ gap: 8, marginTop: 8 }}>
+                <Text size={14}>
+                  Cuando le envíes plata a alguien, Wasted puede preguntarte qué fue con un botón por categoría, sin abrir la app.
+                </Text>
+                <Button label="Permitir esa pregunta" onPress={allowNotify} />
+              </View>
+            )}
           </View>
         ) : (
           <View style={{ gap: 8 }}>

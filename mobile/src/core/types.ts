@@ -21,5 +21,15 @@ export interface HomeData {
   pendingCount: number;
   upcoming: UpcomingCharge[];
   money: { owedToMe: number; iOwe: number; saved: number };
+  /** Transferencias a personas que esperan categoría (src/lib/classify.ts). */
+  toClassify: ToClassifyItem[];
   appearance: { accent: string | null; mode: string | null };
+}
+
+export interface ToClassifyItem {
+  id: string;
+  amount: number;
+  merchant: string;
+  occurred_on: string;
+  occurred_at: string | null;
 }

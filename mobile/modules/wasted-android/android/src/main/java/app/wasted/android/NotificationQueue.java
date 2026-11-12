@@ -63,8 +63,9 @@ final class NotificationQueue {
         }
         if (batch.length() == 0) return;
 
+        JSONArray questions;
         try {
-            WastedApi.notifications(context, key, batch);
+            questions = WastedApi.notifications(context, key, batch);
         } catch (IOException e) {
             // Sin señal o clave inválida: queda en la cola para la próxima.
             return;
@@ -80,5 +81,9 @@ final class NotificationQueue {
         }
         Prefs.setNotificationsSentAt(context, System.currentTimeMillis());
         BalanceWidget.refreshAll(context);
+        for (int i = 0; i < questions.length(); i++) {
+            JSONObject question = questions.optJSONObject(i);
+            if (question != null) ClassifyNotifier.show(context, question);
+        }
     }
 }

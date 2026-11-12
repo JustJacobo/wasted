@@ -1,4 +1,4 @@
-import { Handshake, PiggyBank, Tray } from "phosphor-react-native";
+import { Handshake, PiggyBank, Tag, Tray } from "phosphor-react-native";
 import { View } from "react-native";
 import { addDays, formatDay } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
@@ -45,14 +45,19 @@ function Row({ icon, label, onPress }: { icon: React.ReactNode; label: string; o
 /** Por revisar, préstamos y metas: solo si hay algo (src/app/page.tsx y money-rows.tsx). */
 export function HomeRows({
   pendingCount,
+  classifyCount,
   money,
   onPending,
+  onClassify,
   onLoans,
   onGoals,
 }: {
   pendingCount: number;
+  /** Transferencias a personas que esperan categoría. */
+  classifyCount: number;
   money: { owedToMe: number; iOwe: number; saved: number };
   onPending?: () => void;
+  onClassify?: () => void;
   onLoans?: () => void;
   onGoals?: () => void;
 }) {
@@ -65,6 +70,13 @@ export function HomeRows({
           icon={<Tray size={16} color={colors.muted} />}
           label={pendingCount === 1 ? "1 movimiento por revisar" : `${pendingCount} movimientos por revisar`}
           onPress={onPending}
+        />
+      )}
+      {classifyCount > 0 && (
+        <Row
+          icon={<Tag size={16} color={colors.muted} />}
+          label={classifyCount === 1 ? "1 transferencia por clasificar" : `${classifyCount} transferencias por clasificar`}
+          onPress={onClassify}
         />
       )}
       {loans.length > 0 && <Row icon={<Handshake size={16} color={colors.muted} />} label={loans.join(" · ")} onPress={onLoans} />}

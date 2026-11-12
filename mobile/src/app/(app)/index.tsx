@@ -116,7 +116,12 @@ export default function HomeScreen() {
             Hola, {data.name.split(" ")[0]}
           </Text>
           <SummaryCard summary={data.summary} upcoming={data.upcoming} today={data.today} />
-          <HomeRows pendingCount={data.pendingCount} money={data.money} onPending={() => router.push("/bandeja")}
+          <HomeRows
+            pendingCount={data.pendingCount}
+            classifyCount={data.toClassify?.length ?? 0}
+            money={data.money}
+            onPending={() => router.push("/bandeja")}
+            onClassify={() => router.push("/clasificar")}
             onLoans={() => router.push("/prestamos")}
             onGoals={() => router.push("/metas")}
           />
