@@ -19,10 +19,8 @@ export async function GET(request: NextRequest) {
     fetchUpcoming(admin, today, user.userId),
   ]);
   const week = weekBudget(summary);
-  // `cuenta`: el widget de Android la muestra antes de conectar una clave.
   return respond(request, {
     ok: true,
-    cuenta: user.email,
     ...balanceSnapshot(week, { plan: weekPlan(week, today, upcoming), today }),
   });
 }

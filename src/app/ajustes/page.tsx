@@ -180,8 +180,8 @@ export default async function SettingsPage() {
         )}
         <p className="px-1 text-xs text-muted">
           Ábrela desde las descargas y permite instalar apps de Chrome si Android lo pide. Trae un
-          widget con lo que te queda y un botón para registrar sin abrir la app: conéctalo con tu
-          clave de abajo.
+          widget con lo que te queda y un botón para registrar sin abrir la app. Cada celular se
+          conecta solo al entrar y aparece aquí.
         </p>
       </section>
 

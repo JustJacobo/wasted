@@ -6,12 +6,12 @@ App personal de finanzas: registras un gasto escribiendo `25k almuerzo` y listo.
 
 [**Descargar wasted.apk**](https://github.com/JustJacobo/wasted/releases/latest/download/wasted.apk) · [todas las versiones](https://github.com/JustJacobo/wasted/releases)
 
-Abre el APK desde las descargas y permite instalar apps de esa fuente si Android lo pide. La app abre Wasted a pantalla completa y trae un widget con lo que te queda y un botón para registrar sin abrirla. También puede registrar sola los pagos que avisan Nequi, Nu, DiDi, Uber y Yango (mantén pulsado el ícono → "Pagos automáticos"); en Android 13 o superior hay que permitir los ajustes restringidos de la app antes de darle acceso a las notificaciones. Para entrar hace falta una invitación.
+Abre el APK desde las descargas y permite instalar apps de esa fuente si Android lo pide. Es una app nativa (React Native + Expo, en [`mobile/`](mobile/)) con las mismas pantallas que la web, un widget con lo que te queda y un cuadro para registrar sin abrirla. También puede registrar sola los pagos que avisan Nequi, Nu, DiDi, Uber y Yango (mantén pulsado el ícono → "Pagos automáticos"); en Android 13 o superior hay que permitir los ajustes restringidos de la app antes de darle acceso a las notificaciones. Para entrar hace falta una invitación. Solo funciona en celulares de 64 bits.
 
-Para publicar una versión, sube un tag `android-vX.Y.Z`. El workflow [android-release.yml](.github/workflows/android-release.yml) compila, firma, comprueba la huella contra `assetlinks.json` y crea el Release:
+Para publicar una versión, sube un tag `android-vX.Y.Z` (o `android-vX.Y.Z-beta.N` para una de prueba, que sale como prerelease). El workflow [android-release.yml](.github/workflows/android-release.yml) compila `mobile/`, firma, comprueba la huella contra `assetlinks.json` y crea el Release:
 
 ```bash
-git tag android-v1.1.0 && git push origin android-v1.1.0
+git tag android-v2.0.0 && git push origin android-v2.0.0
 ```
 
 ## Correr en local
