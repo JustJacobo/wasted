@@ -159,7 +159,7 @@ export function DailyChart({ kind, days, dailyAverage, today }: { kind: PeriodKi
     <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 20 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
         <Text weight="semibold">Gasto por día</Text>
-        <Text size={14} numberOfLines={1} accessibilityLiveRegion="polite" style={{ flexShrink: 1 }}>
+        <Text size={14} numberOfLines={2} align="right" accessibilityLiveRegion="polite" style={{ flexShrink: 1 }}>
           {shown ? (
             <>
               <Text size={14} tone="muted">{`${formatDay(shown.day, today)} · `}</Text>
@@ -278,7 +278,7 @@ export function CategoryDonut({ slices }: { slices: CategorySlice[] }) {
               );
             })}
           </Svg>
-          <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+          <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}>
             <Text size={12} tone="muted" numberOfLines={1}>
               {shown ? shown.label : "Total"}
             </Text>

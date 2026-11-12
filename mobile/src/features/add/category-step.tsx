@@ -141,7 +141,8 @@ export function CategoryStep({
                 style={{
                   width: "31.5%",
                   flexGrow: 1,
-                  height: 80,
+                  minHeight: 80,
+                  paddingVertical: 8,
                   borderRadius: 12,
                   alignItems: "center",
                   justifyContent: "center",
@@ -153,7 +154,15 @@ export function CategoryStep({
                 }}
               >
                 <CategoryIcon category={c} size={24} color={active ? colors.background : categoryColor(colors, c.color)} />
-                <Text size={12} numberOfLines={1} style={{ color: active ? colors.background : colors.foreground }}>
+                {/* Dos líneas para "Suscripciones y plataformas"; una palabra sola se achica en vez de partirse ("Entretenimient/o"). */}
+                <Text
+                  size={12}
+                  numberOfLines={/\s/.test(c.name.trim()) ? 2 : 1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                  align="center"
+                  style={{ color: active ? colors.background : colors.foreground }}
+                >
                   {c.name}
                 </Text>
               </Tap>

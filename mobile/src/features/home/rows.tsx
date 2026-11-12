@@ -34,7 +34,7 @@ function Row({ icon, label, onPress }: { icon: React.ReactNode; label: string; o
       }}
     >
       {icon}
-      <Text size={14} tabular numberOfLines={1} style={{ flex: 1 }}>
+      <Text size={14} tabular numberOfLines={2} style={{ flex: 1, paddingVertical: 12 }}>
         {label}
       </Text>
       {onPress && <Text tone="muted">›</Text>}

@@ -176,7 +176,17 @@ function EditForm({ data }: { data: TransactionData & { transaction: Transaction
       </View>
       <View style={{ gap: 6 }}>
         {label("Descripción")}
-        <TextInput value={description} onChangeText={setDescription} maxLength={200} placeholder="Opcional" placeholderTextColor={colors.muted} accessibilityLabel="Descripción" style={field} />
+        <TextInput
+          value={description}
+          onChangeText={setDescription}
+          maxLength={200}
+          multiline
+          submitBehavior="blurAndSubmit"
+          placeholder="Opcional"
+          placeholderTextColor={colors.muted}
+          accessibilityLabel="Descripción"
+          style={[field, { height: undefined, minHeight: 48, maxHeight: 168, paddingVertical: 12, textAlignVertical: "center" }]}
+        />
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <View style={{ flex: 1, gap: 6 }}>

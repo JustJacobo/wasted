@@ -107,7 +107,7 @@ function GoalCard({ item, action }: { item: GoalSummary; action: ReturnType<type
   return (
     <Card style={{ padding: 16, gap: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-        <Text weight="medium" numberOfLines={1} style={{ flexShrink: 1 }}>
+        <Text weight="medium" numberOfLines={2} style={{ flexShrink: 1 }}>
           {goal.name}
         </Text>
         <Text size={14} tone="muted" tabular>

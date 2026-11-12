@@ -134,7 +134,7 @@ function LoanList({
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}
             >
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text numberOfLines={1}>{loan.person}</Text>
+                <Text numberOfLines={2}>{loan.person}</Text>
                 <Text size={12} tone="muted" numberOfLines={1}>
                   {item.outstanding > 0 ? (loan.direction === "lent" ? "Te debe" : "Le debes") : "Saldado"}
                   {item.moves[0] ? ` · ${formatDay(item.moves[0].occurred_on, today)}` : ""}

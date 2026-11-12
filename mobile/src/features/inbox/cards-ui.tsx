@@ -98,7 +98,7 @@ export function PendingRow({ item, categories, today }: { item: PendingItem; cat
       <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
         <CategoryIcon category={category} color={colors.muted} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1}>{item.description || item.merchant || "Movimiento"}</Text>
+          <Text numberOfLines={2}>{item.description || item.merchant || "Movimiento"}</Text>
           <Text size={12} tone="muted" numberOfLines={1}>
             {origin.join(" · ")}
           </Text>
@@ -155,7 +155,7 @@ export function PendingPair({ recurring, mail, categories, today }: { recurring:
         {label}
       </Text>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1}>{title}</Text>
+        <Text numberOfLines={2}>{title}</Text>
         <Text size={12} tone="muted" numberOfLines={1}>
           {detail}
         </Text>
