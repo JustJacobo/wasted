@@ -14,6 +14,10 @@ export interface ChargeLike {
   /** Comercio y descripción juntos. */
   text: string;
   category_id: string | null;
+  /** Hora exacta del aviso (ISO), si se conoce. */
+  occurred_at?: string | null;
+  /** Plata enviada a una persona: el aviso no dice qué se compró. */
+  transfer?: boolean;
 }
 
 export type ChargeMatch = "same" | "maybe";
@@ -24,6 +28,23 @@ const HAND_TOLERANCE = 0.1;
 /** Correo o notificación, y de qué app: dos avisos del mismo canal no se unen solos. */
 export const channel = (c: Pick<ChargeLike, "source" | "provider">) =>
   `${c.source === "notification" ? "notification" : "email"}:${c.provider ?? ""}`;
+
+/** Apps de viajes: su aviso trae el valor, pero el pago suele ser una transferencia al conductor. */
+export const RIDE_PROVIDERS = new Set(["didi", "uber", "yango"]);
+
+/** Cuánto pueden separarse el aviso del viaje y la transferencia al conductor. */
+export const RIDE_TRANSFER_WINDOW_MIN = 60;
+
+const isRide = (c: ChargeLike) => c.source === "notification" && RIDE_PROVIDERS.has(c.provider ?? "");
+
+/** El aviso de un viaje y la transferencia al conductor: mismo monto y pocos minutos entre uno y otro. */
+export function rideAndTransfer(a: ChargeLike, b: ChargeLike): boolean {
+  const pair = (isRide(a) && b.transfer) || (isRide(b) && a.transfer);
+  if (!pair || channel(a) === channel(b) || Number(a.amount) !== Number(b.amount)) return false;
+  if (!a.occurred_at || !b.occurred_at) return false;
+  const minutes = Math.abs(Date.parse(a.occurred_at) - Date.parse(b.occurred_at)) / 60_000;
+  return minutes <= RIDE_TRANSFER_WINDOW_MIN;
+}
 
 const sharesName = (a: ChargeLike, b: ChargeLike) => {
   const theirs = words(b.text);
@@ -38,6 +59,9 @@ const sharesName = (a: ChargeLike, b: ChargeLike) => {
  *   exacto, o si difiere hasta 10% y comparten nombre o categoría.
  * - Con un recurrente pendiente: se pregunta si el monto es exacto (el enlace
  *   con recurrentes decide aparte).
+ * - El aviso de un viaje (DiDi, Uber, Yango) y una transferencia a una persona
+ *   con el mismo monto y a menos de una hora son el mismo cobro: se le pagó al
+ *   conductor. No comparten nombre ("DiDi" y "Juan Pérez").
  */
 export function sameCharge(incoming: ChargeLike, existing: ChargeLike): ChargeMatch | null {
   if (incoming.type !== existing.type) return null;
@@ -46,6 +70,7 @@ export function sameCharge(incoming: ChargeLike, existing: ChargeLike): ChargeMa
 
   if (IMPORTED_SOURCES.includes(existing.source)) {
     if (!exact) return null;
+    if (rideAndTransfer(incoming, existing)) return "same";
     return channel(incoming) !== channel(existing) && sharesName(incoming, existing) ? "same" : "maybe";
   }
   if (existing.source === "recurring") return exact ? "maybe" : null;

@@ -37,7 +37,7 @@ describe("formatos conocidos", () => {
   });
 
   it("envíos y plata recibida de otras personas", () => {
-    expect(parse(nequi("¡Listo!", "Enviaste $7.500 a CRES CATERING SAS"))).toMatchObject({ kind: "expense", amount: 7500, merchant: "Cres Catering Sas" });
+    expect(parse(nequi("¡Listo!", "Enviaste $7.500 a CRES CATERING SAS"))).toMatchObject({ kind: "expense", amount: 7500, merchant: "Cres Catering Sas", transfer: true });
     expect(parse(nequi("Te llegó plata", "Recibiste $42.000 de Maria Lopez"))).toMatchObject({ kind: "income", amount: 42000, merchant: "Maria Lopez" });
   });
 });
@@ -80,5 +80,12 @@ describe("sin formato conocido", () => {
 
   it("sin monto no hay movimiento", () => {
     expect(parse(nequi("Nequi", "Actualiza tu app")).kind).toBe("ignore");
+  });
+});
+
+describe("transferencias a personas", () => {
+  it("un envío queda marcado para preguntar qué fue; una compra no", () => {
+    expect(parse(nequi("Nequi", "Enviaste $15.000 a JUAN PEREZ"))).toMatchObject({ kind: "expense", amount: 15000, transfer: true });
+    expect(parse(nequi("Nequi", "Pagaste $38.069 en PEXTO COLOMBIA SAS"))).not.toHaveProperty("transfer");
   });
 });

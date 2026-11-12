@@ -78,6 +78,7 @@ describe("Nequi", () => {
       externalId: "mail:<m1>",
       source: "email_bank",
       provider: "nequi",
+      transfer: true,
     });
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickMatch, sameCharge, type ChargeLike } from "./charge-match";
+import { pickMatch, rideAndTransfer, sameCharge, type ChargeLike } from "./charge-match";
 
 const nuPush: ChargeLike = {
   type: "expense",
@@ -61,3 +61,36 @@ describe("el mejor candidato", () => {
     expect(pickMatch(nuPush, [])).toBeNull();
   });
 });
+
+describe("el viaje y la transferencia al conductor", () => {
+  const transfer: ChargeLike = {
+    type: "expense",
+    amount: 15000,
+    occurred_on: "2026-11-12",
+    occurred_at: "2026-11-12T13:05:00Z",
+    source: "notification",
+    provider: "nequi",
+    text: "Juan Perez · Juan Perez",
+    category_id: null,
+    transfer: true,
+  };
+  const didi: ChargeLike = { ...transfer, provider: "didi", text: "DiDi · DiDi", category_id: "transporte", transfer: false, occurred_at: "2026-11-12T12:50:00Z" };
+
+  it("mismo monto y pocos minutos: es el mismo cobro aunque no compartan nombre", () => {
+    expect(sameCharge(didi, transfer)).toBe("same");
+    expect(sameCharge(transfer, didi)).toBe("same");
+  });
+
+  it("más de una hora, otro monto o sin hora: no se unen por esta regla", () => {
+    expect(rideAndTransfer({ ...didi, occurred_at: "2026-11-12T10:00:00Z" }, transfer)).toBe(false);
+    expect(rideAndTransfer({ ...didi, amount: 15100 }, transfer)).toBe(false);
+    expect(rideAndTransfer({ ...didi, occurred_at: null }, transfer)).toBe(false);
+  });
+
+  it("dos transferencias del mismo monto no son un viaje", () => {
+    const other = { ...transfer, provider: "nu", text: "Maria Lopez · Maria Lopez" };
+    expect(rideAndTransfer(other, transfer)).toBe(false);
+    expect(sameCharge(other, transfer)).toBe("maybe");
+  });
+});
+

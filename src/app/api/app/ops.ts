@@ -1,6 +1,7 @@
 import "server-only";
 
 import { after } from "next/server";
+import { classifyTransaction, listToClassify } from "@/lib/classify";
 import { z } from "zod";
 import { addTransaction, deleteTransaction, quickAdd, setCategory, updateTransaction } from "@/app/actions";
 import {
@@ -87,7 +88,7 @@ export const OPS: Record<string, Op> = {
   home: op(Empty, async () => {
     const { supabase, userId, email, name } = await requireUser();
     const today = todayIn();
-    const [summary, categories, rules, transactions, pendingCount, upcoming, money, { data: saved }] = await Promise.all([
+    const [summary, categories, rules, transactions, pendingCount, upcoming, money, { data: saved }, toClassify] = await Promise.all([
       getSummary(today),
       getCategories(),
       getRules(),
@@ -96,6 +97,7 @@ export const OPS: Record<string, Op> = {
       getUpcoming(today),
       getMoneyOverview(),
       supabase.from("user_settings").select("accent, color_mode").maybeSingle(),
+      listToClassify(supabase, userId, today),
     ]);
     // Como al abrir la web: recurrentes vencidos y correo, sin frenar la respuesta.
     after(() => onAppOpen(userId, email, today));
@@ -109,8 +111,14 @@ export const OPS: Record<string, Op> = {
       pendingCount,
       upcoming,
       money,
+      toClassify,
       appearance: { accent: saved?.accent ?? null, mode: saved?.color_mode ?? null },
     };
+  }),
+  /** Transferencia a una persona: qué fue. Se aprende para la próxima a esa persona. */
+  classifyTransaction: op(z.object({ id: z.uuid(), categoryId: z.uuid() }), async ({ id, categoryId }) => {
+    const { supabase, userId } = await requireUser();
+    return classifyTransaction(supabase, userId, id, categoryId);
   }),
   report: op(z.object({ kind: z.enum(["semana", "mes"]), anchor: z.iso.date().optional() }), async ({ kind, anchor }) => {
     const today = todayIn();
@@ -256,7 +264,11 @@ export const OPS: Record<string, Op> = {
       .insert({ user_id: userId, token_hash: hashToken(token), device })
       .select("id")
       .single();
-    if (error || !data) return { error: "No pude conectar el widget de este celular." };
+    if (error || !data) {
+      // Sin el token: solo el motivo, para verlo en los logs de Vercel.
+      console.error("createDeviceKey", error?.code, error?.message);
+      return { error: "No pude conectar el widget de este celular." };
+    }
     return { id: data.id, token };
   }),
   revokeDeviceKey: op(Id, async ({ id }) => {

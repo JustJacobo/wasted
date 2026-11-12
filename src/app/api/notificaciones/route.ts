@@ -2,6 +2,9 @@ import { revalidatePath } from "next/cache";
 import { after, type NextRequest } from "next/server";
 import { z } from "zod";
 import { userFromRequest } from "@/lib/api-auth";
+import { sortByUsage } from "@/lib/category-usage";
+import { addDays } from "@/lib/dates";
+import { formatCOP } from "@/lib/money";
 import { todayIn } from "@/lib/dates";
 import { ingestNotification, type NotificationOutcome } from "@/lib/notifications/ingest";
 import { fetchSummary, weekBudget } from "@/lib/report-data";
@@ -47,6 +50,7 @@ export async function POST(request: NextRequest) {
   const ctx = { userId: user.userId, ownerName: user.name, categories, rules };
 
   const outcomes: NotificationOutcome[] = [];
+  const toClassify: { id: string; amount: number; merchant: string }[] = [];
   let spent = 0;
   const today = todayIn();
   for (const item of items) {
@@ -55,6 +59,7 @@ export async function POST(request: NextRequest) {
     const sane = Math.abs(postedAt.getTime() - Date.now()) < 7 * 86_400_000 ? postedAt : new Date();
     const result = await ingestNotification(admin, { package: item.paquete, title: item.titulo, text: item.texto, postedAt: sane }, ctx);
     outcomes.push(result.outcome);
+    if (result.toClassify) toClassify.push(result.toClassify);
     if (result.transaction?.type === "expense" && result.transaction.occurred_on === today) {
       spent += Number(result.transaction.amount);
     }
@@ -79,5 +84,26 @@ export async function POST(request: NextRequest) {
     ok: true,
     mensaje: parts.length ? parts.join(" · ") : "Nada que registrar",
     resultados: outcomes,
+    // El teléfono muestra una notificación "¿Qué fue?" con estas categorías como botones.
+    preguntas: toClassify.length ? await questions(admin, user.userId, today, toClassify) : [],
   });
+}
+
+/** Las 3 categorías de gasto más usadas en los últimos 60 días: caben como botones de una notificación. */
+async function questions(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  today: string,
+  items: { id: string; amount: number; merchant: string }[],
+) {
+  const [{ data: categories }, { data: recent }] = await Promise.all([
+    admin.from("categories").select("id, name, type, sort").eq("user_id", userId).eq("type", "expense").eq("archived", false),
+    admin.from("transactions").select("category_id").eq("user_id", userId).eq("type", "expense").gte("occurred_on", addDays(today, -60)).limit(1000),
+  ]);
+  const options = sortByUsage(categories ?? [], recent ?? []).slice(0, 3).map((c) => ({ id: c.id, nombre: c.name }));
+  return items.map((item) => ({
+    id: item.id,
+    texto: `Enviaste ${formatCOP(item.amount)} a ${item.merchant}`,
+    opciones: options,
+  }));
 }

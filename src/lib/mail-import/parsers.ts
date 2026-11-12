@@ -32,6 +32,8 @@ export type ParsedMail =
       externalId: string;
       source: MailTxSource;
       provider: MailProvider;
+      /** Plata enviada a una persona o llave: el aviso no dice qué se compró. */
+      transfer?: boolean;
     }
   | { kind: "ignore"; reason: string; provider: MailProvider };
 
@@ -144,6 +146,7 @@ function parseNequi(mail: MailMessage, ownerName: string): ParsedMail {
       description: titleCase(merchant),
       occurredOn: spanishDate(sent[3]) ?? fallbackDay,
       externalId: `mail:${mail.messageId}`,
+      transfer: true,
     };
   }
 

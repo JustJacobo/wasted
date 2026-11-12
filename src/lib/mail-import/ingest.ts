@@ -39,6 +39,7 @@ export async function ingestMail(
         externalId: parsed.externalId,
         source: parsed.source,
         provider: parsed.provider,
+        transfer: parsed.transfer,
         subject: mail.subject,
         body: cleanText(mail.text).slice(0, 2000),
         meta: { from: mail.from, messageId: mail.messageId },

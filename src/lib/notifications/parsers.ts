@@ -49,6 +49,8 @@ export type ParsedNotification =
       /** "low" va a la bandeja aunque no parezca repetido. */
       confidence: "high" | "low";
       provider: NotificationProvider;
+      /** Plata enviada a una persona ("Enviaste $15.000 a Juan Pérez"): no dice qué se compró. */
+      transfer?: boolean;
     }
   | { kind: "own_transfer"; reason: string; provider: NotificationProvider }
   | { kind: "ignore"; reason: string; provider: NotificationProvider | null };
@@ -110,9 +112,9 @@ export function parseNotification(n: PhoneNotification, ownerName: string): Pars
   const sent = SENT.exec(text);
   if (sent) {
     const to = sent[2].trim();
-    return isOwnName(to, ownerName) || OWN_ACCOUNT.test(fold(to))
-      ? { kind: "own_transfer", reason: "Envío a ti mismo", provider }
-      : charge("expense", sent[1], to, "high");
+    if (isOwnName(to, ownerName) || OWN_ACCOUNT.test(fold(to))) return { kind: "own_transfer", reason: "Envío a ti mismo", provider };
+    const parsed = charge("expense", sent[1], to, "high");
+    return parsed.kind === "expense" ? { ...parsed, transfer: true } : parsed;
   }
   const received = RECEIVED.exec(text);
   if (received) {

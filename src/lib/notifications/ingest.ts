@@ -23,8 +23,13 @@ export async function ingestNotification(
   admin: SupabaseClient,
   notification: PhoneNotification,
   ctx: IngestContext,
-): Promise<{ outcome: NotificationOutcome; transaction: Pick<Transaction, "type" | "amount" | "occurred_on"> | null }> {
-  if (!WATCHED_PACKAGES[notification.package]) return { outcome: "ignored", transaction: null };
+): Promise<{
+  outcome: NotificationOutcome;
+  transaction: Pick<Transaction, "type" | "amount" | "occurred_on"> | null;
+  /** Transferencia a una persona que quedó sin categoría: se pregunta qué fue. */
+  toClassify: { id: string; amount: number; merchant: string } | null;
+}> {
+  if (!WATCHED_PACKAGES[notification.package]) return { outcome: "ignored", transaction: null, toClassify: null };
   const n = { ...notification, title: notification.title.trim().slice(0, 300), text: notification.text.trim().slice(0, 1000) };
 
   const id = notificationId(n);
@@ -38,17 +43,19 @@ export async function ingestNotification(
     .gte("posted_at", new Date(n.postedAt.getTime() - REPOST_WINDOW_MS).toISOString())
     .lte("posted_at", new Date(n.postedAt.getTime() + REPOST_WINDOW_MS).toISOString())
     .limit(1);
-  if (seen?.length) return { outcome: "duplicate", transaction: null };
+  if (seen?.length) return { outcome: "duplicate", transaction: null, toClassify: null };
 
   const parsed = parseNotification(n, ctx.ownerName);
   let outcome: NotificationOutcome;
   let transactionId: string | null = null;
   let transaction: Pick<Transaction, "type" | "amount" | "occurred_on"> | null = null;
+  let toClassify: { id: string; amount: number; merchant: string } | null = null;
 
   if (parsed.kind === "ignore" || parsed.kind === "own_transfer") {
     outcome = parsed.kind === "own_transfer" ? "own_transfer" : "ignored";
   } else {
-    ({ outcome, transactionId } = await ingestCharge(
+    let waiting: boolean | undefined;
+    ({ outcome, transactionId, toClassify: waiting } = await ingestCharge(
       admin,
       {
         type: parsed.kind,
@@ -61,6 +68,7 @@ export async function ingestNotification(
         externalId: `notif:${id}`,
         source: "notification",
         provider: parsed.provider,
+        transfer: parsed.transfer,
         subject: n.title,
         body: n.text,
         meta: { package: n.package },
@@ -70,6 +78,7 @@ export async function ingestNotification(
     if (outcome === "recorded") {
       transaction = { type: parsed.kind, amount: parsed.amount, occurred_on: parsed.occurredOn };
     }
+    if (waiting && transactionId) toClassify = { id: transactionId, amount: parsed.amount, merchant: parsed.merchant };
   }
 
   await admin.from("notification_log").upsert(
@@ -85,5 +94,5 @@ export async function ingestNotification(
     },
     { onConflict: "user_id,id", ignoreDuplicates: true },
   );
-  return { outcome, transaction };
+  return { outcome, transaction, toClassify };
 }

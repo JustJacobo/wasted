@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { channel, pickMatch, type ChargeLike } from "@/lib/charge-match";
+import { channel, pickMatch, rideAndTransfer, type ChargeLike } from "@/lib/charge-match";
 import { addDays } from "@/lib/dates";
 import {
   fallbackCategory,
@@ -36,6 +36,8 @@ export interface IncomingCharge {
   externalId: string;
   source: "email_bank" | "email_invoice" | "email_other" | "notification";
   provider: string;
+  /** Plata enviada a una persona: si no se reconoce, queda por clasificar en vez de ir a Varios. */
+  transfer?: boolean;
   /** Asunto del correo o título de la notificación. */
   subject: string;
   /** Texto recortado: a veces solo ahí aparece el nombre ("YouTube Premium"). */
@@ -46,7 +48,8 @@ export interface IncomingCharge {
 
 export type ChargeOutcome = "recorded" | "pending" | "duplicate";
 
-const CANDIDATE_COLUMNS = "id, type, amount, occurred_on, source, status, merchant, description, category_id, recurring_id, raw";
+const CANDIDATE_COLUMNS =
+  "id, type, amount, occurred_on, occurred_at, source, status, merchant, description, category_id, recurring_id, raw";
 
 /**
  * Lo claro y sin parecido a nada queda confirmado; lo de baja confianza o que
@@ -60,18 +63,23 @@ export async function ingestCharge(
   admin: SupabaseClient,
   charge: IncomingCharge,
   ctx: IngestContext,
-): Promise<{ outcome: ChargeOutcome; transactionId: string | null }> {
+): Promise<{ outcome: ChargeOutcome; transactionId: string | null; toClassify?: boolean }> {
   const { type, amount } = charge;
-  let categoryId =
-    matchCategory(charge.description, type, ctx.categories, ctx.rules) ?? fallbackCategory(type, ctx.categories);
+  const matched = matchCategory(charge.description, type, ctx.categories, ctx.rules);
+  // Una transferencia a alguien que no se reconoce cuenta igual, pero sin categoría:
+  // se pregunta qué fue (inicio de la app y notificación) y se aprende para esa persona.
+  let toClassify = Boolean(charge.transfer) && !matched;
+  let categoryId = matched ?? (toClassify ? null : fallbackCategory(type, ctx.categories));
   const incoming: ChargeLike = {
     type,
     amount,
     occurred_on: charge.occurredOn,
+    occurred_at: charge.occurredAt,
     source: charge.source,
     provider: charge.provider,
     text: [charge.merchant, charge.description].join(" · "),
     category_id: categoryId,
+    transfer: charge.transfer,
   };
 
   // Lo confirmado y lo que espera en la bandeja, con un monto parecido y ±1 día.
@@ -94,6 +102,7 @@ export async function ingestCharge(
       ...t,
       provider: ((t.raw as Raw)?.provider as string | undefined) ?? null,
       text: [t.merchant, t.description].filter(Boolean).join(" · "),
+      transfer: Boolean((t.raw as Raw)?.transfer),
     }));
   const match = pickMatch(incoming, candidates);
 
@@ -103,12 +112,21 @@ export async function ingestCharge(
     // Si el que estaba solo esperaba por no ser seguro y este sí lo es, ya cuenta.
     const confirm =
       twin.status === "pending" && charge.confidence === "high" && !raw.possibleDuplicateOf && !twin.recurring_id;
+    // Viaje + transferencia al conductor: un solo movimiento "DiDi · Juan Pérez" en la categoría del viaje.
+    const ride = rideAndTransfer(incoming, twin);
+    const rideName = ride ? (twin.transfer ? charge.merchant : twin.merchant) : null;
+    const person = ride ? (twin.transfer ? twin.merchant : charge.merchant) : null;
+    const classify = Boolean(ride && raw.toClassify && categoryId);
+    const nextRaw: Raw = { ...raw, twins: [...((raw.twins as string[] | undefined) ?? []), arriving] };
+    if (classify) delete nextRaw.toClassify;
     await admin
       .from("transactions")
       .update({
-        raw: { ...raw, twins: [...((raw.twins as string[] | undefined) ?? []), arriving] },
+        raw: nextRaw,
         ...(twin.merchant ? {} : { merchant: charge.merchant }),
         ...(confirm ? { status: "confirmed" } : {}),
+        ...(ride && rideName && person ? { description: `${rideName} · ${person}` } : {}),
+        ...(classify ? { category_id: categoryId } : {}),
       })
       .eq("id", twin.id)
       .eq("user_id", ctx.userId);
@@ -148,6 +166,8 @@ export async function ingestCharge(
     possibleDuplicateOf = link.placeholder.id;
   }
   const recurringId = link?.strength === "same" ? link.rule.id : null;
+  // Si resultó ser el cobro de un recurrente, ya tiene categoría: no hay nada que preguntar.
+  if (categoryId) toClassify = false;
 
   const { data, error } = await admin
     .from("transactions")
@@ -170,6 +190,8 @@ export async function ingestCharge(
         subject: charge.subject.slice(0, 200),
         text: charge.body,
         ...(possibleDuplicateOf ? { possibleDuplicateOf } : {}),
+        ...(charge.transfer ? { transfer: true } : {}),
+        ...(toClassify ? { toClassify: true } : {}),
       },
     })
     .select("id")
@@ -182,5 +204,5 @@ export async function ingestCharge(
   if (link?.strength === "same" && link.kind === "pending") {
     await retirePlaceholder(admin, link.placeholder, data.id, ctx.userId);
   }
-  return { outcome: status === "pending" ? "pending" : "recorded", transactionId: data.id };
+  return { outcome: status === "pending" ? "pending" : "recorded", transactionId: data.id, toClassify: toClassify && status === "confirmed" };
 }
