@@ -34,6 +34,7 @@ const NEQUI_RECEIVED_OWN = `| ¡Recibiste plata por Bre-B! | | ¡Hola, JACOBO GI
 const NEQUI_PSE = `| ¡Pago exitoso! | | Hiciste un pago en PEXTO COLOMBIA SAS por $38.069 Fecha: El 22 de agosto de 2026 Hora: 8:27 p. m. CUS: 123456789 Puedes ingresar a tu app Nequi |`;
 const NEQUI_CIVICA = `| Recarga en Cívica - Metro de Medellín | | Hiciste una recarga a tu Cívica por $10.000 | | Estado: Exitoso | | Comprobante de Pago | | Valor: $10.000 | | Fecha del pago: 4/Oct/2026 |`;
 const UBER = `| 20/10/2026 5:09 p.m. | | 20/10/2026 , 5:09 p.m. | | Gracias por usar Uber, Jacobo Esperamos que hayas disfrutado tu viaje de esta noche. | | | Total | COP 7,901 | | Tarifa del viaje | COP 9,522 | | Descuentos y ajustes | -COP 1,621 | | Pagos | | Cash | COP 7,901 |`;
+const DIDI = `| | jue, 12 nov, 2026 | | | | Jacobo, gracias por usar DiDi Moto. | | | Total | $6.600 | | Detalles de la tarifa | | Tarifa | $8.800 | | Duración de la solicitud | 15min | | Cupón | -$2.200 | | Método de pago | | Nequi | -$6.600 | | [Duda sobre la tarifa](https://example.com) | | Detalles | 4,9 km | 15 min | | DiDi Moto | | 05:30 pm Calle 1 | | 05:52 pm Destino |`;
 const RAPPI = `| | ##### sin Miseria - Metro | ###### Orden # 1234567890 | # ¡Jacobo, aquí están los detalles de tu pedido! | ##### Entregado con cambios | ##### 2026-10-06 17:39:59 | | ## Total pagado | $23.800 | | ## Cargo neto | ## $23.800 |`;
 
 describe("utilidades", () => {
@@ -147,6 +148,35 @@ describe("Uber y Rappi", () => {
       amount: 2700,
       confidence: "low",
     });
+  });
+
+  it("viaje de DiDi pagado con Nequi", () => {
+    expect(
+      parseEmail(mail({ from: "didi@co.didiglobal.com", fromName: "DiDi", subject: "Tu solicitud DiDi Moto del jueves en la tarde", text: DIDI }), OWNER),
+    ).toMatchObject({
+      kind: "expense",
+      amount: 6600,
+      merchant: "DiDi",
+      description: "DiDi Moto",
+      occurredOn: "2026-11-12",
+      confidence: "high",
+      source: "email_other",
+      provider: "didi",
+    });
+  });
+
+  it("DiDi Express lleva el nombre de DiDi", () => {
+    const text = "| | jue, 5 nov, 2026 | | Jacobo, gracias por usar Express. | | Total | $19.450 | | Método de pago | | Nequi | -$19.450 |";
+    expect(parseEmail(mail({ from: "didi@co.didiglobal.com", text }), OWNER)).toMatchObject({
+      amount: 19450,
+      description: "DiDi Express",
+      occurredOn: "2026-11-05",
+    });
+  });
+
+  it("promociones de DiDi se ignoran", () => {
+    const promo = "Durante Noviembre ¿Necesitas ayuda? Ingresa a la app a Mi cuenta colombia.didiglobal.com";
+    expect(parseEmail(mail({ from: "didi@mkt-co.didiglobal.com", text: promo }), OWNER).kind).toBe("ignore");
   });
 
   it("promociones de Uber sin total se ignoran", () => {

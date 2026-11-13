@@ -24,7 +24,7 @@ function gmailQuery(since: string): string {
   return [
     `after:${since.replaceAll("-", "/")}`,
     "-category:promotions -category:social",
-    "{from:nequi.com.co from:uber.com from:rappimail.com category:purchases",
+    "{from:nequi.com.co from:uber.com from:didiglobal.com from:rappimail.com category:purchases",
     "subject:factura subject:recibo subject:comprobante subject:compra subject:pago filename:zip}",
   ].join(" ");
 }

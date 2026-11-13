@@ -16,7 +16,7 @@ export interface MailMessage {
   attachments: { filename: string; content: Uint8Array }[];
 }
 
-export type MailProvider = "nequi" | "uber" | "rappi" | "dian" | "otro";
+export type MailProvider = "nequi" | "uber" | "didi" | "rappi" | "dian" | "otro";
 export type MailTxSource = "email_bank" | "email_invoice" | "email_other";
 
 export type ParsedMail =
@@ -126,6 +126,7 @@ export function parseEmail(mail: MailMessage, ownerName: string): ParsedMail {
   if (/^\s*\d{6,10};[^;]+;[^;]+;\d{2};/.test(mail.subject)) return parseDian(mail);
   if (domain.endsWith("nequi.com.co")) return parseNequi(mail, ownerName);
   if (domain === "uber.com" || domain.endsWith(".uber.com")) return parseUber(mail);
+  if (domain === "didiglobal.com" || domain.endsWith(".didiglobal.com")) return parseDidi(mail);
   if (domain === "rappimail.com" || domain.endsWith(".rappimail.com")) return parseRappi(mail);
   return parseGeneric(mail);
 }
@@ -218,6 +219,35 @@ function parseUber(mail: MailMessage): ParsedMail {
     externalId: `mail:${mail.messageId}`,
     source: "email_other",
     provider: "uber",
+  };
+}
+
+/**
+ * Recibo de cada viaje de DiDi ("Tu solicitud DiDi Moto del jueves en la tarde"):
+ * llega al terminar, también cuando se paga con Nequi, cuyo aviso no trae el monto.
+ */
+function parseDidi(mail: MailMessage): ParsedMail {
+  const text = cleanText(mail.text);
+  const service = /gracias por usar (.{2,40}?)\./i.exec(text)?.[1].trim();
+  const total = /\bTotal\s*:?\s*\$\s*([\d.,]+)/i.exec(text);
+  if (!service || !total) return { kind: "ignore", reason: "Correo de DiDi sin viaje", provider: "didi" };
+  const amount = parseAmount(total[1]) ?? 0;
+  if (amount <= 0) return { kind: "ignore", reason: "Total en cero", provider: "didi" };
+
+  const name = /didi/i.test(service) ? service : `DiDi ${service}`;
+  const date = /(\d{1,2}) ([a-z]{3,10})\.?,? (\d{4})/.exec(fold(text));
+  const month = date ? MONTHS[date[2]] : undefined;
+  return {
+    kind: "expense",
+    amount,
+    merchant: "DiDi",
+    description: name,
+    occurredOn: (date && month && ymd(Number(date[3]), month, Number(date[1]))) || todayIn(mail.date),
+    // Un pedido de comida no es transporte, y un viaje cancelado puede no haberse cobrado.
+    confidence: /food|cancelad/i.test(`${mail.subject} ${text}`) ? "low" : "high",
+    externalId: `mail:${mail.messageId}`,
+    source: "email_other",
+    provider: "didi",
   };
 }
 

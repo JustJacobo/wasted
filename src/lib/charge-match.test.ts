@@ -81,6 +81,12 @@ describe("el viaje y la transferencia al conductor", () => {
     expect(sameCharge(transfer, didi)).toBe("same");
   });
 
+  it("el recibo de DiDi por correo también se une con la transferencia", () => {
+    const receipt: ChargeLike = { ...didi, source: "email_other", text: "DiDi Moto · DiDi" };
+    expect(sameCharge(receipt, transfer)).toBe("same");
+    expect(sameCharge(transfer, receipt)).toBe("same");
+  });
+
   it("más de una hora, otro monto o sin hora: no se unen por esta regla", () => {
     expect(rideAndTransfer({ ...didi, occurred_at: "2026-11-12T10:00:00Z" }, transfer)).toBe(false);
     expect(rideAndTransfer({ ...didi, amount: 15100 }, transfer)).toBe(false);

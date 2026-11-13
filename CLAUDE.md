@@ -126,7 +126,8 @@ npx expo start --dev-client --port 8081   # Metro para la build debug
   - Firma: el keystore está en `%USERPROFILE%\.wasted\` y la contraseña en `mobile/keystore.properties` (copia de `%USERPROFILE%\.wasted\keystore.properties`); los dos quedan fuera de git. Sin ese keystore no se pueden instalar actualizaciones encima: hay que respaldarlo.
 - **Importar del correo** (`src/lib/mail-import/`; solo el buzón de `GMAIL_USER`, por IMAP con la contraseña de aplicación):
   - `source.ts` busca en Gmail (`X-GM-RAW`) desde el lunes en que se activó, salta los Message-ID ya procesados y convierte el HTML a texto con `html.ts` (separa las celdas de las tablas).
-  - `parsers.ts` (puro y testeado con textos reales): Nequi (Bre-B, PSE, Cívica), Uber, Rappi, facturas DIAN (XML dentro del ZIP, con límite de tamaño) y un genérico por "Total". Las transferencias propias (tu nombre o el pago a la tarjeta Nu) no cuentan.
+  - `parsers.ts` (puro y testeado con textos reales): Nequi (Bre-B, PSE, Cívica), Uber, DiDi (el recibo de cada viaje, `didiglobal.com`: "Tu solicitud DiDi Moto del jueves en la tarde"), Rappi, facturas DIAN (XML dentro del ZIP, con límite de tamaño) y un genérico por "Total". Las transferencias propias (tu nombre o el pago a la tarjeta Nu) no cuentan.
+  - Un viaje de DiDi pagado con Nequi solo trae el monto en el correo de DiDi: la notificación de Nequi dice "Envío exitoso, la plata ya está en el Nequi destino", sin monto ni persona, y Nequi no manda correo.
   - `ingest.ts` pasa por `ingestCharge` (ver "Lo que llega solo") y anota cada correo en `mail_messages`. Descartar en la bandeja lo deja `discarded` (conserva su `external_id`, así no vuelve).
   - Se revisa al abrir la app (`after()`, cada 10 min como máximo), con "Revisar correo ahora", con el cron diario `/api/correo/sincronizar` y con `/correo` en Telegram.
   - En local: `MAIL_FIXTURES_DIR` (carpeta de `.eml`) y `MAIL_FIXTURES_USER` reemplazan a Gmail.
@@ -141,7 +142,7 @@ npx expo start --dev-client --port 8081   # Metro para la build debug
 - **Lo que llega solo** (correo y notificaciones; `src/lib/ingest-charge.ts`, `IMPORTED_SOURCES`):
   - `ingestCharge` busca candidatos del mismo tipo, ±1 día y monto ±10 % y decide con `sameCharge` (`src/lib/charge-match.ts`, puro y testeado):
     - Con otro aviso automático de **otro canal** (`channel`: correo o notificación + app), monto exacto y un nombre en común ("UBER *TRIP" y "Uber"): es el mismo cobro. No se crea otro; el que estaba anota el canal en `raw.twins` (un aviso por canal) y, si esperaba solo por baja confianza, se confirma.
-    - El aviso de un viaje (DiDi, Uber o Yango) y una transferencia a una persona de otro canal, con monto exacto y a menos de `RIDE_TRANSFER_WINDOW_MIN` (60 min, por `occurred_at`): es el mismo cobro aunque no compartan nombre (`rideAndTransfer`). Queda un movimiento "DiDi · Juan Pérez" en la categoría del viaje.
+    - El aviso de un viaje (notificación o recibo por correo de DiDi, Uber o Yango) y una transferencia a una persona de otro canal, con monto exacto y a menos de `RIDE_TRANSFER_WINDOW_MIN` (60 min, por `occurred_at`): es el mismo cobro aunque no compartan nombre (`rideAndTransfer`). Queda un movimiento "DiDi · Juan Pérez" en la categoría del viaje.
     - Mismo canal con monto exacto, o lo registrado a mano con monto exacto o hasta 10 % de diferencia y el mismo nombre o categoría: va a la bandeja como posible repetido (`possibleDuplicateOf`). Nunca se une solo con algo registrado a mano.
   - Después, el enlace con recurrentes (`linkForCharge`) y la inserción, igual para las dos fuentes.
 - **Recurrentes** (arriendo, suscripciones, cuota semanal; tabla `recurring`):

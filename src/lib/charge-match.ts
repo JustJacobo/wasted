@@ -35,7 +35,9 @@ export const RIDE_PROVIDERS = new Set(["didi", "uber", "yango"]);
 /** Cuánto pueden separarse el aviso del viaje y la transferencia al conductor. */
 export const RIDE_TRANSFER_WINDOW_MIN = 60;
 
-const isRide = (c: ChargeLike) => c.source === "notification" && RIDE_PROVIDERS.has(c.provider ?? "");
+/** El aviso (notificación) o el recibo por correo de un viaje. */
+const isRide = (c: ChargeLike) =>
+  (c.source === "notification" || c.source === "email_other") && RIDE_PROVIDERS.has(c.provider ?? "");
 
 /** El aviso de un viaje y la transferencia al conductor: mismo monto y pocos minutos entre uno y otro. */
 export function rideAndTransfer(a: ChargeLike, b: ChargeLike): boolean {
