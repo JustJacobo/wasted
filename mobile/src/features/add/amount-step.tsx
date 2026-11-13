@@ -28,28 +28,25 @@ export function AmountStep({
   const amount = Number(digits || 0);
 
   return (
-    <View style={{ flexGrow: 1, gap: 16 }}>
+    <View style={{ gap: 16 }}>
       <TypeSwitch type={type} onType={onType} />
 
-      {/* El monto ocupa el espacio que sobra, centrado; el teclado queda pegado abajo. */}
-      <View style={{ flexGrow: 1, justifyContent: "center", minHeight: 88 }}>
-        <Text
-          accessibilityLabel={`Monto ${formatCOP(amount)}`}
-          accessibilityLiveRegion="polite"
-          tabular
-          weight="bold"
-          size={digits.length > 9 ? 36 : 48}
-          leading={1.15}
-          tracking={-1.2}
-          align="center"
-          tone={amount ? "foreground" : "muted"}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          style={{ paddingVertical: 8 }}
-        >
-          {formatCOP(amount)}
-        </Text>
-      </View>
+      <Text
+        accessibilityLabel={`Monto ${formatCOP(amount)}`}
+        accessibilityLiveRegion="polite"
+        tabular
+        weight="bold"
+        size={digits.length > 9 ? 36 : 48}
+        leading={1.15}
+        tracking={-1.2}
+        align="center"
+        tone={amount ? "foreground" : "muted"}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        style={{ paddingVertical: 16 }}
+      >
+        {formatCOP(amount)}
+      </Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {KEYS.map((key) => (

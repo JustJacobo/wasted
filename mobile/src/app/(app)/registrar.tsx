@@ -91,8 +91,7 @@ export default function RegisterSheet() {
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
-      // flexGrow: en un celular alto el teclado y el botón quedan abajo, al alcance del pulgar.
-      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 8, paddingBottom: insets.bottom + 16 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: insets.bottom + 16 }}
       style={{ backgroundColor: colors.surface }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
@@ -116,7 +115,7 @@ export default function RegisterSheet() {
         </Tap>
       </View>
 
-      <Animated.View key={view} entering={enter} style={{ flexGrow: 1 }}>
+      <Animated.View key={view} entering={enter}>
         {view === "text" ? (
           <TextStep categories={home.data?.categories ?? []} rules={home.data?.rules ?? []} today={today} onDone={done} />
         ) : view === "amount" ? (

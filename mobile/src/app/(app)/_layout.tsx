@@ -49,12 +49,13 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen name="index" />
-      {/* La ventana de registro es una hoja nativa: se arrastra para cerrar y Atrás la cierra. */}
+      {/* La ventana de registro es una hoja nativa: se arrastra para cerrar y Atrás la cierra.
+          Mide lo que su contenido: con una altura fija, en celulares altos quedaba un hueco. */}
       <Stack.Screen
         name="registrar"
         options={{
           presentation: "formSheet",
-          sheetAllowedDetents: [0.92],
+          sheetAllowedDetents: "fitToContents",
           sheetGrabberVisible: true,
           sheetCornerRadius: 24,
           contentStyle: { backgroundColor: colors.surface },

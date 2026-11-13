@@ -71,7 +71,7 @@ export function CategoryStep({
   );
 
   return (
-    <View style={{ flexGrow: 1, gap: 16 }}>
+    <View style={{ gap: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Tap accessibilityRole="button" accessibilityLabel="Volver al monto" onPress={onBack} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
           <Text size={20}>←</Text>
@@ -170,9 +170,6 @@ export function CategoryStep({
           })}
         </View>
       </View>
-
-      {/* Lo que sobra queda arriba: el botón de guardar, abajo, donde termina el pulgar. */}
-      <View style={{ flexGrow: 1 }} />
 
       {error && (
         <Text accessibilityRole="alert" size={14} tone="danger">
