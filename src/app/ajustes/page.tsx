@@ -1,122 +1,65 @@
+import { DownloadSimple, PlugsConnected, Tag, Users } from "@phosphor-icons/react/dist/ssr";
 import { cookies } from "next/headers";
 import Link from "next/link";
+import { ListRow, ListSection } from "@/components/list";
+import { ScreenHeader } from "@/components/screen-header";
 import { getSettings } from "@/lib/data";
 import { ACCENT_COOKIE, MODE_COOKIE, parseAccent, parseMode } from "@/lib/theme";
-import { SyncButton } from "../bandeja/sync-button";
-import { DeviceButton } from "./device-button";
-import { ThemePicker } from "./theme-picker";
-import { MailToggle } from "./mail-toggle";
-import { NotificationLog } from "./notification-log";
-import { InviteForm } from "./invite-form";
 import { ReportToggles } from "./report-toggles";
-import { RemoveButton } from "./remove-button";
-import { ShortcutsKey } from "./shortcuts-key";
-import { TelegramConnect } from "./telegram-connect";
+import { ThemePicker } from "./theme-picker";
+import { lastSync } from "./time";
 
-/** Último APK publicado por el workflow de GitHub Releases (.github/workflows/android-release.yml). */
-const APK_URL = "https://github.com/JustJacobo/wasted/releases/latest/download/wasted.apk";
-
-const time = new Intl.DateTimeFormat("es-CO", {
-  timeZone: "America/Bogota",
-  day: "numeric",
-  month: "short",
-  hour: "numeric",
-  minute: "2-digit",
-});
-
-function lastSync(iso: string): string {
-  const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (minutes < 1) return "hace un momento";
-  if (minutes < 60) return `hace ${minutes} min`;
-  return time.format(new Date(iso));
-}
-
+/**
+ * Ajustes: solo configuración. Recurrentes, préstamos y metas están en el Plan;
+ * Telegram, correo, la app de Android y atajos, en Conexiones.
+ */
 export default async function SettingsPage() {
-  const { email, name, role, mail, settings, telegram, mailSync, apiToken, devices, notifications, members } =
-    await getSettings();
+  const { email, name, role, mail, settings, telegram, mailSync, devices, members } = await getSettings();
   // El tema que muestra Ajustes es el que pinta este dispositivo (cookies del layout).
   const jar = await cookies();
+  const connections = [
+    telegram ? "Telegram conectado" : "Telegram sin conectar",
+    mail && (mailSync?.last_synced_at ? `Correo ${lastSync(mailSync.last_synced_at)}` : "Correo sin revisar"),
+    devices.length > 0 && (devices.length === 1 ? "1 celular" : `${devices.length} celulares`),
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <main className="mx-auto max-w-lg space-y-8 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-      <header className="flex items-center gap-2 py-2">
-        <Link href="/" className="rounded-lg px-2 py-1 text-sm text-muted active:scale-[0.97]">
-          ← Volver
-        </Link>
-      </header>
+    <main className="mx-auto max-w-lg space-y-7 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <ScreenHeader title="Ajustes" back="/" />
 
-      <section className="space-y-2">
-        <h1 className="px-1 text-sm text-muted">Tu cuenta</h1>
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 ring-1 ring-border">
-          <span className="min-w-0">
-            <span className="block truncate font-medium capitalize">{name}</span>
-            <span className="block truncate text-sm text-muted">{email}</span>
-          </span>
-          <form action="/auth/signout" method="post">
-            <button className="shrink-0 rounded-lg px-2 py-1 text-sm text-danger active:scale-[0.97]">
-              Salir
-            </button>
-          </form>
-        </div>
-      </section>
+      <div className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 ring-1 ring-border">
+        <span className="min-w-0">
+          <span className="block truncate font-medium capitalize">{name}</span>
+          <span className="block truncate text-sm text-muted">{email}</span>
+        </span>
+        <form action="/auth/signout" method="post">
+          <button className="shrink-0 rounded-lg px-2 py-1 text-sm text-danger active:scale-[0.97]">Salir</button>
+        </form>
+      </div>
 
-      <section className="space-y-2">
-        <h2 className="px-1 text-sm text-muted">Tus finanzas</h2>
-        <Link
-          href="/ajustes/categorias"
-          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
-        >
-          <span>Categorías</span>
-          <span aria-hidden className="text-muted">
-            ›
-          </span>
-        </Link>
-        <Link
-          href="/ajustes/recurrentes"
-          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
-        >
-          <span>Recurrentes</span>
-          <span aria-hidden className="text-muted">
-            ›
-          </span>
-        </Link>
-        <Link
-          href="/prestamos"
-          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
-        >
-          <span>Préstamos</span>
-          <span aria-hidden className="text-muted">
-            ›
-          </span>
-        </Link>
-        <Link
-          href="/metas"
-          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
-        >
-          <span>Metas</span>
-          <span aria-hidden className="text-muted">
-            ›
-          </span>
-        </Link>
+      <ListSection
+        title="General"
+        note="El CSV trae todos tus movimientos confirmados y se abre en Excel o Google Sheets. Para un solo mes, usa el botón CSV de Movimientos."
+      >
+        <ListRow href="/ajustes/categorias" icon={<Tag aria-hidden className="size-5" />} title="Categorías" />
         {/* Un archivo de un Route Handler, no una página: <Link> lo precargaría en cada visita. */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a
+        <ListRow
           href="/movimientos/exportar?todo=1"
-          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
-        >
-          <span>Exportar a CSV</span>
-          <span aria-hidden className="text-muted">
-            ↓
-          </span>
-        </a>
-        <p className="px-1 text-xs text-muted">
-          El CSV trae todos tus movimientos confirmados y se abre en Excel o Google Sheets. Para un
-          solo mes, usa el botón CSV del Historial.
-        </p>
-      </section>
+          plain
+          icon={<DownloadSimple aria-hidden className="size-5" />}
+          title="Exportar a CSV"
+          trailing={<span />}
+        />
+      </ListSection>
+
+      <ListSection note="Registrar sin abrir la app: Telegram, el correo, los avisos de tus bancos, el widget y los atajos.">
+        <ListRow href="/ajustes/conexiones" icon={<PlugsConnected aria-hidden className="size-5" />} title="Conexiones" subtitle={connections} />
+      </ListSection>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-sm text-muted">Tema</h2>
+        <h2 className="px-1 text-sm font-medium text-muted">Tema</h2>
         <ThemePicker
           initialAccent={parseAccent(jar.get(ACCENT_COOKIE)?.value ?? settings?.accent)}
           initialMode={parseMode(jar.get(MODE_COOKIE)?.value ?? settings?.color_mode)}
@@ -124,134 +67,31 @@ export default async function SettingsPage() {
         <p className="px-1 text-xs text-muted">El acento solo cambia los detalles de color. El resto sigue en papel y tinta.</p>
       </section>
 
-      {mail && (
-        <section className="space-y-2">
-          <h2 className="px-1 text-sm text-muted">Correo</h2>
-          <div className="overflow-hidden rounded-xl bg-surface ring-1 ring-border">
-            <MailToggle enabled={mailSync?.enabled ?? true} />
-          </div>
-          <p className="px-1 text-xs text-muted">
-            Lee {email}: avisos de Nequi, viajes de Uber, pedidos de Rappi y facturas. Lo claro se
-            registra solo y lo dudoso queda en{" "}
-            <Link href="/bandeja" className="underline">
-              Por revisar
-            </Link>
-            . {mailSync?.last_synced_at ? `Última revisión: ${lastSync(mailSync.last_synced_at)}.` : "Aún no se ha revisado."}
-          </p>
-          <SyncButton />
-        </section>
-      )}
-
       <section className="space-y-2">
-        <h2 className="px-1 text-sm text-muted">Telegram</h2>
-        <TelegramConnect linked={Boolean(telegram)} username={telegram?.username ?? null} />
+        <h2 className="px-1 text-sm font-medium text-muted">Reportes</h2>
+        <ReportToggles weekly={settings?.report_weekly ?? true} monthly={settings?.report_monthly ?? true} />
         <p className="px-1 text-xs text-muted">
-          Escríbele al bot “25k almuerzo” para registrar sin abrir la app, y usa /semana o /mes
-          para ver cómo vas. Los reportes y avisos de presupuesto también llegan ahí.
-        </p>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="px-1 text-sm text-muted">App de Android</h2>
-        <a
-          href={APK_URL}
-          rel="noopener"
-          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
-        >
-          <span>Descargar la app (APK)</span>
-          <span aria-hidden className="text-muted">
-            ↓
-          </span>
-        </a>
-        {devices.length > 0 && (
-          <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-border">
-            {devices.map((d) => (
-              <li key={d.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <span className="min-w-0">
-                  <span className="block truncate">{d.device}</span>
-                  <span className="block truncate text-sm text-muted">
-                    {d.last_used_at ? `Usado ${lastSync(d.last_used_at)}` : "Conectado, sin usar todavía"}
-                  </span>
-                </span>
-                <DeviceButton id={d.id} device={d.device ?? "el celular"} />
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="px-1 text-xs text-muted">
-          Ábrela desde las descargas y permite instalar apps de Chrome si Android lo pide. Trae un
-          widget con lo que te queda y un botón para registrar sin abrir la app. Cada celular se
-          conecta solo al entrar y aparece aquí.
-        </p>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="px-1 text-sm text-muted">Notificaciones del teléfono</h2>
-        {notifications && notifications.length > 0 && <NotificationLog entries={notifications} when={lastSync} />}
-        <a
-          href="wasted://notificaciones"
-          className="flex items-center justify-between rounded-xl bg-surface px-4 py-4 ring-1 ring-border active:scale-[0.99]"
-        >
-          <span>Configurar en la app de Android</span>
-          <span aria-hidden className="text-muted">
-            ›
-          </span>
-        </a>
-        <p className="px-1 text-xs text-muted">
-          La app de Android lee los avisos de pagos de Nequi, Nu, DiDi, Uber y Yango, nunca chats ni
-          otras apps. Lo claro se registra solo, lo dudoso queda en Por revisar y lo que pasas entre
-          tus cuentas no cuenta. Un mismo pago que llega por la tarjeta y por el correo queda una sola
-          vez.
-        </p>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="px-1 text-sm text-muted">Atajos y widgets</h2>
-        <ShortcutsKey
-          active={Boolean(apiToken)}
-          lastUsed={apiToken?.last_used_at ? lastSync(apiToken.last_used_at) : null}
-        />
-        <p className="px-1 text-xs text-muted">
-          Registra desde la pantalla de inicio sin abrir la app: un botón que pide “25k almuerzo”,
-          botones fijos para lo de siempre y un widget con lo que te queda. Funciona con Atajos en
-          iPhone y HTTP Shortcuts en Android.
-        </p>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="px-1 text-sm text-muted">Reportes</h2>
-        <ReportToggles
-          weekly={settings?.report_weekly ?? true}
-          monthly={settings?.report_monthly ?? true}
-        />
-        <p className="px-1 text-xs text-muted">
-          Llegan a {email}{telegram ? " y a Telegram" : ""}: el semanal los lunes y el mensual el
-          día 1, a las 7:00 a. m.
+          Llegan a {email}
+          {telegram ? " y a Telegram" : ""}: el semanal los lunes y el mensual el día 1, a las 7:00 a. m.
         </p>
       </section>
 
       {role === "owner" && (
-        <section className="space-y-2">
-          <h2 className="px-1 text-sm text-muted">Personas con acceso</h2>
-          <ul className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-border">
-            {members.map((m) => (
-              <li key={m.email} className="flex items-center justify-between gap-3 px-4 py-3">
-                <span className="min-w-0 truncate">{m.email}</span>
-                {m.role === "owner" ? (
-                  <span className="shrink-0 text-xs text-muted">Dueño</span>
-                ) : (
-                  <RemoveButton email={m.email} />
-                )}
-              </li>
-            ))}
-          </ul>
-          <InviteForm />
-          <p className="px-1 text-xs text-muted">
-            Cada persona ve solo sus propios movimientos. Comparte el enlace de la app y pídele que
-            entre con Google usando el correo que agregaste.
-          </p>
-        </section>
+        <ListSection>
+          <ListRow
+            href="/ajustes/personas"
+            icon={<Users aria-hidden className="size-5" />}
+            title="Personas con acceso"
+            subtitle={members.length === 1 ? "Solo tú" : `${members.length} personas`}
+          />
+        </ListSection>
       )}
+
+      <p className="text-center">
+        <Link href="/privacidad" className="inline-block px-3 py-2 text-xs text-muted active:opacity-70">
+          Privacidad
+        </Link>
+      </p>
     </main>
   );
 }

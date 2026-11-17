@@ -2,7 +2,7 @@ import { Bone, BoneRows, PageSkeleton } from "@/components/skeleton";
 
 export default function Loading() {
   return (
-    <PageSkeleton title="Historial" back="/">
+    <PageSkeleton title="Movimientos" className="space-y-4 pb-32">
       <div className="flex items-center justify-between">
         <Bone className="size-10" />
         <Bone className="h-5 w-32 rounded-md" />

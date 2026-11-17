@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ScreenHeader } from "@/components/screen-header";
 import { requireUser } from "@/lib/auth";
 import { getCategories, getPending, type PendingItem } from "@/lib/data";
 import { todayIn } from "@/lib/dates";
@@ -57,12 +57,7 @@ export default async function InboxPage() {
 
   return (
     <main className="mx-auto max-w-lg space-y-4 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
-      <header className="flex items-center gap-2 py-2">
-        <Link href="/" className="rounded-lg px-2 py-1 text-sm text-muted active:scale-[0.97]">
-          ← Volver
-        </Link>
-        <h1 className="flex-1 text-right text-lg font-bold tracking-tight">Por revisar</h1>
-      </header>
+      <ScreenHeader title="Por revisar" back="/" />
 
       {pending.length === 0 ? (
         <p className="rounded-xl bg-surface px-5 py-10 text-center text-sm text-muted ring-1 ring-border">

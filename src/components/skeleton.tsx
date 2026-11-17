@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ScreenHeader } from "./screen-header";
 
 // Piezas de las pantallas de carga (`loading.tsx`). Repiten el marco de cada
 // página (mismo <main> y encabezado) para que al llegar los datos nada salte.
@@ -31,33 +31,23 @@ export function BoneRows({ count = 6 }: { count?: number }) {
  * se puede volver sin esperar; sin `back`, el texto queda solo como referencia.
  */
 export function PageSkeleton({
-  title,
+  title = "",
   back,
-  backLabel = "← Volver",
   className = "space-y-4 pb-[max(2rem,env(safe-area-inset-bottom))]",
   children,
 }: {
   title?: string;
+  /** Sin `back`, es una pestaña: título grande y sin flecha. */
   back?: string;
-  backLabel?: string;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
     <main
       aria-busy
-      className={`mx-auto max-w-lg px-4 pt-[max(1rem,env(safe-area-inset-top))] ${className}`}
+      className={`mx-auto max-w-lg px-4 pt-[max(0.5rem,env(safe-area-inset-top))] ${className}`}
     >
-      <header className="flex items-center gap-2 py-2">
-        {back ? (
-          <Link href={back} className="rounded-lg px-2 py-1 text-sm text-muted active:scale-[0.97]">
-            {backLabel}
-          </Link>
-        ) : (
-          <span className="px-2 py-1 text-sm text-muted">{backLabel}</span>
-        )}
-        {title && <h1 className="flex-1 text-right text-lg font-bold tracking-tight">{title}</h1>}
-      </header>
+      <ScreenHeader title={title} back={back} />
       <p role="status" className="sr-only">
         Cargando…
       </p>

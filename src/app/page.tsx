@@ -1,6 +1,7 @@
-import { Tray } from "@phosphor-icons/react/dist/ssr";
+import { GearSix, Tray } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
@@ -10,45 +11,70 @@ import {
   getMoneyOverview,
   getPendingCount,
   getRecentTransactions,
-  getReport,
   getRules,
   getSummary,
   getUpcoming,
 } from "@/lib/data";
 import { todayIn } from "@/lib/dates";
 import { onAppOpen } from "@/lib/on-open";
-import type { PeriodKind } from "@/lib/report";
+import { payableForRule } from "@/lib/recurring-suggest";
 import { ACCENT_COOKIE, MODE_COOKIE, parseAccent, parseMode } from "@/lib/theme";
-import { Logo } from "@/components/logo";
+import type { UpcomingCharge } from "@/lib/week-plan";
+import { ScreenHeader } from "@/components/screen-header";
 import { AppearanceSync } from "./appearance-sync";
 import { AddLauncher } from "./add/add-launcher";
-import { HomePager } from "./home-pager";
 import { MoneyRows } from "./money-rows";
-import { ReportView } from "./reportes/report-view";
+import { dashboardHref } from "./reportes/period-nav";
 import { SummaryCard } from "./summary-card";
 import { TransactionList } from "./transaction-list";
 import { UpcomingCharges } from "./upcoming-charges";
+
+const one = (value: string | string[] | undefined) => (typeof value === "string" ? value : undefined);
+
+/**
+ * El recurrente que se paga al abrir (?recurrente=<regla>&ocurrencia=<fecha>, desde el Plan):
+ * la fecha de "Próximos" si está; si no (más adelante en el mes), la que describen los parámetros.
+ */
+function chargeFromParams(params: Record<string, string | string[] | undefined>, upcoming: UpcomingCharge[]): UpcomingCharge | null {
+  const ruleId = z.uuid().safeParse(params.recurrente).data;
+  if (!ruleId) return null;
+  const occurrence = z.iso.date().safeParse(params.ocurrencia).data;
+  const exact = occurrence && upcoming.find((c) => c.ruleId === ruleId && c.occurrence === occurrence);
+  if (exact) return exact;
+  const amount = Number(one(params.monto));
+  if (occurrence && Number.isInteger(amount) && amount > 0) {
+    const tx = z.uuid().safeParse(params.tx).data ?? null;
+    return {
+      ruleId,
+      occurrence,
+      day: z.iso.date().safeParse(params.dia).data ?? occurrence,
+      type: params.nuevo === "ingreso" ? "income" : "expense",
+      amount,
+      description: (one(params.nombre) ?? "").slice(0, 200),
+      categoryId: z.uuid().safeParse(params.categoria).data ?? null,
+      pending: tx !== null,
+      txId: tx,
+    };
+  }
+  return payableForRule(upcoming, ruleId);
+}
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   const params = await searchParams;
   const today = todayIn();
 
-  // Dashboard: ?vista=dashboard&periodo=semana|mes&fecha=YYYY-MM-DD
-  const kind: PeriodKind = params.periodo === "mes" ? "mes" : "semana";
-  const requested = z.iso.date().safeParse(params.fecha);
-  const anchor = requested.success && requested.data <= today ? requested.data : today;
-  const onDashboard = params.vista === "dashboard";
-  // ?recurrente=<regla>&ocurrencia=<fecha>: la ventana abre lista para marcarlo pagado.
-  const recurrente = z.uuid().safeParse(params.recurrente).data ?? null;
+  // El Dashboard ahora es la pestaña Reportes; los enlaces viejos (correos, accesos) siguen sirviendo.
+  if (params.vista === "dashboard") {
+    redirect(dashboardHref(params.periodo === "mes" ? "mes" : "semana", z.iso.date().safeParse(params.fecha).data ?? today));
+  }
 
-  const [{ name, userId, email, supabase }, summary, categories, rules, transactions, report, pendingCount, upcoming, money] =
+  const [{ name, userId, email, supabase }, summary, categories, rules, transactions, pendingCount, upcoming, money] =
     await Promise.all([
       requireUser(),
       getSummary(today),
       getCategories(),
       getRules(),
       getRecentTransactions(),
-      getReport(kind, anchor, today),
       getPendingCount(),
       getUpcoming(today),
       getMoneyOverview(),
@@ -69,54 +95,50 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       {needsSync && (
         <AppearanceSync accent={parseAccent(saved?.accent)} mode={parseMode(saved?.color_mode)} />
       )}
-      <HomePager
-        initialPanel={onDashboard ? 1 : 0}
-        home={
-          <>
-            <div className="mb-2 flex items-center gap-2 px-1">
-              <Logo className="h-4 w-auto" title={null} />
-              <p className="text-sm text-muted capitalize">Hola, {name.split(" ")[0]}</p>
-            </div>
-            <SummaryCard summary={summary} upcoming={upcoming} today={today} />
-            {pendingCount > 0 && (
-              <Link
-                href="/bandeja"
-                className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 text-sm ring-1 ring-border active:scale-[0.99]"
-              >
-                <span>
-                  <Tray aria-hidden className="mr-2 inline size-4 align-[-2px] text-muted" />
-                  {pendingCount === 1
-                    ? "1 movimiento por revisar"
-                    : `${pendingCount} movimientos por revisar`}
-                </span>
-                <span aria-hidden className="text-muted">
-                  ›
-                </span>
-              </Link>
-            )}
-            <MoneyRows {...money} />
-            <UpcomingCharges upcoming={upcoming} categories={categories} today={today} />
-            <TransactionList transactions={transactions} categories={categories} today={today} />
-            {transactions.length > 0 && (
-              <Link
-                href="/movimientos"
-                className="mt-4 block rounded-xl py-3 text-center text-sm font-medium text-muted active:scale-[0.98]"
-              >
-                Ver historial completo →
-              </Link>
-            )}
-          </>
-        }
-        dashboard={<ReportView kind={kind} report={report} today={today} />}
-      />
+      <main className="mx-auto max-w-lg px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-44">
+        <ScreenHeader
+          title={`Hola, ${name.split(" ")[0]}`}
+          action={
+            <Link href="/ajustes" aria-label="Ajustes" className="-mr-2 grid size-11 place-items-center rounded-xl text-muted active:scale-[0.97]">
+              <GearSix aria-hidden className="size-6" />
+            </Link>
+          }
+        />
+        <SummaryCard summary={summary} upcoming={upcoming} today={today} />
+        {pendingCount > 0 && (
+          <Link
+            href="/bandeja"
+            className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 text-sm ring-1 ring-border active:scale-[0.99]"
+          >
+            <span>
+              <Tray aria-hidden className="mr-2 inline size-4 align-[-2px] text-muted" />
+              {pendingCount === 1 ? "1 movimiento por revisar" : `${pendingCount} movimientos por revisar`}
+            </span>
+            <span aria-hidden className="text-muted">
+              ›
+            </span>
+          </Link>
+        )}
+        <MoneyRows {...money} />
+        <UpcomingCharges upcoming={upcoming} categories={categories} today={today} />
+        <TransactionList transactions={transactions} categories={categories} today={today} />
+        {transactions.length > 0 && (
+          <Link
+            href="/movimientos"
+            className="mt-4 block rounded-xl py-3 text-center text-sm font-medium text-muted active:scale-[0.98]"
+          >
+            Ver historial completo →
+          </Link>
+        )}
+      </main>
       <AddLauncher
         categories={active(categories)}
         rules={rules}
         usage={transactions}
         upcoming={upcoming}
         initialType={params.nuevo === "ingreso" ? "income" : "expense"}
-        initialPick={recurrente ? { ruleId: recurrente, occurrence: z.iso.date().safeParse(params.ocurrencia).data ?? null } : null}
-        startOpen={!onDashboard}
+        initialCharge={chargeFromParams(params, upcoming)}
+        requested={params.nuevo === "gasto" || params.nuevo === "ingreso"}
       />
     </>
   );

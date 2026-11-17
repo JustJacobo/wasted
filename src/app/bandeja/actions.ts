@@ -12,7 +12,8 @@ function revalidate() {
   revalidatePath("/");
   revalidatePath("/bandeja");
   revalidatePath("/movimientos");
-  revalidatePath("/ajustes/recurrentes");
+  revalidatePath("/recurrentes");
+  revalidatePath("/plan");
 }
 
 /** Agrega un pendiente a los movimientos con la categoría elegida (y la aprende). */

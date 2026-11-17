@@ -3,7 +3,7 @@ import { Bone, PageSkeleton } from "@/components/skeleton";
 // El enlace de volver depende de ?volver=, que aquí no se conoce: queda como texto.
 export default function Loading() {
   return (
-    <PageSkeleton className="pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+    <PageSkeleton title="Editar movimiento" back="/movimientos" className="pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <div className="mt-2 space-y-6">
         <Bone className="h-12" />
         <Bone className="h-[4.75rem]" />

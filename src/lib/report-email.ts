@@ -61,7 +61,7 @@ export function renderReportEmail({
   const delta = deltaText(report.expense, report.previousExpense, false, periodName);
   const top = report.byCategory.slice(0, 5);
   const max = top[0]?.amount ?? 1;
-  const link = `${appUrl}/?vista=dashboard&periodo=${kind}&fecha=${report.range.start}`;
+  const link = `${appUrl}/reportes?periodo=${kind}&fecha=${report.range.start}`;
   const first = name.split(" ")[0] || "hola";
 
   const subject = `Wasted · ${kind === "semana" ? "Tu semana" : "Tu mes"} (${label}): gastaste ${formatCOP(report.expense)}`;

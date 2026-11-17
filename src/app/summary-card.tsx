@@ -5,8 +5,8 @@ import { formatCOP, sizeForLength } from "@/lib/money";
 import { REFILL_COOKIE } from "@/lib/theme";
 import type { Summary, WeekBudget } from "@/lib/types";
 import { weekPlan, weekPlanMessage, type UpcomingCharge } from "@/lib/week-plan";
+import Link from "next/link";
 import { BudgetMeter } from "./budget-meter";
-import { GoToPanel } from "./home-pager";
 
 const monthName = new Intl.DateTimeFormat("es-CO", { month: "long", timeZone: "UTC" });
 
@@ -74,8 +74,8 @@ export async function SummaryCard({
       )}
       <BudgetMeter week={week} refillWeek={refill ? monday : undefined} />
 
-      <GoToPanel
-        index={1}
+      <Link
+        href="/reportes?periodo=mes"
         className="tabular mt-6 flex w-full items-center justify-between gap-2 border-y border-border py-3 text-sm active:opacity-70"
       >
         <span className="text-muted capitalize">{month_}</span>
@@ -88,9 +88,9 @@ export async function SummaryCard({
           <span aria-hidden className="text-muted">
             ›
           </span>
-          <span className="sr-only">Ver dashboard</span>
+          <span className="sr-only">Ver reportes del mes</span>
         </span>
-      </GoToPanel>
+      </Link>
     </section>
   );
 }

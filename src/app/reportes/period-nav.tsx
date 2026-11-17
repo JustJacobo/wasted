@@ -2,9 +2,8 @@ import Link from "next/link";
 import { formatDayRange, formatMonth } from "@/lib/dates";
 import { nextRange, previousRange, type PeriodKind, type Range } from "@/lib/report";
 
-/** Enlace al dashboard (panel derecho del inicio) en un periodo dado. */
-export const dashboardHref = (kind: PeriodKind, day: string) =>
-  `/?vista=dashboard&periodo=${kind}&fecha=${day}`;
+/** Enlace a Reportes (el Dashboard) en un periodo dado. */
+export const dashboardHref = (kind: PeriodKind, day: string) => `/reportes?periodo=${kind}&fecha=${day}`;
 
 export function PeriodNav({
   kind,

@@ -4,13 +4,12 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { sortByUsage } from "@/lib/category-usage";
 import { todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
-import { chargeName, findCharge, matchingCharges, payableCharges, payDate } from "@/lib/recurring-suggest";
+import { chargeName, matchingCharges, payableCharges, payDate } from "@/lib/recurring-suggest";
 import type { Category, Transaction, TxType, WeekBudget } from "@/lib/types";
 import type { UpcomingCharge } from "@/lib/week-plan";
 import { addTransaction, payRecurring, type Similar } from "../actions";
 import { AmountStep } from "./amount-step";
 import { CategoryStep } from "./category-step";
-import type { PaymentPick } from "./pay-event";
 import { DueChips, PayToggle } from "./recurring";
 import { TextStep } from "./text-step";
 
@@ -26,7 +25,7 @@ const ENTER_FROM = {
 export function AddSheet({
   open,
   initialType,
-  initialPick,
+  initialCharge,
   categories,
   rules,
   usage,
@@ -36,8 +35,8 @@ export function AddSheet({
 }: {
   open: boolean;
   initialType: TxType;
-  /** Abre listo para marcar pagada esta fecha de un recurrente (Próximos movimientos, ?recurrente=). */
-  initialPick: PaymentPick | null;
+  /** Abre listo para marcar pagada esta fecha de un recurrente (Próximos movimientos, el Plan). */
+  initialCharge: UpcomingCharge | null;
   categories: Category[];
   rules: CategoryRule[];
   usage: { category_id: string | null }[];
@@ -66,7 +65,7 @@ export function AddSheet({
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open) {
-      const start = initialPick ? findCharge(upcoming, initialPick.ruleId, initialPick.occurrence) : null;
+      const start = initialCharge;
       setView(start ? "category" : "amount");
       setDirection("forward");
       setType(start?.type ?? initialType);

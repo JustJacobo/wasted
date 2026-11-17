@@ -44,7 +44,7 @@ describe("renderReportEmail", () => {
 
   it("enlaza al dashboard del mismo periodo", () => {
     expect(email.html).toContain(
-      'href="https://wasted-lilac.vercel.app/?vista=dashboard&periodo=semana&fecha=2026-10-19"',
+      'href="https://wasted-lilac.vercel.app/reportes?periodo=semana&fecha=2026-10-19"',
     );
   });
 

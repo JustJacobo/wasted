@@ -24,7 +24,8 @@ const Input = Fields.and(Freq);
 export type RecurringInput = z.input<typeof Input>;
 
 function refresh() {
-  revalidatePath("/ajustes/recurrentes");
+  revalidatePath("/recurrentes");
+  revalidatePath("/plan");
   revalidatePath("/bandeja");
   revalidatePath("/");
 }

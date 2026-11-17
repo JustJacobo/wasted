@@ -142,7 +142,8 @@ export async function deleteTransaction(id: string): Promise<void> {
   if (data) await restoreOccurrence(supabase, data);
   revalidatePath("/");
   revalidatePath("/movimientos");
-  revalidatePath("/ajustes/recurrentes");
+  revalidatePath("/recurrentes");
+  revalidatePath("/plan");
 }
 
 /** Lo que guarda un recurrente marcado pagado, para poder deshacerlo. */
@@ -178,7 +179,8 @@ function revalidateRecurringPayment() {
   revalidatePath("/");
   revalidatePath("/movimientos");
   revalidatePath("/bandeja");
-  revalidatePath("/ajustes/recurrentes");
+  revalidatePath("/recurrentes");
+  revalidatePath("/plan");
 }
 
 const PayRecurring = NewTransaction.omit({ type: true }).extend({

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ScreenHeader } from "@/components/screen-header";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { getCategories, getRecurringRule, getTransaction } from "@/lib/data";
@@ -21,11 +21,7 @@ export default async function EditTransactionPage({
 
   return (
     <main className="mx-auto max-w-lg px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-      <header className="flex items-center gap-2 py-2">
-        <Link href={returnTo} className="rounded-lg px-2 py-1 text-sm text-muted active:scale-[0.97]">
-          ← Volver
-        </Link>
-      </header>
+      <ScreenHeader title="Editar movimiento" back={returnTo} />
       <EditForm
         transaction={transaction}
         categories={categories}

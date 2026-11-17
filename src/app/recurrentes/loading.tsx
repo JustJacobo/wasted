@@ -2,7 +2,7 @@ import { Bone, BoneRows, PageSkeleton } from "@/components/skeleton";
 
 export default function Loading() {
   return (
-    <PageSkeleton title="Recurrentes" back="/ajustes" backLabel="← Ajustes">
+    <PageSkeleton title="Recurrentes" back="/plan">
       <Bone className="mx-1 h-10" />
       <BoneRows count={4} />
       <Bone className="h-12" />

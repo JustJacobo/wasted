@@ -64,7 +64,7 @@ export function UpcomingCharges({
         })}
       </ul>
       {hidden > 0 && (
-        <Link href="/ajustes/recurrentes" className="block px-1 py-3 text-xs text-muted active:opacity-70">
+        <Link href="/plan" className="block px-1 py-3 text-xs text-muted active:opacity-70">
           y {hidden} más ›
         </Link>
       )}

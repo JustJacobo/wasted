@@ -5,16 +5,24 @@ import { balance, crossedLevel, weekBefore } from "@/lib/budget";
 import { startOfWeek, todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
 import type { Category, Transaction, TxType, WeekBudget } from "@/lib/types";
+import { findCharge } from "@/lib/recurring-suggest";
 import type { UpcomingCharge } from "@/lib/week-plan";
+import { TabBar } from "@/components/tab-bar";
 import { deleteTransaction, setCategory, undoRecurringPayment, type Similar } from "../actions";
 import { AddSheet } from "./add-sheet";
 import { pulseMecha } from "./mecha-pulse";
-import { onPayment, type PaymentPick } from "./pay-event";
+import { onPayment } from "./pay-event";
 import { revealRow } from "./reveal-row";
 import { SavedToast, type Feedback } from "./saved-toast";
 import { WastedMoment } from "./wasted-moment";
 
 const DISMISS_MS = 6_000;
+
+/**
+ * La ventana se abre sola la primera vez que se entra al inicio en esta visita
+ * (como la app al arrancar). Al volver desde otra pestaña ya no: se abre con el ＋.
+ */
+let openedThisVisit = false;
 
 /** true la primera vez de la semana que se pasa del 100% (recordado en este dispositivo). */
 function firstOverThisWeek(): boolean {
@@ -29,9 +37,9 @@ function firstOverThisWeek(): boolean {
 }
 
 /**
- * Barra fija con "− Gasto" y "+ Ingreso" y la ventana de registro, que se abre
- * sola al entrar. Al abrir se agrega una entrada al historial para que el
- * botón Atrás de Android cierre la ventana en vez de salir de la app.
+ * La barra de pestañas (con el ＋ que abre el registro) y la ventana de
+ * registro. Al abrir se agrega una entrada al historial para que el botón
+ * Atrás de Android cierre la ventana en vez de salir de la app.
  */
 export function AddLauncher({
   categories,
@@ -39,21 +47,25 @@ export function AddLauncher({
   usage,
   upcoming,
   initialType,
-  initialPick = null,
-  startOpen = true,
+  initialCharge = null,
+  requested = false,
 }: {
   categories: Category[];
   rules: CategoryRule[];
   usage: { category_id: string | null }[];
   upcoming: UpcomingCharge[];
   initialType: TxType;
-  /** ?recurrente=<regla>&ocurrencia=<fecha>: abre listo para marcarlo pagado. */
-  initialPick?: PaymentPick | null;
-  startOpen?: boolean;
+  /** ?recurrente=…: abre listo para marcar pagada esa fecha. */
+  initialCharge?: UpcomingCharge | null;
+  /** Se pidió abrirla (?nuevo=gasto|ingreso, el ＋ de otra pestaña). */
+  requested?: boolean;
 }) {
-  const [open, setOpen] = useState(startOpen || initialPick !== null);
+  const [open, setOpen] = useState(!openedThisVisit || requested || initialCharge !== null);
+  useEffect(() => {
+    openedThisVisit = true;
+  }, []);
   const [type, setType] = useState<TxType>(initialType);
-  const [pick, setPick] = useState<PaymentPick | null>(initialPick);
+  const [charge, setCharge] = useState<UpcomingCharge | null>(initialCharge);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [wastedBy, setWastedBy] = useState<number | null>(null);
   const hideWasted = useCallback(() => setWastedBy(null), []);
@@ -102,7 +114,7 @@ export function AddLauncher({
 
   function openWith(next: TxType) {
     setType(next);
-    setPick(null);
+    setCharge(null);
     show(null);
     setOpen(true);
   }
@@ -110,12 +122,12 @@ export function AddLauncher({
   // "Próximos movimientos": abre la ventana con ese recurrente listo para marcarlo pagado.
   useEffect(
     () =>
-      onPayment((next) => {
-        setPick(next);
+      onPayment((pick) => {
+        setCharge(findCharge(upcoming, pick.ruleId, pick.occurrence));
         setFeedback(null);
         setOpen(true);
       }),
-    [],
+    [upcoming],
   );
 
   function saved(transaction: Transaction, week: WeekBudget, similar?: Similar | null, paid?: string) {
@@ -150,41 +162,15 @@ export function AddLauncher({
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto max-w-lg px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          {feedback && (
-            <div className="mb-3">
-              <SavedToast
-                feedback={feedback}
-                categories={categories}
-                onCategory={changeCategory}
-                onUndo={undo}
-              />
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => openWith("expense")}
-              className="h-14 rounded-xl bg-foreground text-lg font-semibold text-background transition-transform duration-150 ease-out active:scale-[0.97]"
-            >
-              − Gasto
-            </button>
-            <button
-              type="button"
-              onClick={() => openWith("income")}
-              className="h-14 rounded-xl bg-surface text-lg font-semibold ring-1 ring-border transition-transform duration-150 ease-out active:scale-[0.97]"
-            >
-              <span className="text-accent-ink">+</span> Ingreso
-            </button>
-          </div>
-        </div>
-      </div>
+      <TabBar
+        onAdd={() => openWith("expense")}
+        toast={feedback && <SavedToast feedback={feedback} categories={categories} onCategory={changeCategory} onUndo={undo} />}
+      />
 
       <AddSheet
         open={open}
         initialType={type}
-        initialPick={pick}
+        initialCharge={charge}
         categories={categories}
         rules={rules}
         usage={usage}

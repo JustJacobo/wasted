@@ -21,13 +21,16 @@ export function RecurringManager({
   recurring,
   categories,
   today,
+  startCreating = false,
 }: {
   recurring: Recurring[];
   categories: Category[];
   today: string;
+  /** ?nuevo=1 (desde el Plan): abre el formulario de uno nuevo. */
+  startCreating?: boolean;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(startCreating);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 

@@ -38,7 +38,7 @@ export function RepeatSection({
       <span className="mb-1 block px-1 text-sm text-muted">Repetir</span>
       {rule ? (
         <Link
-          href="/ajustes/recurrentes"
+          href="/recurrentes"
           className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 ring-1 ring-border active:scale-[0.99]"
         >
           <span className="min-w-0">

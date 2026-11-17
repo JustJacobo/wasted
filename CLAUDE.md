@@ -50,22 +50,27 @@ npx expo start --dev-client --port 8081   # Metro para la build debug
 - **Next.js 16 (App Router)**. `cacheComponents` está apagado a propósito: casi todo depende de la sesión. El middleware se llama `src/proxy.ts`. Antes de usar una API de Next, consulta `node_modules/next/dist/docs/`.
 - **Supabase**: Postgres + Auth (Google y enlace mágico) + RLS por `user_id`. El esquema está en `supabase/migrations/`. Un trigger sobre `auth.users` crea las categorías y la cuenta por defecto. Los montos se guardan como `bigint` en pesos y las fechas como `date` en hora de Colombia (`src/lib/dates.ts`).
 - **Auth**: `requireUser()` en `src/lib/auth.ts` es la puerta de toda página y Server Action. Solo entran correos de la tabla `members` (los dueños invitan desde /ajustes); RLS además exige `is_member()`.
-- **Registro en la web (vía principal)**: `src/app/add/`. `AddLauncher` muestra la barra "− Gasto / + Ingreso" y abre `AddSheet` al entrar a la app.
+- **Registro en la web (vía principal)**: `src/app/add/`. `AddLauncher` pinta la barra de pestañas (`TabBar` con el ＋) y abre `AddSheet` la primera vez que se entra al inicio en la visita (al volver por la pestaña ya no; se abre con el ＋).
   - El sheet tiene 2 pasos: monto con teclado propio (`src/lib/amount-keypad.ts`) y luego fecha (hoy por defecto) y categoría; "Agregar gasto · <categoría>" guarda con la Server Action `addTransaction`.
   - Las categorías salen ordenadas por uso (`src/lib/category-usage.ts`).
   - El sheet agrega una entrada al historial para que Atrás lo cierre.
-  - `?nuevo=gasto|ingreso` (accesos directos del manifest) elige el tipo inicial.
+  - `?nuevo=gasto|ingreso` (accesos directos del manifest y el ＋ de las otras pestañas) la abre con ese tipo; `?recurrente=&ocurrencia=` (y `monto`, `nombre`, `categoria`, `tx`, `dia` desde el Plan) la abre lista para marcar ese recurrente pagado.
   - El ⌨ del sheet abre el modo texto secundario (`text-step.tsx`).
 - **Registro por texto** (modo ⌨, Telegram y atajos): todo pasa por `recordQuickEntry()` en `src/lib/record.ts`. El flujo es:
   1. `parseQuickAdd` (`src/lib/quick-add/parse.ts`) interpreta montos como `25k`, `1.5M`, `20 lucas` o `$25.000`, fechas como `ayer`, `el lunes` o `15/10`, y decide si es gasto o ingreso (`+` o palabras clave).
   2. `matchCategory` busca en las reglas aprendidas (`category_rules`) y luego en las palabras clave integradas (`keywords.ts`, indexadas por `categories.key`).
   3. Si nada coincide, `suggestCategory` le pregunta a Claude Haiku (`src/lib/ai/categorize.ts`, se omite sin `ANTHROPIC_API_KEY`).
   4. Si tampoco hay respuesta, usa "Varios" u "Otros".
-- **Inicio y Dashboard**: `src/app/home-pager.tsx` pone ambos paneles lado a lado. Se cambia deslizando (scroll-snap nativo) o con las pestañas.
-  - El paginador y los paneles deben ser `relative`: si no, los elementos absolutos (`sr-only`) escapan del recorte y ensanchan la página en el celular.
-  - `?vista=dashboard` abre directo en el dashboard, y en ese caso no se abre la ventana de registro.
-  - `/reportes` redirige ahí.
-- **Dashboard / reportes** (`/?vista=dashboard&periodo=semana|mes&fecha=YYYY-MM-DD`, contenido en `src/app/reportes/report-view.tsx`, datos con `getReport`):
+- **Navegación** (web y app iguales): barra de pestañas abajo Inicio · Movimientos · ＋ · Plan · Reportes. Ajustes se abre con el engranaje del inicio.
+  - Web: `src/components/tab-bar.tsx` (en el inicio la pinta `AddLauncher` con el toast encima; las otras pestañas la ponen al final de la página). Encabezados con `ScreenHeader` y filas con `ListSection`/`ListRow` (`src/components/`).
+  - App: grupo `mobile/src/app/(app)/(tabs)/` con `Tabs` de expo-router y la barra propia `features/nav/tab-bar.tsx` (el ＋ abre `/registrar`; mantenerlo presionado, Ingreso). El toast de lo guardado se pinta encima de la barra, en cualquier pestaña. Lo demás se apila encima (Stack anclado en `(tabs)`). Encabezado único `ui/header.tsx` y filas `ui/list.tsx`.
+  - Enlaces viejos: `/?vista=dashboard` redirige a `/reportes` y `/ajustes/recurrentes` a `/recurrentes` (web y app).
+- **Plan** (`/plan`, pestaña de la app; datos con `getPlan` en `src/lib/data.ts`, op `plan`):
+  - Pagos fijos del mes: `schedule()` en `src/lib/recurring-schedule.ts` (puro y testeado) da cada fecha de cada recurrente activo con su estado (`paid`, `pending`, `overdue`, `upcoming`, `skipped`) y los totales del mes ("Falta pagar"). Un pago adelantado se une por `raw.paidOccurrence`. Lo vencido y la primera fecha que viene se pueden marcar pagados con un toque (abre el registro listo).
+  - Préstamos abiertos y metas activas (`getOpenMoney`, sin lo cerrado ni lo archivado).
+  - "Administrar" lleva a `/recurrentes` (antes en Ajustes); `?nuevo=1` abre el formulario.
+- **Ajustes** solo tiene configuración: cuenta, categorías, CSV, tema, reportes. Telegram, correo, la app de Android, notificaciones y atajos están en `/ajustes/conexiones`; quién tiene acceso, en `/ajustes/personas` (web y app).
+- **Dashboard / reportes** (`/reportes?periodo=semana|mes&fecha=YYYY-MM-DD`, pestaña Reportes; contenido en `src/app/reportes/report-view.tsx`, datos con `getReport`):
   - Toda la agregación es pura y está testeada en `src/lib/report.ts` (`buildReport`, rangos lunes–domingo y mes calendario, comparación con el periodo anterior).
   - Los gráficos son HTML/CSS a mano, en un solo tono `--viz`, validado con la skill `dataviz` para modo claro y oscuro.
   - Las variaciones llevan ▲▼ coloreado y el texto en tinta neutra.
@@ -78,7 +83,7 @@ npx expo start --dev-client --port 8081   # Metro para la build debug
 - **Exportar a CSV** (solo exportar; no hay importación):
   - `src/lib/export-csv.ts` (puro y testeado): punto y coma y BOM para que Excel en español lo abra con doble clic (Google Sheets lo detecta solo). El monto lleva signo (gastos en negativo) y la hora es la de Colombia. Los textos que empiezan por `= + - @` llevan un apóstrofo para que Excel no los ejecute como fórmula: los comercios vienen de correos ajenos.
   - `GET /movimientos/exportar` (Route Handler; la sesión la piden el proxy y `requireUser`): sin `todo` es el mes del Historial con sus filtros (`historyParams` en `src/app/movimientos/params.ts`, compartido con la página); `?todo=1` trae todo lo confirmado (`getAllTransactions`, en páginas de 1000).
-  - Se baja con "CSV" en el Historial y "Exportar a CSV" en Ajustes. Son `<a>` sin `download`: `<Link>` precargaría el archivo y, si la sesión venció, `download` guardaría la página de /login.
+  - Se baja con "CSV" en Movimientos y "Exportar a CSV" en Ajustes. Son `<a>` sin `download`: `<Link>` precargaría el archivo y, si la sesión venció, `download` guardaría la página de /login.
 - **Saldo y presupuesto** (`src/lib/budget.ts`, puro y testeado): el saldo no se reinicia cada lunes.
   - `carry` es lo que sobró o faltó antes del lunes (función SQL `totals_before`, llamada desde `fetchSummary`; incluye lo movido a préstamos y metas).
   - Lo disponible en la semana es `carry` + lo que entró + `moved` (préstamos y metas de la semana, con signo). "Te quedan" es lo disponible menos lo que salió, es decir, el saldo total.
@@ -95,13 +100,13 @@ npx expo start --dev-client --port 8081   # Metro para la build debug
 - **Aprendizaje**: cuando el usuario corrige una categoría, `learnCategory` guarda la descripción plegada (sin tildes, en minúsculas) como regla.
 - **Telegram** (`src/lib/telegram/`, webhook en `src/app/api/telegram/route.ts`):
   - El webhook valida `X-Telegram-Bot-Api-Secret-Token`, que se deriva del token del bot (`webhookSecret`). `ensureWebhook` lo registra (con los comandos) al tocar "Conectar Telegram" si no apunta a esta app; `/api/telegram/setup` (con `CRON_SECRET`) hace lo mismo a mano.
-  - Vinculación: Ajustes crea un código de un solo uso (15 min, guardado como hash) y abre `t.me/<bot>?start=<código>`. Tabla `telegram_links`: un chat por usuario, solo chats privados, y en cada mensaje se verifica que el usuario siga en `members`.
+  - Vinculación: Ajustes › Conexiones crea un código de un solo uso (15 min, guardado como hash) y abre `t.me/<bot>?start=<código>`. Tabla `telegram_links`: un chat por usuario, solo chats privados, y en cada mensaje se verifica que el usuario siga en `members`.
   - Todo usa el cliente de servicio, así que cada consulta filtra por `user_id`. `recordQuickEntry` recibe `userId` y `externalId = tg:<chat>:<mensaje>` para que un reintento de Telegram no duplique.
   - Mensajes y botones puros y testeados en `format.ts` (HTML de Telegram escapado; los uuid van en base64url para caber en `callback_data`).
   - Los reportes programados salen por correo y por Telegram; registrar desde la web avisa por Telegram al cruzar el 80% o el 100% de lo disponible en la semana (`notify.ts`, dentro de `after()`).
   - En local: `TELEGRAM_API_URL` apunta a un servidor falso del Bot API.
 - **Atajos y widgets** (Atajos y Scriptable en iPhone, HTTP Shortcuts en Android; guía en `/ajustes/atajos`):
-  - Clave personal `wst_…` creada en Ajustes. En `api_tokens` queda solo su hash (`src/lib/api-token.ts`): una de atajos por usuario (`device` nulo) y una por celular con la app.
+  - Clave personal `wst_…` creada en Ajustes › Conexiones. En `api_tokens` queda solo su hash (`src/lib/api-token.ts`): una de atajos por usuario (`device` nulo) y una por celular con la app.
   - `userFromRequest` (`src/lib/api-auth.ts`) lee `Authorization: Bearer`, busca el hash con el cliente de servicio y verifica `members` en cada llamada (`memberInfo`, `src/lib/members.ts`).
   - `POST /api/atajos/registrar` (JSON `texto`, formulario o texto plano) pasa por `recordQuickEntry` con `source = 'shortcut'`. `GET /api/atajos/saldo` da el saldo para widgets.
   - Con `?formato=texto` responden solo el mensaje, para mostrarlo tal cual. Los textos son puros y testeados en `src/lib/shortcut-format.ts`.
@@ -111,15 +116,20 @@ npx expo start --dev-client --port 8081   # Metro para la build debug
     - `cache()` no guarda nada en un Route Handler: la ruta corre cada llamada en `inAppCall` (`src/lib/auth.ts`) para verificar la sesión una sola vez. Responde 401 (sesión vencida: la app la cierra), 403 (sin invitación) o 503 (Auth no respondió: se reintenta, no se cierra la sesión).
     - Salir (web y app) cierra solo la sesión de ese dispositivo (`scope: "local"`). Si la app pierde la sesión, `forgetDevice` desconecta el widget.
   - Login: Google en la pestaña del sistema (`expo-web-browser`) y enlace mágico, los dos con PKCE (`expo-crypto` da WebCrypto a Hermes) y vuelta por `wasted://auth/callback` (en la lista de redirects de Supabase, local y producción).
+  - Arranque y fluidez (medido con las marcas `[arranque]` de `mobile/src/core/perf.ts`, solo en desarrollo, y el encabezado `Server-Timing` de `/api/app`):
+    - Lo último leído (`me`, `home`, `plan`, `report`, `settings`) queda en el teléfono con `PersistQueryClientProvider` y AsyncStorage (`mobile/src/core/query.ts`, 7 días, `buster` = versión de la app). El inicio pinta con eso y se actualiza detrás. Salir lo borra (`forgetCache`).
+    - Con una sesión guardada se entra sin esperar el refresco del token (`AuthProvider` lee la clave `sb-<proyecto>-auth-token`); si el token ya no sirve, `getSession` cierra la sesión. Sin caché, `(app)/_layout.tsx` pide `home` a la vez que `me`.
+    - Al registrar, `homeAfterSave` (`features/add/optimistic.ts`) actualiza el inicio con el `week` que devuelve la acción antes de recargar. Reportes y Plan se piden cuando el inicio ya pintó.
+    - Movimientos es una `SectionList` (solo dibuja lo que se ve). Las fuentes Geist van dentro del APK (plugin de `expo-font` en `app.config.ts`): no hay `useFonts`.
   - La lógica pura se importa de `src/lib` como `@/lib/...` (alias en `mobile/tsconfig.json`, `watchFolders` en `metro.config.js`). Desde la app no se importa nada `server-only`; los tipos de las respuestas se redefinen en `mobile/`.
   - Después de escribir, `refreshAfterWrite()` (`mobile/src/core/query.ts`) deja viejo todo lo leído, como `revalidatePath` en la web.
   - Lo nativo vive en el módulo local `mobile/modules/wasted-android` (Java del widget, el registro rápido y el lector de notificaciones, más el puente `WastedAndroidModule.kt`):
-    - Cada celular tiene su clave `wst_` (columna `device` de `api_tokens`): `connectDevice` (`mobile/src/core/device.ts`) la pide con `createDeviceKey` al entrar y `signOut` la revoca. Ajustes (web y app) lista los celulares. Si el widget recibe 401 borra la clave y la app crea otra al abrirse.
+    - Cada celular tiene su clave `wst_` (columna `device` de `api_tokens`): `connectDevice` (`mobile/src/core/device.ts`) la pide con `createDeviceKey` al entrar y `signOut` la revoca. Ajustes › Conexiones (web y app) lista los celulares. Si el widget recibe 401 borra la clave y la app crea otra al abrirse.
     - `BalanceWidget` muestra "Te quedan" (cada 30 min, con ↻ y cuando el inicio trae datos nuevos). `QuickAddActivity` es el cuadro "¿Qué registras?" con botones fijos.
     - `NotificationReader` lee solo `Packages.WATCHED` (la misma lista que `WATCHED_PACKAGES` del servidor) y manda a `/api/notificaciones`, con cola sin señal (`NotificationQueue`). Si la respuesta trae `preguntas`, `ClassifyNotifier` muestra "¿Qué fue?" con un botón por categoría (las 3 más usadas); `ClassifyReceiver` llama a `/api/atajos/clasificar`. Sin el permiso de notificaciones (Android 13+, se pide en "Pagos automáticos") no se muestra y queda la fila del inicio. El permiso se da en la pantalla "Pagos automáticos" (`mobile/src/app/(app)/notificaciones.tsx`, también `wasted://notificaciones`). Android 13+ lo bloquea en apps instaladas por APK hasta "Permitir ajustes restringidos".
     - Los accesos del ícono están en `mobile/plugins/shortcuts.xml` (el plugin `with-app-shortcuts` los copia a la app).
     - `android.blockedPermissions` (`app.config.ts`) quita los permisos que la plantilla de Expo agrega sin usarse (mostrarse encima de otras apps, almacenamiento). Mostrarse encima de otras apps junto con leer notificaciones de bancos es el patrón de un troyano bancario: Play Protect bloqueó la instalación de la 2.0.0-beta.3 por eso. Por lo mismo el módulo ya no declara `<queries>` de las apps de bancos. El APK solo debe pedir `INTERNET`, `VIBRATE`, `ACCESS_NETWORK_STATE` y `POST_NOTIFICATIONS` (revisar con `aapt2 dump permissions`).
-    - `connectDevice` devuelve el motivo si no consigue la clave (`lastConnectError`) y Ajustes › "Este celular" lo muestra con **Reintentar**: sin clave no funcionan el widget, el registro rápido ni las notificaciones.
+    - `connectDevice` devuelve el motivo si no consigue la clave (`lastConnectError`) y Ajustes › Conexiones › "Este celular" lo muestra con **Reintentar**: sin clave no funcionan el widget, el registro rápido ni las notificaciones.
   - Publicar: tag `android-vX.Y.Z` (o `android-vX.Y.Z-beta.N`, que sale como prerelease y queda por debajo de la final: 2.0.0-beta.3 → 19903). `.github/workflows/android-release.yml` hace `expo prebuild`, firma con los secretos del repo (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`; el plugin `with-release-signing` lee `mobile/keystore.properties`), verifica la huella y sube `wasted.apk`, solo para 64 bits (`arm64-v8a`): no se instala en celulares de 32 bits. Ajustes y el README enlazan a `releases/latest/download/wasted.apk`.
   - Para probar pantallas con datos extremos (nombres de 60 caracteres, montos de $999.999.999.999, 130 movimientos, bandeja con repetidos) está `supabase/dev/peor-caso.sql`, para la base local; las instrucciones están en el archivo.
   - En local (Windows): la ruta del repo pasa el límite de 260 caracteres de CMake, así que se compila desde una copia corta (`robocopy mobile C:\w\mobile` y `src\lib` a `C:\w\src\lib`; ojo: `/XD android` también salta `modules/wasted-android/android`, que se copia aparte) con `JAVA_HOME` en el JBR de Android Studio. La debug usa `mobile/.env.development.local` (API y Supabase en `10.0.2.2`, el computador visto desde el emulador); Metro corre desde `mobile/`.
@@ -160,4 +170,4 @@ npx expo start --dev-client --port 8081   # Metro para la build debug
     - Un pago adelantado cuenta por la fecha que cubre (`raw.paidOccurrence`), no por el día en que se pagó: `alreadyLinked` no genera esa fecha, `upcomingCharges` no la cuenta (`paid_occurrence`) y `linkForCharge` devuelve `kind: "paid"`, así el correo o la notificación del cobro va a la bandeja como posible repetido en vez de contar doble.
     - Deshacer usa `undoRecurringPayment` (vuelve a la bandeja o devuelve `next_on`); borrar el pago desde el Historial también devuelve la fecha.
     - `UpcomingCharge` trae `txId` (el pendiente) y `occurrence` (la fecha de la serie). Las filas de "Próximos movimientos" abren la ventana con esa fecha (`findCharge`): `/registrar?recurrente=&ocurrencia=` en la app, `openPayment` (`src/app/add/pay-event.ts`) o `/?recurrente=&ocurrencia=` en la web.
-  - Se crea desde un movimiento ("Repetir" en `/movimientos/[id]`: ese movimiento es la primera vez) o en Ajustes › Recurrentes, donde se edita, pausa (al reanudar no trae lo vencido en la pausa) o elimina (borra lo que generó sin confirmar).
+  - Se crea desde un movimiento ("Repetir" en `/movimientos/[id]`: ese movimiento es la primera vez) o en Plan › Administrar (`/recurrentes`), donde se edita, pausa (al reanudar no trae lo vencido en la pausa) o elimina (borra lo que generó sin confirmar).

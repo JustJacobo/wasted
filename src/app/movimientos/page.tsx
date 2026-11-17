@@ -6,6 +6,8 @@ import { formatCOP } from "@/lib/money";
 import { TransactionList } from "../transaction-list";
 import { HistoryFilters } from "./history-filters";
 import { historyParams } from "./params";
+import { ScreenHeader } from "@/components/screen-header";
+import { TabBar } from "@/components/tab-bar";
 
 export default async function HistoryPage({ searchParams }: PageProps<"/movimientos">) {
   const today = todayIn();
@@ -38,13 +40,9 @@ export default async function HistoryPage({ searchParams }: PageProps<"/movimien
     "grid size-11 place-items-center rounded-xl text-xl transition-transform duration-150 ease-ui active:scale-[0.97]";
 
   return (
-    <main className="mx-auto max-w-lg space-y-4 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
-      <header className="flex items-center gap-2 py-2">
-        <Link href="/" className="rounded-lg px-2 py-1 text-sm text-muted active:scale-[0.97]">
-          ← Volver
-        </Link>
-        <h1 className="flex-1 text-right text-lg font-bold tracking-tight">Historial</h1>
-      </header>
+    <>
+    <main className="mx-auto max-w-lg space-y-4 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-32">
+      <ScreenHeader title="Movimientos" />
 
       <div className="flex items-center justify-between">
         <Link href={href({ mes: prevMonth })} replace scroll={false} aria-label="Mes anterior" className={arrow}>
@@ -129,5 +127,7 @@ export default async function HistoryPage({ searchParams }: PageProps<"/movimien
         }
       />
     </main>
+    <TabBar />
+    </>
   );
 }
