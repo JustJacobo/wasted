@@ -21,7 +21,11 @@ export interface DaySection {
 /** Los movimientos por día, en el orden en que llegan (del más reciente al más antiguo). */
 export function groupByDay(transactions: Transaction[]): DaySection[] {
   const days = new Map<string, Transaction[]>();
-  for (const tx of transactions) days.set(tx.occurred_on, [...(days.get(tx.occurred_on) ?? []), tx]);
+  for (const tx of transactions) {
+    const day = days.get(tx.occurred_on);
+    if (day) day.push(tx);
+    else days.set(tx.occurred_on, [tx]);
+  }
   return [...days].map(([day, data]) => ({
     day,
     data,

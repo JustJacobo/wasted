@@ -33,6 +33,8 @@ export interface ScheduledCharge {
   txId: string | null;
   /** Se puede marcar pagado ahora: un pendiente, o la próxima fecha del recurrente. */
   payable: boolean;
+  /** Fechas siguientes de este recurrente en el periodo que no se listan (una diaria tendría 30 filas). */
+  more: number;
 }
 
 export interface ScheduleTotals {
@@ -116,6 +118,7 @@ export function schedule(rules: Recurring[], linked: LinkedCharge[], from: strin
         status,
         txId: tx?.id ?? null,
         payable: status === "pending" || status === "overdue" || firstUpcoming,
+        more: 0,
       });
     }
   }
@@ -134,17 +137,25 @@ export function schedule(rules: Recurring[], linked: LinkedCharge[], from: strin
       status: "pending",
       txId: tx.id,
       payable: true,
+      more: 0,
     });
   }
 
   items.sort((a, b) => (a.day === b.day ? a.description.localeCompare(b.description) : a.day < b.day ? -1 : 1));
 
-  // Los totales son del periodo: un pendiente de un mes anterior se ve en la lista pero no suma aquí.
+  // Los totales son del periodo y cuentan todas las fechas: un pendiente de un mes anterior se ve en
+  // la lista pero no suma aquí.
   const totals = (type: TxType): ScheduleTotals => {
     const counted = items.filter((c) => c.type === type && c.status !== "skipped" && c.occurrence >= from);
     const total = counted.reduce((sum, c) => sum + c.amount, 0);
     const paid = counted.filter((c) => c.status === "paid").reduce((sum, c) => sum + c.amount, 0);
     return { total, paid, left: total - paid };
   };
-  return { items, expense: totals("expense"), income: totals("income") };
+  // La lista muestra lo pagado, lo pendiente o vencido y la próxima fecha de cada recurrente; las
+  // siguientes se resumen en esa fila (`more`).
+  const visible = items.filter((c) => c.status !== "upcoming" || c.payable);
+  for (const c of visible) {
+    if (c.status === "upcoming") c.more = items.filter((o) => o.ruleId === c.ruleId && o.status === "upcoming" && !o.payable).length;
+  }
+  return { items: visible, expense: totals("expense"), income: totals("income") };
 }

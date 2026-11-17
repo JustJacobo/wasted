@@ -167,6 +167,7 @@ function FixedPayments({ data, byId }: { data: PlanData; byId: Map<string, Categ
                   </Text>
                   <Text size={13} numberOfLines={1} tone={c.status === "pending" || c.status === "overdue" ? "foreground" : "muted"} weight={c.status === "pending" || c.status === "overdue" ? "medium" : "regular"}>
                     {scheduleLabel(c, data.today)}
+                    {c.more > 0 ? ` · y ${c.more} más este mes` : ""}
                   </Text>
                 </View>
                 <Text mono size={15} tracking={-0.3} tone={done ? "muted" : c.type === "income" ? "accent" : "foreground"} style={{ textDecorationLine: c.status === "skipped" ? "line-through" : "none" }}>
@@ -230,7 +231,7 @@ function Goals({ data }: { data: PlanData }) {
       {items.map((g) => (
         <Tap key={g.id} accessibilityRole="button" pressScale={0.99} onPress={() => router.push("/metas")} style={{ paddingHorizontal: 16, paddingVertical: 14, gap: 8 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
-            <Text numberOfLines={1} style={{ flex: 1 }}>
+            <Text numberOfLines={2} style={{ flex: 1 }}>
               {g.name}
             </Text>
             <Text size={14} tabular tone="muted" numberOfLines={1}>

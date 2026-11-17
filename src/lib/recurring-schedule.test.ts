@@ -58,6 +58,7 @@ describe("pagos fijos del mes", () => {
 
   it("un pendiente se puede marcar pagado; una fecha pasada sin movimiento quedó omitida", () => {
     const weekly = rule({ id: "w", every: 1, unit: "week", starts_on: "2026-11-02", next_on: "2026-11-23", amount: 200000, type: "income", description: "Cuota" });
+    // (La del 30 se resume en la del 23.)
     const linked = [
       tx({ id: "a", recurring_id: "w", type: "income", amount: 200000, occurred_on: "2026-11-02" }),
       tx({ id: "b", recurring_id: "w", type: "income", amount: 200000, occurred_on: "2026-11-16", status: "pending" }),
@@ -68,7 +69,6 @@ describe("pagos fijos del mes", () => {
       ["w", "2026-11-09", "skipped", false],
       ["w", "2026-11-16", "pending", true],
       ["w", "2026-11-23", "upcoming", true],
-      ["w", "2026-11-30", "upcoming", false],
     ]);
     expect(s.income).toEqual({ total: 800000, paid: 200000, left: 600000 });
   });
@@ -80,13 +80,24 @@ describe("pagos fijos del mes", () => {
 
   it("todas las fechas vencidas se pueden pagar, y de lo que viene solo la primera", () => {
     const weekly = rule({ every: 1, unit: "week", starts_on: "2026-11-02", next_on: "2026-11-02" });
-    expect(summary(schedule([weekly], [], FROM, TO, TODAY))).toEqual([
+    const s = schedule([weekly], [], FROM, TO, TODAY);
+    expect(summary(s)).toEqual([
       ["r1", "2026-11-02", "overdue", true],
       ["r1", "2026-11-09", "overdue", true],
       ["r1", "2026-11-16", "overdue", true],
       ["r1", "2026-11-23", "upcoming", true],
-      ["r1", "2026-11-30", "upcoming", false],
     ]);
+    // La del 30 no se lista: se resume en la del 23, pero suma en el mes.
+    expect(s.items.at(-1)?.more).toBe(1);
+    expect(s.expense.total).toBe(5 * 45000);
+  });
+
+  it("un recurrente diario no llena el mes: una fila con las que faltan", () => {
+    const daily = rule({ every: 1, unit: "day", starts_on: TODAY, next_on: TODAY, amount: 7000 });
+    const s = schedule([daily], [], FROM, TO, TODAY);
+    expect(s.items).toHaveLength(1);
+    expect(s.items[0]).toMatchObject({ occurrence: TODAY, more: 13 });
+    expect(s.expense.total).toBe(14 * 7000);
   });
 
   it("un pendiente de un mes anterior se ve pero no suma en los totales del mes", () => {

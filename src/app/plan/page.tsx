@@ -127,6 +127,7 @@ export default async function PlanPage() {
                           <span className={`block truncate ${done ? "text-muted" : ""}`}>{name}</span>
                           <span className={`block truncate text-[13px] ${urgent ? "font-medium" : "text-muted"}`}>
                             {scheduleLabel(c, today)}
+                            {c.more > 0 && ` · y ${c.more} más este mes`}
                           </span>
                         </span>
                         <span
@@ -178,7 +179,7 @@ export default async function PlanPage() {
             {plan.goals.items.map((g) => (
               <Link key={g.id} href="/metas" className="block space-y-2 px-4 py-3.5 transition-colors active:bg-border/40">
                 <span className="flex items-baseline gap-3">
-                  <span className="min-w-0 flex-1 truncate">{g.name}</span>
+                  <span className="line-clamp-2 min-w-0 flex-1">{g.name}</span>
                   <span className="tabular shrink-0 text-sm text-muted">
                     {formatCOP(g.saved)}
                     {g.target ? ` de ${formatCOP(g.target)}` : ""}

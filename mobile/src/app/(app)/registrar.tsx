@@ -7,6 +7,7 @@ import { ScrollView, View } from "react-native";
 import Animated, { FadeIn, ReduceMotion } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { sortByUsage } from "@/lib/category-usage";
+import { todayIn } from "@/lib/dates";
 import { chargeName, matchingCharges, payableCharges, payableForRule, payDate } from "@/lib/recurring-suggest";
 import type { TxType } from "@/lib/types";
 import type { UpcomingCharge } from "@/lib/week-plan";
@@ -80,7 +81,8 @@ export default function RegisterSheet() {
   const [view, setView] = useState<View_>(start ? "category" : "amount");
   const [type, setType] = useState<TxType>(start?.type ?? (params.tipo === "ingreso" ? "income" : "expense"));
   const [digits, setDigits] = useState(start ? String(start.amount) : "");
-  const today = home.data?.today ?? "";
+  // La fecha del teléfono (hora de Colombia): lo guardado del inicio puede ser de días atrás.
+  const today = todayIn();
   const [date, setDate] = useState(start ? payDate(start, today) : today);
   const [note, setNote] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(() => usable(start));
@@ -119,7 +121,7 @@ export default function RegisterSheet() {
     setWaiting(false);
     const late = startFrom(home.data);
     if (late) pick(late);
-    else setDate(home.data.today);
+    else setDate(today);
   }
 
   function togglePaying() {

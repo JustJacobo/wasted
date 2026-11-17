@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { CaretLeftIcon, CaretRightIcon, DownloadSimple } from "phosphor-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, SectionList, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { addDays, formatMonth } from "@/lib/dates";
@@ -56,6 +56,8 @@ export default function HistoryScreen() {
   useEffect(
     () =>
       navigation.addListener("tabPress" as never, () => {
+        setFilters({});
+        setText("");
         if (params.mes || params.tipo || params.cat) router.setParams({ mes: undefined, tipo: undefined, cat: undefined, n: undefined });
       }),
     [navigation, params.mes, params.tipo, params.cat],
@@ -76,6 +78,8 @@ export default function HistoryScreen() {
   });
   const data = history.data;
   const set = (changes: Filters) => setFilters((f) => ({ ...f, ...changes }));
+  const sections = useMemo(() => groupByDay(data?.transactions ?? []), [data?.transactions]);
+  const byId = useMemo(() => new Map((data?.categories ?? []).map((c) => [c.id, c])), [data?.categories]);
 
   async function exportCsv() {
     setExporting(true);
@@ -109,7 +113,6 @@ export default function HistoryScreen() {
   const prevMonth = addDays(`${data.month}-01`, -1).slice(0, 7);
   const nextMonth = addDays(`${data.month}-28`, 7).slice(0, 7);
   const categories = data.categories.filter((c) => !c.archived && (data.tipo === "todos" || c.type === (data.tipo === "gasto" ? "expense" : "income")));
-  const byId = new Map(data.categories.map((c) => [c.id, c]));
 
   // Lo de arriba (mes, filtros, búsqueda) va como encabezado de una lista virtualizada:
   // con cientos de movimientos solo se dibujan los que se ven.
@@ -215,7 +218,7 @@ export default function HistoryScreen() {
 
   return (
     <SectionList
-      sections={groupByDay(data.transactions)}
+      sections={sections}
       keyExtractor={(tx) => tx.id}
       renderItem={({ item }) => <TransactionRow tx={item} category={item.category_id ? byId.get(item.category_id) : undefined} />}
       renderSectionHeader={({ section }) => <DayHeader day={section.day} spent={section.spent} today={data.today} />}

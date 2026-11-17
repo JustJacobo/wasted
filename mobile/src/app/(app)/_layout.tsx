@@ -17,7 +17,8 @@ export const unstable_settings = { anchor: "(tabs)" };
 /** Todo lo que pide sesión. Solo entran correos invitados (tabla members). */
 export default function AppLayout() {
   const { colors } = useTheme();
-  const me = useQuery({ queryKey: ["me"], queryFn: () => api<Me>("me"), staleTime: Infinity });
+  // Con lo guardado se entra de una vez; se vuelve a pedir detrás (un 403 quiere decir que quitaron la invitación).
+  const me = useQuery({ queryKey: ["me"], queryFn: () => api<Me>("me"), staleTime: 5 * 60_000 });
   const userId = me.data?.userId;
   const client = useQueryClient();
 
@@ -38,8 +39,9 @@ export default function AppLayout() {
       </View>
     );
   }
-  if (me.error) {
-    const notInvited = me.error instanceof ApiError && me.error.status === 403;
+  const notInvited = me.error instanceof ApiError && me.error.status === 403;
+  // Sin señal, con la cuenta guardada se sigue usando la app; sin invitación, nunca.
+  if (me.error && (notInvited || !me.data)) {
     return (
       <View style={{ flex: 1, justifyContent: "center", padding: 24, gap: 16, backgroundColor: colors.background }}>
         <Text align="center">{notInvited ? "Tu correo no tiene una invitación a Wasted." : me.error.message}</Text>

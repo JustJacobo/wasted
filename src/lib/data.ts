@@ -161,24 +161,8 @@ export async function getGoals() {
 
 /** Para el inicio: cuánto te deben, cuánto debes y cuánto hay apartado en metas. */
 export async function getMoneyOverview(): Promise<{ owedToMe: number; iOwe: number; saved: number }> {
-  const { supabase } = await requireUser();
-  // Solo lo abierto: préstamos sin saldar y metas activas (las archivadas están vacías).
-  const [{ data: loans, error }, { data: goals, error: goalsError }] = await Promise.all([
-    supabase.from("loans").select("id, person, direction, created_at, closed_at").is("closed_at", null),
-    supabase.from("goals").select("id").eq("archived", false),
-  ]);
-  if (error) throw error;
-  if (goalsError) throw goalsError;
-  if (!loans.length && !goals.length) return { owedToMe: 0, iOwe: 0, saved: 0 };
-  const owners = [
-    ...loans.map((l) => `loan_id.eq.${l.id}`),
-    ...goals.map((g) => `goal_id.eq.${g.id}`),
-  ].join(",");
-  const { data: moves, error: movesError } = await supabase.from("balance_moves").select(MOVE_COLUMNS).or(owners);
-  if (movesError) throw movesError;
-  const { owedToMe, iOwe } = summarizeLoans(loans as Loan[], moves as BalanceMove[]);
-  const saved = -(moves as BalanceMove[]).filter((m) => m.goal_id).reduce((sum, m) => sum + Number(m.amount), 0);
-  return { owedToMe, iOwe, saved: Math.max(0, saved) };
+  const { loans, goals } = await getOpenMoney();
+  return { owedToMe: loans.owedToMe, iOwe: loans.iOwe, saved: goals.total };
 }
 
 /** Todo lo que muestra Ajustes: preferencias, conexiones, claves y personas con acceso. */
@@ -310,7 +294,7 @@ export async function getPlan(today: string): Promise<PlanData> {
   };
 }
 
-/** Para el Plan: solo los préstamos abiertos y las metas activas, con sus movimientos. */
+/** Solo los préstamos abiertos y las metas activas (las archivadas están vacías), con sus movimientos. */
 async function getOpenMoney() {
   const { supabase } = await requireUser();
   const [{ data: loans, error }, { data: goals, error: goalsError }] = await Promise.all([

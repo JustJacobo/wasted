@@ -4,6 +4,7 @@ import { GearSixIcon } from "phosphor-react-native";
 import { useEffect } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { todayIn } from "@/lib/dates";
 import { api } from "@/core/api";
 import { mark } from "@/core/perf";
 import type { HomeData } from "@/core/types";
@@ -39,15 +40,17 @@ export default function HomeScreen() {
   }, [appearance?.accent, appearance?.mode]);
 
   const client = useQueryClient();
-  const today = home.data?.today;
+  // Lo que se pide nuevo usa la fecha del teléfono: el inicio guardado puede ser de días atrás.
+  const today = todayIn();
+  const ready = Boolean(home.data);
   useEffect(() => {
-    if (!today) return;
+    if (!ready) return;
     const timer = setTimeout(() => {
       client.prefetchQuery({ queryKey: ["report", "semana", today], queryFn: () => api("report", { kind: "semana", anchor: today }) }).catch(() => {});
       client.prefetchQuery({ queryKey: ["plan"], queryFn: () => api("plan") }).catch(() => {});
     }, 800);
     return () => clearTimeout(timer);
-  }, [client, today]);
+  }, [client, today, ready]);
 
   useEffect(() => {
     if (home.data && !openedOnLaunch) {
@@ -102,12 +105,12 @@ export default function HomeScreen() {
         <UpcomingList
           upcoming={data.upcoming}
           categories={data.categories}
-          today={data.today}
+          today={today}
           onPay={(c) =>
             router.push({ pathname: "/registrar", params: { tipo: c.type === "income" ? "ingreso" : "gasto", recurrente: c.ruleId, ocurrencia: c.occurrence } })
           }
         />
-        <TransactionList transactions={data.transactions} categories={data.categories} today={data.today} />
+        <TransactionList transactions={data.transactions} categories={data.categories} today={today} />
         {data.transactions.length > 0 && (
           <Tap accessibilityRole="link" onPress={() => router.navigate("/movimientos")} style={{ marginTop: 16, paddingVertical: 12, alignItems: "center" }}>
             <Text size={14} weight="medium" tone="muted">

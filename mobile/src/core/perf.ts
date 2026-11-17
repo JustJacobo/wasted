@@ -4,9 +4,9 @@
 const start = Date.now();
 const seen = new Set<string>();
 
-/** Registra la primera vez que pasa algo ("sesión lista", "inicio con datos"). */
-export function mark(label: string) {
+/** Registra la primera vez que pasa algo ("sesión lista", "inicio con datos"), con un detalle opcional. */
+export function mark(label: string, detail?: string) {
   if (!__DEV__ || seen.has(label)) return;
   seen.add(label);
-  console.log(`[arranque] ${label}: ${Date.now() - start} ms`);
+  console.log(`[arranque] ${label}${detail ? ` (${detail})` : ""}: ${Date.now() - start} ms`);
 }

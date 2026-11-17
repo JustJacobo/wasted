@@ -13,8 +13,6 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      // Lo guardado en el teléfono vive lo mismo que la caché en memoria (si no, se borraría a los 5 min).
-      gcTime: 7 * DAY,
       // Un 401 o 403 no se arregla reintentando.
       retry: (failures, error) => !(error instanceof ApiError && [400, 401, 403, 404].includes(error.status)) && failures < 2,
     },
@@ -28,6 +26,8 @@ refreshWidgetOnHome(queryClient);
  * instante con eso y se actualiza detrás. Solo lo de las pantallas principales.
  */
 const PERSISTED = new Set(["me", "home", "plan", "report", "settings"]);
+// Lo guardado en el teléfono vive lo mismo en memoria (si no, se borraría a los 5 min y dejaría de guardarse).
+for (const key of PERSISTED) queryClient.setQueryDefaults([key], { gcTime: 7 * DAY });
 
 export const persister = createAsyncStoragePersister({ storage: AsyncStorage, key: "wasted-cache", throttleTime: 1000 });
 
