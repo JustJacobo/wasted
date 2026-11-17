@@ -21,7 +21,8 @@ export function ListSection({
   note?: string;
   /** Algo a la derecha del título ("Administrar"). */
   action?: React.ReactNode;
-  children: React.ReactNode;
+  /** Sin filas, solo el encabezado. */
+  children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
   const rows = Children.toArray(children).filter(isValidElement);

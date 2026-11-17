@@ -72,7 +72,8 @@ export function upcomingCharges(
     const near = linked.filter((tx) => tx.recurring_id === rule.id);
     let day = rule.next_on;
     for (let i = 0; day <= until && i < MAX_PER_RULE; i++, day = nextAfter(rule.starts_on, rule, day)) {
-      if (near.some((tx) => tx.paid_occurrence === day || Math.abs(daysBetween(day, tx.occurred_on)) <= linkWindow(rule))) continue;
+      // Un pago adelantado cubre exactamente su fecha; lo demás, por cercanía.
+      if (near.some((tx) => (tx.paid_occurrence ? tx.paid_occurrence === day : Math.abs(daysBetween(day, tx.occurred_on)) <= linkWindow(rule)))) continue;
       items.push({
         // Lo vencido que el cron aún no generó se debe desde hoy.
         day: day < today ? today : day,

@@ -1,11 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { api, ApiError } from "@/core/api";
 import { signOut } from "@/core/auth";
 import { connectDevice } from "@/core/device";
-import type { Me } from "@/core/types";
+import type { HomeData, Me } from "@/core/types";
 import { useTheme } from "@/theme/theme";
 import { Button } from "@/ui/button";
 import { Text } from "@/ui/text";
@@ -19,6 +19,12 @@ export default function AppLayout() {
   const { colors } = useTheme();
   const me = useQuery({ queryKey: ["me"], queryFn: () => api<Me>("me"), staleTime: Infinity });
   const userId = me.data?.userId;
+  const client = useQueryClient();
+
+  // El inicio se pide a la vez que la cuenta, no cuando esta responde (con lo guardado, ya está).
+  useEffect(() => {
+    client.prefetchQuery({ queryKey: ["home"], queryFn: () => api<HomeData>("home") }).catch(() => {});
+  }, [client]);
 
   // El widget, el registro rápido y las notificaciones quedan con la cuenta que entró.
   useEffect(() => {

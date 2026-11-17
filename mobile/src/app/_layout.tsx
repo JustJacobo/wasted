@@ -1,7 +1,5 @@
-import { Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold } from "@expo-google-fonts/geist";
-import { GeistMono_400Regular } from "@expo-google-fonts/geist-mono";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { useFonts } from "expo-font";
+import { useIsRestoring } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -10,7 +8,7 @@ import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "@/core/auth";
-import { queryClient } from "@/core/query";
+import { persistOptions, queryClient } from "@/core/query";
 import { ThemeProvider, useTheme } from "@/theme/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -18,7 +16,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 function Navigation() {
   const { session, ready } = useAuth();
   const { colors, scheme } = useTheme();
-  const [fontsLoaded] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold, GeistMono_400Regular });
+  // Lo guardado en el teléfono se lee antes de pintar (es local: unos milisegundos).
+  const restoring = useIsRestoring();
 
   // El fondo de la ventana nativa igual al de la app: sin destellos al navegar.
   useEffect(() => {
@@ -26,10 +25,11 @@ function Navigation() {
   }, [colors.background]);
 
   useEffect(() => {
-    if (ready && fontsLoaded) SplashScreen.hideAsync().catch(() => {});
-  }, [ready, fontsLoaded]);
+    if (ready && !restoring) SplashScreen.hideAsync().catch(() => {});
+  }, [ready, restoring]);
 
-  if (!ready || !fontsLoaded) return null;
+  // Las fuentes vienen dentro del APK (plugin de expo-font en app.config.ts): no hay que esperarlas.
+  if (!ready || restoring) return null;
 
   return (
     <>
@@ -51,13 +51,13 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
           <AuthProvider>
             <ThemeProvider>
               <Navigation />
             </ThemeProvider>
           </AuthProvider>
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

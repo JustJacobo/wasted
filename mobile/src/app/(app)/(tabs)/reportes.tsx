@@ -19,7 +19,8 @@ export default function ReportsScreen() {
       <Dashboard
         today={today}
         header={<ScreenHeader root title="Reportes" />}
-        onCategory={(cat, mes) => router.navigate({ pathname: "/movimientos", params: { mes, cat, tipo: "gasto" } })}
+        // `n` distingue cada toque: la pestaña sigue montada y vuelve a filtrar aunque sea la misma barra.
+        onCategory={(cat, mes) => router.navigate({ pathname: "/movimientos", params: { mes, cat, tipo: "gasto", n: String(Date.now()) } })}
       />
     </View>
   );

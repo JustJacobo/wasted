@@ -55,7 +55,6 @@ function Progress({ value, label }: { value: number; label: string }) {
  * del mes (qué falta y qué ya se pagó), los préstamos abiertos y las metas.
  */
 export default function PlanScreen() {
-  const { colors } = useTheme();
   const query = useQuery({ queryKey: ["plan"], queryFn: () => api<PlanData>("plan") });
   // Las categorías ya vienen con el inicio.
   const home = useQuery({ queryKey: ["home"], queryFn: () => api<HomeData>("home") });
@@ -83,8 +82,6 @@ export default function PlanScreen() {
           )}
         </View>
       )}
-      {!data && query.error && null}
-      <View style={{ height: 4, backgroundColor: colors.background }} />
     </Screen>
   );
 }
@@ -125,9 +122,7 @@ function FixedPayments({ data, byId }: { data: PlanData; byId: Map<string, Categ
 
   return (
     <View style={{ gap: 12 }}>
-      <ListSection title={`Pagos fijos · ${formatMonth(data.from)}`} action={manage}>
-        {[]}
-      </ListSection>
+      <ListSection title={`Pagos fijos · ${formatMonth(data.from)}`} action={manage} />
       {expense.total > 0 && (
         <Card style={{ padding: 16, gap: 10 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>

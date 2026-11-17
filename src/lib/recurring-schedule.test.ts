@@ -78,6 +78,24 @@ describe("pagos fijos del mes", () => {
     expect(summary(s)).toEqual([["r1", "2026-11-15", "overdue", true]]);
   });
 
+  it("todas las fechas vencidas se pueden pagar, y de lo que viene solo la primera", () => {
+    const weekly = rule({ every: 1, unit: "week", starts_on: "2026-11-02", next_on: "2026-11-02" });
+    expect(summary(schedule([weekly], [], FROM, TO, TODAY))).toEqual([
+      ["r1", "2026-11-02", "overdue", true],
+      ["r1", "2026-11-09", "overdue", true],
+      ["r1", "2026-11-16", "overdue", true],
+      ["r1", "2026-11-23", "upcoming", true],
+      ["r1", "2026-11-30", "upcoming", false],
+    ]);
+  });
+
+  it("un pendiente de un mes anterior se ve pero no suma en los totales del mes", () => {
+    const linked = [tx({ id: "old", status: "pending", occurred_on: "2026-10-20", amount: 30000 })];
+    const s = schedule([rule({})], linked, FROM, TO, TODAY);
+    expect(s.items.map((c) => c.status)).toEqual(["pending", "upcoming"]);
+    expect(s.expense.total).toBe(45000);
+  });
+
   it("incluye los pendientes de antes del mes y omite los recurrentes en pausa", () => {
     const linked = [tx({ id: "old", recurring_id: "p", status: "pending", occurred_on: "2026-10-28", description: "Gimnasio" })];
     const s = schedule([rule({ id: "p", paused: true })], linked, FROM, TO, TODAY);

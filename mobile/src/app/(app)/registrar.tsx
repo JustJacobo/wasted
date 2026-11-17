@@ -11,11 +11,12 @@ import { chargeName, matchingCharges, payableCharges, payableForRule, payDate } 
 import type { TxType } from "@/lib/types";
 import type { UpcomingCharge } from "@/lib/week-plan";
 import { api, ApiError } from "@/core/api";
-import { refreshAfterWrite } from "@/core/query";
+import { queryClient, refreshAfterWrite } from "@/core/query";
 import type { HomeData } from "@/core/types";
 import { AmountStep } from "@/features/add/amount-step";
 import { CategoryStep } from "@/features/add/category-step";
 import { showFeedback } from "@/features/add/feedback";
+import { homeAfterSave } from "@/features/add/optimistic";
 import { DueChips, PayToggle } from "@/features/add/recurring";
 import { TextStep } from "@/features/add/text-step";
 import type { QuickAddState } from "@/features/add/types";
@@ -71,7 +72,8 @@ export default function RegisterSheet() {
     return exact ?? fromPlan ?? (data ? payableForRule(data.upcoming, params.recurrente) : null);
   };
   const [start] = useState(() => startFrom(home.data));
-  const [waiting, setWaiting] = useState(!!params.recurrente && !start);
+  // Sin los datos del inicio, la categoría y la fecha se completan cuando lleguen.
+  const [waiting, setWaiting] = useState(!!params.recurrente && (!start || !home.data));
   const usable = (charge: UpcomingCharge | null) =>
     charge && home.data?.categories.some((c) => c.id === charge.categoryId && !c.archived) ? charge.categoryId : null;
 
@@ -129,6 +131,11 @@ export default function RegisterSheet() {
 
   function done(result: Exclude<QuickAddState, { status: "error" }>) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    // "Te quedan" y la lista cambian apenas se cierra la ventana; la recarga llega detrás.
+    if (result.status === "ok") {
+      const paid = result.paid ? paying : null;
+      queryClient.setQueryData<HomeData>(["home"], (old) => old && homeAfterSave(old, result.transaction, result.week, paid));
+    }
     showFeedback(
       result.status === "ok"
         ? { kind: "saved", transaction: result.transaction, week: result.week, similar: result.similar, paid: result.paid }

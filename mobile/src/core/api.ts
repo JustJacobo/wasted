@@ -1,4 +1,5 @@
 import { API_URL } from "./config";
+import { mark } from "./perf";
 import { supabase } from "./supabase";
 
 export class ApiError extends Error {
@@ -30,6 +31,7 @@ export async function api<T>(op: string, input?: unknown): Promise<T> {
     throw new ApiError("Sin conexión. Revisa el internet e intenta de nuevo.", 0);
   }
   const body = (await response.json().catch(() => null)) as { ok: boolean; data?: T; error?: string } | null;
+  mark(`primera respuesta de ${op} (servidor: ${response.headers.get("server-timing") ?? "?"})`);
   if (!response.ok || !body?.ok) {
     // Sesión vencida o revocada: se cierra y la app vuelve al login (y el widget se desconecta).
     if (response.status === 401) await supabase.auth.signOut({ scope: "local" }).catch(() => {});

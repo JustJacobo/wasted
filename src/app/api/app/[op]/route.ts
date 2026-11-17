@@ -6,8 +6,8 @@ import { isRedirect, OPS } from "../ops";
 
 export const maxDuration = 60;
 
-const json = (body: unknown, status = 200) =>
-  NextResponse.json(body, { status, headers: { "cache-control": "no-store" } });
+const json = (body: unknown, status = 200, timing?: string) =>
+  NextResponse.json(body, { status, headers: { "cache-control": "no-store", ...(timing ? { "server-timing": timing } : {}) } });
 
 /**
  * API de la app nativa: `POST /api/app/<op>` con `Authorization: Bearer <JWT de
@@ -23,14 +23,19 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/app/[op
 
   return inAppCall(async () => {
     // La sesión se revisa antes de la operación: requireUser() redirigiría a /login.
+    const started = performance.now();
     const user = await currentUser();
+    const auth = performance.now() - started;
     if (user === "session") return json({ ok: false, error: "Sesión vencida." }, 401);
     if (user === "invite") return json({ ok: false, error: "Tu correo no tiene una invitación a Wasted." }, 403);
     if (user === "unavailable") return json({ ok: false, error: "No pude verificar la sesión. Intenta de nuevo." }, 503);
 
     const input = await request.json().catch(() => undefined);
     try {
-      return json({ ok: true, data: (await run(input)) ?? null });
+      const data = (await run(input)) ?? null;
+      // Cuánto tardó el servidor (sesión y operación), para medir desde la app.
+      const timing = `auth;dur=${auth.toFixed(0)}, op;dur=${(performance.now() - started - auth).toFixed(0)}`;
+      return json({ ok: true, data }, 200, timing);
     } catch (error) {
       // El único redirect esperado (guardar un movimiento) lo atiende su operación; otro es requireOwner.
       if (isRedirect(error)) return json({ ok: false, error: "Solo el dueño de la cuenta puede hacer esto." }, 403);

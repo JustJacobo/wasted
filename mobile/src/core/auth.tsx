@@ -1,10 +1,15 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Session } from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
 import { createContext, useContext, useEffect, useState } from "react";
-import { AUTH_REDIRECT } from "./config";
+import { AUTH_REDIRECT, SUPABASE_URL } from "./config";
 import { disconnectDevice, forgetDevice } from "./device";
-import { queryClient } from "./query";
+import { mark } from "./perf";
+import { forgetCache } from "./query";
 import { supabase } from "./supabase";
+
+/** Donde supabase-js guarda la sesión (su clave por defecto: sb-<proyecto>-auth-token). */
+const SESSION_KEY = `sb-${new URL(SUPABASE_URL).hostname.split(".")[0]}-auth-token`;
 
 interface AuthValue {
   session: Session | null;
@@ -18,11 +23,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [value, setValue] = useState<AuthValue>({ session: null, ready: false });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setValue({ session: data.session, ready: true }));
+    let settled = false;
+    // Con una sesión guardada se entra de una vez y el inicio pinta con lo guardado. Si el token
+    // venció, getSession lo refresca por red (puede tardar con mala señal) y, si ya no sirve, cierra la sesión.
+    AsyncStorage.getItem(SESSION_KEY)
+      .then((raw) => {
+        const stored = raw ? (JSON.parse(raw) as Session) : null;
+        if (!settled && stored?.access_token && stored.user) {
+          mark("sesión guardada");
+          setValue({ session: stored, ready: true });
+        }
+      })
+      .catch(() => {});
+    supabase.auth.getSession().then(({ data }) => {
+      settled = true;
+      mark("sesión lista");
+      setValue({ session: data.session, ready: true });
+    });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       // Lo guardado era de la cuenta que salió: otra cuenta no debe verlo ni un instante.
       if (event === "SIGNED_OUT") {
-        queryClient.clear();
+        forgetCache().catch(() => {});
         forgetDevice().catch(() => {});
       }
       setValue({ session, ready: true });

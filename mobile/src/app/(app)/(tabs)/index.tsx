@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useNavigation } from "expo-router";
 import { GearSixIcon } from "phosphor-react-native";
 import { useEffect } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "@/core/api";
+import { mark } from "@/core/perf";
 import type { HomeData } from "@/core/types";
 import { HomeRows, UpcomingList } from "@/features/home/rows";
 import { SummaryCard } from "@/features/home/summary";
@@ -37,6 +38,17 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appearance?.accent, appearance?.mode]);
 
+  const client = useQueryClient();
+  const today = home.data?.today;
+  useEffect(() => {
+    if (!today) return;
+    const timer = setTimeout(() => {
+      client.prefetchQuery({ queryKey: ["report", "semana", today], queryFn: () => api("report", { kind: "semana", anchor: today }) }).catch(() => {});
+      client.prefetchQuery({ queryKey: ["plan"], queryFn: () => api("plan") }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [client, today]);
+
   useEffect(() => {
     if (home.data && !openedOnLaunch) {
       openedOnLaunch = true;
@@ -61,6 +73,7 @@ export default function HomeScreen() {
   }
 
   const data = home.data;
+  mark(home.isFetchedAfterMount ? "inicio con datos del servidor" : "inicio con datos guardados");
   return (
     <View style={{ flex: 1, paddingTop: insets.top }}>
       <ScrollView

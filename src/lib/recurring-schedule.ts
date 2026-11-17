@@ -48,12 +48,11 @@ export interface Schedule {
   income: ScheduleTotals;
 }
 
-/** El estado de una fecha en palabras: "Pagado · 17 nov", "Por confirmar", "Mañana"… */
+/** El estado de una fecha en palabras: "Pagado el 17 nov", "Por confirmar", "Mañana"… */
 export function scheduleLabel(c: Pick<ScheduledCharge, "status" | "day">, today: string): string {
-  const when = c.day === today ? "hoy" : c.day === addDays(today, 1) ? "mañana" : formatShortDay(c.day);
   switch (c.status) {
     case "paid":
-      return `Pagado ${c.day === today ? "hoy" : `el ${formatShortDay(c.day)}`}`;
+      return c.day === today ? "Pagado hoy" : `Pagado el ${formatShortDay(c.day)}`;
     case "pending":
       return "Por confirmar";
     case "overdue":
@@ -61,7 +60,7 @@ export function scheduleLabel(c: Pick<ScheduledCharge, "status" | "day">, today:
     case "skipped":
       return `Omitido el ${formatShortDay(c.day)}`;
     default:
-      return when.charAt(0).toUpperCase() + when.slice(1);
+      return c.day === today ? "Hoy" : c.day === addDays(today, 1) ? "Mañana" : formatShortDay(c.day);
   }
 }
 
@@ -81,6 +80,8 @@ export function schedule(rules: Recurring[], linked: LinkedCharge[], from: strin
     if (rule.paused) continue;
     const own = linked.filter((tx) => tx.recurring_id === rule.id);
     const window = linkWindow(rule);
+    // De lo que aún no vence, solo la primera fecha se paga ahora; lo vencido, todo.
+    let upcomingSeen = false;
     let day = firstOnOrAfter(rule.starts_on, rule, from);
     for (let i = 0; day <= to && i < MAX_PER_RULE; i++, day = nextAfter(rule.starts_on, rule, day)) {
       const occurrence = day;
@@ -101,17 +102,20 @@ export function schedule(rules: Recurring[], linked: LinkedCharge[], from: strin
           : occurrence < today
             ? "overdue"
             : "upcoming";
+      const firstUpcoming = status === "upcoming" && !upcomingSeen;
+      if (status === "upcoming") upcomingSeen = true;
       items.push({
         ruleId: rule.id,
         occurrence,
         day: tx ? tx.occurred_on : occurrence,
-        type: rule.type,
+        // El movimiento manda (la regla pudo cambiar de tipo después).
+        type: tx?.type ?? rule.type,
         amount: tx ? Number(tx.amount) : Number(rule.amount),
         description: (tx?.status === "pending" && tx.description) || rule.description,
         categoryId: tx?.category_id ?? rule.category_id,
         status,
         txId: tx?.id ?? null,
-        payable: status === "pending" || ((status === "overdue" || status === "upcoming") && occurrence === rule.next_on),
+        payable: status === "pending" || status === "overdue" || firstUpcoming,
       });
     }
   }
@@ -135,8 +139,9 @@ export function schedule(rules: Recurring[], linked: LinkedCharge[], from: strin
 
   items.sort((a, b) => (a.day === b.day ? a.description.localeCompare(b.description) : a.day < b.day ? -1 : 1));
 
+  // Los totales son del periodo: un pendiente de un mes anterior se ve en la lista pero no suma aquí.
   const totals = (type: TxType): ScheduleTotals => {
-    const counted = items.filter((c) => c.type === type && c.status !== "skipped");
+    const counted = items.filter((c) => c.type === type && c.status !== "skipped" && c.occurrence >= from);
     const total = counted.reduce((sum, c) => sum + c.amount, 0);
     const paid = counted.filter((c) => c.status === "paid").reduce((sum, c) => sum + c.amount, 0);
     return { total, paid, left: total - paid };

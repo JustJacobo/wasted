@@ -48,6 +48,20 @@ const config: ExpoConfig = {
       },
     ],
     "expo-sharing",
+    // Las fuentes van dentro del APK: la app no espera a cargarlas al abrir.
+    // En Android el nombre de la fuente es el del archivo (Geist_400Regular), el mismo de FONTS.
+    [
+      "expo-font",
+      {
+        fonts: [
+          "node_modules/@expo-google-fonts/geist/400Regular/Geist_400Regular.ttf",
+          "node_modules/@expo-google-fonts/geist/500Medium/Geist_500Medium.ttf",
+          "node_modules/@expo-google-fonts/geist/600SemiBold/Geist_600SemiBold.ttf",
+          "node_modules/@expo-google-fonts/geist/700Bold/Geist_700Bold.ttf",
+          "node_modules/@expo-google-fonts/geist-mono/400Regular/GeistMono_400Regular.ttf",
+        ],
+      },
+    ],
     "./plugins/with-cmake-short-paths",
     "./plugins/with-app-shortcuts",
     "./plugins/with-release-signing",

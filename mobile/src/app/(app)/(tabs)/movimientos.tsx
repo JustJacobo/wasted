@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { CaretLeftIcon, CaretRightIcon, DownloadSimple } from "phosphor-react-native";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, TextInput, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, SectionList, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { addDays, formatMonth } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import type { Category, Transaction } from "@/lib/types";
 import { api } from "@/core/api";
 import { shareCsv } from "@/core/share-csv";
-import { TransactionList } from "@/features/transactions/list";
+import { DayHeader, groupByDay, TransactionRow } from "@/features/transactions/list";
 import { useTheme } from "@/theme/theme";
 import { categoryColor, FONTS } from "@/theme/tokens";
 import { CategoryIcon } from "@/ui/category-icon";
@@ -29,6 +29,7 @@ interface HistoryData {
 }
 
 type Filters = { mes?: string; tipo?: string; cat?: string; q?: string };
+type Params = Filters & { n?: string };
 
 /**
  * Movimientos (el Historial): un mes con filtros y búsqueda, y el CSV de lo que
@@ -39,8 +40,9 @@ type Filters = { mes?: string; tipo?: string; cat?: string; q?: string };
 export default function HistoryScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<Filters>();
-  const fromParams = `${params.mes ?? ""}|${params.tipo ?? ""}|${params.cat ?? ""}`;
+  const params = useLocalSearchParams<Params>();
+  const navigation = useNavigation();
+  const fromParams = `${params.mes ?? ""}|${params.tipo ?? ""}|${params.cat ?? ""}|${params.n ?? ""}`;
   const [filters, setFilters] = useState<Filters>({ mes: params.mes, tipo: params.tipo, cat: params.cat });
   const [text, setText] = useState("");
   const [seen, setSeen] = useState(fromParams);
@@ -49,6 +51,15 @@ export default function HistoryScreen() {
     setFilters({ mes: params.mes, tipo: params.tipo, cat: params.cat });
     setText("");
   }
+
+  // Tocar la pestaña (no una barra del Dashboard) vuelve al mes actual sin filtros.
+  useEffect(
+    () =>
+      navigation.addListener("tabPress" as never, () => {
+        if (params.mes || params.tipo || params.cat) router.setParams({ mes: undefined, tipo: undefined, cat: undefined, n: undefined });
+      }),
+    [navigation, params.mes, params.tipo, params.cat],
+  );
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -98,14 +109,12 @@ export default function HistoryScreen() {
   const prevMonth = addDays(`${data.month}-01`, -1).slice(0, 7);
   const nextMonth = addDays(`${data.month}-28`, 7).slice(0, 7);
   const categories = data.categories.filter((c) => !c.archived && (data.tipo === "todos" || c.type === (data.tipo === "gasto" ? "expense" : "income")));
+  const byId = new Map(data.categories.map((c) => [c.id, c]));
 
-  return (
-    <ScrollView
-      keyboardShouldPersistTaps="handled"
-      style={{ marginTop: insets.top }}
-      contentContainerStyle={{ paddingTop: 4, paddingBottom: 32, paddingHorizontal: 16, gap: 16 }}
-      refreshControl={<RefreshControl refreshing={history.isRefetching} onRefresh={() => void history.refetch()} tintColor={colors.foreground} />}
-    >
+  // Lo de arriba (mes, filtros, búsqueda) va como encabezado de una lista virtualizada:
+  // con cientos de movimientos solo se dibujan los que se ven.
+  const header = (
+    <View style={{ gap: 16 }}>
       <ScreenHeader root title="Movimientos" />
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -201,15 +210,28 @@ export default function HistoryScreen() {
           {exportError}
         </Text>
       )}
+    </View>
+  );
 
-      <View style={{ marginTop: -24 }}>
-        <TransactionList
-          transactions={data.transactions}
-          categories={data.categories}
-          today={data.today}
-          empty={filtered ? "Nada con estos filtros." : "No hay movimientos en este mes."}
-        />
-      </View>
-    </ScrollView>
+  return (
+    <SectionList
+      sections={groupByDay(data.transactions)}
+      keyExtractor={(tx) => tx.id}
+      renderItem={({ item }) => <TransactionRow tx={item} category={item.category_id ? byId.get(item.category_id) : undefined} />}
+      renderSectionHeader={({ section }) => <DayHeader day={section.day} spent={section.spent} today={data.today} />}
+      ListHeaderComponent={header}
+      ListEmptyComponent={
+        <Text size={14} tone="muted" align="center" style={{ marginTop: 40 }}>
+          {filtered ? "Nada con estos filtros." : "No hay movimientos en este mes."}
+        </Text>
+      }
+      stickySectionHeadersEnabled={false}
+      initialNumToRender={24}
+      windowSize={9}
+      keyboardShouldPersistTaps="handled"
+      style={{ marginTop: insets.top }}
+      contentContainerStyle={{ paddingTop: 4, paddingBottom: 32, paddingHorizontal: 16 }}
+      refreshControl={<RefreshControl refreshing={history.isRefetching} onRefresh={() => void history.refetch()} tintColor={colors.foreground} />}
+    />
   );
 }

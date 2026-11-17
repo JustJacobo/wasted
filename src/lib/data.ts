@@ -269,20 +269,23 @@ export async function getPlan(today: string): Promise<PlanData> {
   const { supabase } = await requireUser();
   const from = startOfMonth(today);
   const to = lastDayOfMonth(today);
-  // Lo unido a recurrentes cerca del mes (±3 días de la ventana) y todo lo que espera en la bandeja.
-  const [{ data: rules, error }, { data: linked, error: linkedError }, loans, goals] = await Promise.all([
+  // Lo unido a recurrentes cerca del mes (±3 días de la ventana), lo pagado por adelantado para
+  // una fecha del mes (aunque se haya pagado antes) y todo lo que espera en la bandeja.
+  const [{ data: rules, error }, { data: linked, error: linkedError }, money] = await Promise.all([
     supabase.from("recurring").select(RECURRING_COLUMNS),
     supabase
       .from("transactions")
       .select("id, recurring_id, status, type, amount, description, category_id, occurred_on, paid_occurrence:raw->>paidOccurrence")
       .not("recurring_id", "is", null)
-      .or(`status.eq.pending,and(status.eq.confirmed,occurred_on.gte.${addDays(from, -3)},occurred_on.lte.${addDays(to, 3)})`),
-    getLoans(),
-    getGoals(),
+      .or(
+        `status.eq.pending,and(status.eq.confirmed,occurred_on.gte.${addDays(from, -3)},occurred_on.lte.${addDays(to, 3)}),and(status.eq.confirmed,raw->>paidOccurrence.gte.${from},raw->>paidOccurrence.lte.${to})`,
+      ),
+    getOpenMoney(),
   ]);
   if (error) throw error;
   if (linkedError) throw linkedError;
   const all = rules as Recurring[];
+  const { loans, goals } = money;
   return {
     today,
     from,
@@ -304,6 +307,26 @@ export async function getPlan(today: string): Promise<PlanData> {
         .filter((g) => !g.goal.archived)
         .map((g) => ({ id: g.goal.id, name: g.goal.name, saved: g.saved, target: g.goal.target, progress: g.progress })),
     },
+  };
+}
+
+/** Para el Plan: solo los préstamos abiertos y las metas activas, con sus movimientos. */
+async function getOpenMoney() {
+  const { supabase } = await requireUser();
+  const [{ data: loans, error }, { data: goals, error: goalsError }] = await Promise.all([
+    supabase.from("loans").select("id, person, direction, created_at, closed_at").is("closed_at", null),
+    supabase.from("goals").select("id, name, target, archived, created_at").eq("archived", false),
+  ]);
+  if (error) throw error;
+  if (goalsError) throw goalsError;
+  const owners = [...loans.map((l) => `loan_id.eq.${l.id}`), ...goals.map((g) => `goal_id.eq.${g.id}`)];
+  const { data: moves, error: movesError } = owners.length
+    ? await supabase.from("balance_moves").select(MOVE_COLUMNS).or(owners.join(","))
+    : { data: [], error: null };
+  if (movesError) throw movesError;
+  return {
+    loans: summarizeLoans(loans as Loan[], moves as BalanceMove[]),
+    goals: summarizeGoals(goals as Goal[], moves as BalanceMove[]),
   };
 }
 
