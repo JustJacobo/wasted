@@ -1,4 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { CaretRightIcon } from "phosphor-react-native";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -18,6 +19,7 @@ import { Button } from "@/ui/button";
 import { Card } from "@/ui/card";
 import { CategoryIcon } from "@/ui/category-icon";
 import { Tap } from "@/ui/tap";
+import { ScreenHeader } from "@/ui/header";
 import { Text } from "@/ui/text";
 
 interface TransactionData {
@@ -53,18 +55,7 @@ export default function TransactionScreen() {
 }
 
 function Header() {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <Tap accessibilityRole="button" onPress={() => router.back()} style={{ paddingVertical: 8, paddingRight: 12 }}>
-        <Text size={14} tone="muted">
-          ← Volver
-        </Text>
-      </Tap>
-      <Text size={18} weight="bold" align="right" style={{ flex: 1 }} accessibilityRole="header">
-        Editar movimiento
-      </Text>
-    </View>
-  );
+  return <ScreenHeader title="Editar movimiento" />;
 }
 
 function Missing({ message }: { message: string }) {
@@ -264,6 +255,7 @@ function EditForm({ data }: { data: TransactionData & { transaction: Transaction
 
 /** "Repetir": convierte el movimiento en recurrente, o muestra cada cuánto se repite (repeat-section.tsx). */
 function Repeat({ transaction, rule, today, onSaved }: { transaction: Transaction; rule: Recurring | null; today: string; onSaved: () => Promise<unknown> }) {
+  const { colors } = useTheme();
   const [open, setOpen] = useState(false);
   const [freq, setFreq] = useState<Frequency>({ every: 1, unit: "month" });
   const [saving, setSaving] = useState(false);
@@ -302,7 +294,7 @@ function Repeat({ transaction, rule, today, onSaved }: { transaction: Transactio
         <Tap accessibilityRole="button" pressScale={0.99} onPress={() => setOpen(true)}>
           <Card style={{ height: 48, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <Text>No se repite</Text>
-            <Text tone="muted">›</Text>
+            <CaretRightIcon size={16} color={colors.muted} />
           </Card>
         </Tap>
       ) : (

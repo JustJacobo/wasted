@@ -10,9 +10,9 @@ import { useTheme } from "@/theme/theme";
 import { Button } from "@/ui/button";
 import { Text } from "@/ui/text";
 
-// Un enlace wasted://… o un acceso directo que abre otra pantalla deja el inicio
-// debajo: Atrás vuelve al inicio en vez de cerrar la app.
-export const unstable_settings = { anchor: "index" };
+// Un enlace wasted://… o un acceso directo que abre otra pantalla deja las
+// pestañas debajo: Atrás vuelve al inicio en vez de cerrar la app.
+export const unstable_settings = { anchor: "(tabs)" };
 
 /** Todo lo que pide sesión. Solo entran correos invitados (tabla members). */
 export default function AppLayout() {
@@ -48,7 +48,8 @@ export default function AppLayout() {
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-      <Stack.Screen name="index" />
+      {/* Inicio, Movimientos, Plan y Reportes, con la barra de abajo. Lo demás se apila encima. */}
+      <Stack.Screen name="(tabs)" />
       {/* La ventana de registro es una hoja nativa: se arrastra para cerrar y Atrás la cierra.
           Mide lo que su contenido: con una altura fija, en celulares altos quedaba un hueco. */}
       <Stack.Screen

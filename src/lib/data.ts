@@ -2,15 +2,16 @@ import "server-only";
 
 import { requireUser } from "@/lib/auth";
 import { canImportMail } from "@/lib/mail-import/sync";
-import { todayIn } from "@/lib/dates";
+import { addDays, lastDayOfMonth, startOfMonth, todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
 import { frequencyLabel, RECURRING_COLUMNS, type Frequency, type Recurring } from "@/lib/recurring";
 import { periodRange, type PeriodKind, type Report } from "@/lib/report";
 import { fetchReport, fetchSummary, fetchUpcoming } from "@/lib/report-data";
 import { summarizeGoals, summarizeLoans, type BalanceMove, type Goal, type Loan } from "@/lib/money-moves";
+import { schedule, type Schedule } from "@/lib/recurring-schedule";
 import { likePattern } from "@/lib/search";
 import { TX_COLUMNS, type Category, type Summary, type Transaction, type TxType } from "@/lib/types";
-import type { UpcomingCharge } from "@/lib/week-plan";
+import type { LinkedCharge, UpcomingCharge } from "@/lib/week-plan";
 
 /**
  * Todas las categorías, incluidas las archivadas (para nombrar movimientos
@@ -240,6 +241,70 @@ export async function getRecurring(): Promise<Recurring[]> {
     .order("created_at");
   if (error) throw error;
   return data;
+}
+
+export interface PlanData {
+  today: string;
+  /** El mes del Plan: del día 1 al último. */
+  from: string;
+  to: string;
+  schedule: Schedule;
+  /** Recurrentes activos y en pausa (para "Administrar"). */
+  active: number;
+  paused: number;
+  loans: {
+    owedToMe: number;
+    iOwe: number;
+    /** Los abiertos con más saldo primero. */
+    open: { id: string; person: string; direction: Loan["direction"]; outstanding: number }[];
+  };
+  goals: {
+    total: number;
+    items: { id: string; name: string; saved: number; target: number | null; progress: number | null }[];
+  };
+}
+
+/** El Plan: los pagos fijos del mes, los préstamos abiertos y las metas activas. */
+export async function getPlan(today: string): Promise<PlanData> {
+  const { supabase } = await requireUser();
+  const from = startOfMonth(today);
+  const to = lastDayOfMonth(today);
+  // Lo unido a recurrentes cerca del mes (±3 días de la ventana) y todo lo que espera en la bandeja.
+  const [{ data: rules, error }, { data: linked, error: linkedError }, loans, goals] = await Promise.all([
+    supabase.from("recurring").select(RECURRING_COLUMNS),
+    supabase
+      .from("transactions")
+      .select("id, recurring_id, status, type, amount, description, category_id, occurred_on, paid_occurrence:raw->>paidOccurrence")
+      .not("recurring_id", "is", null)
+      .or(`status.eq.pending,and(status.eq.confirmed,occurred_on.gte.${addDays(from, -3)},occurred_on.lte.${addDays(to, 3)})`),
+    getLoans(),
+    getGoals(),
+  ]);
+  if (error) throw error;
+  if (linkedError) throw linkedError;
+  const all = rules as Recurring[];
+  return {
+    today,
+    from,
+    to,
+    schedule: schedule(all, linked as LinkedCharge[], from, to, today),
+    active: all.filter((r) => !r.paused).length,
+    paused: all.filter((r) => r.paused).length,
+    loans: {
+      owedToMe: loans.owedToMe,
+      iOwe: loans.iOwe,
+      open: loans.items
+        .filter((s) => s.outstanding > 0)
+        .sort((a, b) => b.outstanding - a.outstanding)
+        .map((s) => ({ id: s.loan.id, person: s.loan.person, direction: s.loan.direction, outstanding: s.outstanding })),
+    },
+    goals: {
+      total: goals.total,
+      items: goals.items
+        .filter((g) => !g.goal.archived)
+        .map((g) => ({ id: g.goal.id, name: g.goal.name, saved: g.saved, target: g.goal.target, progress: g.progress })),
+    },
+  };
 }
 
 export async function getRecurringRule(id: string): Promise<Recurring | null> {

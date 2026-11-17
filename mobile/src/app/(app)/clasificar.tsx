@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import Animated, { FadeOut } from "react-native-reanimated";
@@ -16,6 +15,7 @@ import { categoryColor } from "@/theme/tokens";
 import { Card } from "@/ui/card";
 import { CategoryIcon } from "@/ui/category-icon";
 import { Tap } from "@/ui/tap";
+import { ScreenHeader } from "@/ui/header";
 import { Text } from "@/ui/text";
 
 /**
@@ -35,16 +35,7 @@ export default function ClassifyScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32, gap: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Tap accessibilityRole="button" onPress={() => router.back()} style={{ paddingVertical: 8, paddingRight: 12 }}>
-          <Text size={14} tone="muted">
-            ← Volver
-          </Text>
-        </Tap>
-        <Text size={18} weight="bold" align="right" style={{ flex: 1 }} accessibilityRole="header">
-          Por clasificar
-        </Text>
-      </View>
+      <ScreenHeader title="Por clasificar" />
 
       {!data ? (
         <View style={{ paddingTop: 48, alignItems: "center" }}>

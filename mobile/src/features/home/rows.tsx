@@ -1,4 +1,4 @@
-import { Handshake, PiggyBank, Tag, Tray } from "phosphor-react-native";
+import { CaretRightIcon, Handshake, PiggyBank, Tag, Tray } from "phosphor-react-native";
 import { View } from "react-native";
 import { addDays, formatDay } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
@@ -37,7 +37,7 @@ function Row({ icon, label, onPress }: { icon: React.ReactNode; label: string; o
       <Text size={14} tabular numberOfLines={2} style={{ flex: 1, paddingVertical: 12 }}>
         {label}
       </Text>
-      {onPress && <Text tone="muted">›</Text>}
+      {onPress && <CaretRightIcon size={16} color={colors.muted} />}
     </Tap>
   );
 }

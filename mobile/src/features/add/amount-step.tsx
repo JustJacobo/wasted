@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { BackspaceIcon } from "phosphor-react-native";
 import { View } from "react-native";
 import { pressKey, type KeypadKey } from "@/lib/amount-keypad";
 import { formatCOP } from "@/lib/money";
@@ -74,9 +75,13 @@ export function AmountStep({
               borderColor: colors.border,
             }}
           >
-            <Text size={24} weight="medium" tabular>
-              {key === "back" ? "⌫" : key}
-            </Text>
+            {key === "back" ? (
+              <BackspaceIcon size={26} color={colors.foreground} />
+            ) : (
+              <Text size={24} weight="medium" tabular>
+                {key}
+              </Text>
+            )}
           </Tap>
         ))}
       </View>

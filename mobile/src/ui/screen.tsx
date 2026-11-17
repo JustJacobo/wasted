@@ -1,14 +1,18 @@
-import { router } from "expo-router";
 import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/theme";
-import { Tap } from "./tap";
+import { ScreenHeader } from "./header";
 import { Text } from "./text";
 
-/** Pantalla con "← Volver", título a la derecha, desplazamiento y deslizar para recargar. */
+/**
+ * Pantalla con encabezado, desplazamiento y deslizar para recargar. `root`
+ * para las raíces de pestaña (sin flecha, título grande; la barra de abajo ya
+ * reserva su espacio).
+ */
 export function Screen({
   title,
-  back = "← Volver",
+  root,
+  action,
   loading,
   error,
   refreshing,
@@ -16,7 +20,8 @@ export function Screen({
   children,
 }: {
   title: string;
-  back?: string;
+  root?: boolean;
+  action?: React.ReactNode;
   loading?: boolean;
   error?: string | null;
   refreshing?: boolean;
@@ -30,20 +35,10 @@ export function Screen({
     <View style={{ flex: 1, paddingTop: insets.top }}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: 16, paddingTop: 8, paddingBottom: insets.bottom + 32, gap: 16 }}
+        contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: root ? 32 : insets.bottom + 32, gap: 16 }}
         refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.foreground} /> : undefined}
       >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {/* Desde un enlace o un acceso directo no hay pantalla atrás: vuelve al inicio. */}
-          <Tap accessibilityRole="button" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={{ paddingVertical: 8, paddingRight: 12 }}>
-            <Text size={14} tone="muted">
-              {back}
-            </Text>
-          </Tap>
-          <Text size={18} weight="bold" tracking={-0.3} align="right" style={{ flex: 1 }} accessibilityRole="header">
-            {title}
-          </Text>
-        </View>
+        <ScreenHeader title={title} root={root} action={action} />
         {loading || error ? (
           <View style={{ paddingTop: 48, alignItems: "center" }}>{error ? <Text>{error}</Text> : <ActivityIndicator color={colors.foreground} />}</View>
         ) : (

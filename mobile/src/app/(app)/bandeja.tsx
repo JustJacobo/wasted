@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
 import { Fragment, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,7 +10,7 @@ import { PendingPair, PendingRow } from "@/features/inbox/cards-ui";
 import { useTheme } from "@/theme/theme";
 import { Button } from "@/ui/button";
 import { Card, Divider } from "@/ui/card";
-import { Tap } from "@/ui/tap";
+import { ScreenHeader } from "@/ui/header";
 import { Text } from "@/ui/text";
 
 interface PendingData {
@@ -58,16 +57,7 @@ export default function InboxScreen() {
       contentContainerStyle={{ padding: 16, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32, gap: 16 }}
       refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor={colors.foreground} />}
     >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Tap accessibilityRole="button" onPress={() => router.back()} style={{ paddingVertical: 8, paddingRight: 12 }}>
-          <Text size={14} tone="muted">
-            ← Volver
-          </Text>
-        </Tap>
-        <Text size={18} weight="bold" align="right" style={{ flex: 1 }} accessibilityRole="header">
-          Por revisar
-        </Text>
-      </View>
+      <ScreenHeader title="Por revisar" />
 
       {!data ? (
         <View style={{ paddingTop: 48, alignItems: "center" }}>

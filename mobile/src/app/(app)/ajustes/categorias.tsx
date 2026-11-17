@@ -29,7 +29,7 @@ export default function CategoriesScreen() {
   const archived = all.filter((c) => c.type === type && c.archived);
 
   return (
-    <Screen title="Categorías" back="← Ajustes" loading={!query.data && !query.error} error={query.error?.message} refreshing={query.isRefetching} onRefresh={() => void query.refetch()}>
+    <Screen title="Categorías" loading={!query.data && !query.error} error={query.error?.message} refreshing={query.isRefetching} onRefresh={() => void query.refetch()}>
       <TypeSwitch
         type={type}
         onType={(t) => {

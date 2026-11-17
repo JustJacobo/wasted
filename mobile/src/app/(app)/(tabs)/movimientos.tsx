@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { router, useLocalSearchParams } from "expo-router";
-import { DownloadSimple } from "phosphor-react-native";
+import { useLocalSearchParams } from "expo-router";
+import { CaretLeftIcon, CaretRightIcon, DownloadSimple } from "phosphor-react-native";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,6 +13,7 @@ import { TransactionList } from "@/features/transactions/list";
 import { useTheme } from "@/theme/theme";
 import { categoryColor, FONTS } from "@/theme/tokens";
 import { CategoryIcon } from "@/ui/category-icon";
+import { ScreenHeader } from "@/ui/header";
 import { Tap } from "@/ui/tap";
 import { Text } from "@/ui/text";
 
@@ -29,13 +30,25 @@ interface HistoryData {
 
 type Filters = { mes?: string; tipo?: string; cat?: string; q?: string };
 
-/** Historial: un mes con filtros y búsqueda, y el CSV de lo que se ve (src/app/movimientos/page.tsx). */
+/**
+ * Movimientos (el Historial): un mes con filtros y búsqueda, y el CSV de lo que
+ * se ve (src/app/movimientos/page.tsx). Es una pestaña: sigue montada, así que
+ * los filtros vuelven a empezar cuando llega con otros parámetros (una barra
+ * del Dashboard).
+ */
 export default function HistoryScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<Filters>();
+  const fromParams = `${params.mes ?? ""}|${params.tipo ?? ""}|${params.cat ?? ""}`;
   const [filters, setFilters] = useState<Filters>({ mes: params.mes, tipo: params.tipo, cat: params.cat });
   const [text, setText] = useState("");
+  const [seen, setSeen] = useState(fromParams);
+  if (seen !== fromParams) {
+    setSeen(fromParams);
+    setFilters({ mes: params.mes, tipo: params.tipo, cat: params.cat });
+    setText("");
+  }
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -65,9 +78,9 @@ export default function HistoryScreen() {
     }
   }
 
-  const arrow = (label: string, a11y: string, onPress?: () => void) => (
+  const arrow = (direction: "left" | "right", a11y: string, onPress?: () => void) => (
     <Tap accessibilityRole="button" accessibilityLabel={a11y} disabled={!onPress} onPress={onPress} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center", opacity: onPress ? 1 : 0.2 }}>
-      <Text size={22}>{label}</Text>
+      {direction === "left" ? <CaretLeftIcon size={22} color={colors.foreground} /> : <CaretRightIcon size={22} color={colors.foreground} />}
     </Tap>
   );
 
@@ -89,24 +102,16 @@ export default function HistoryScreen() {
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32, paddingHorizontal: 16, gap: 16 }}
+      style={{ marginTop: insets.top }}
+      contentContainerStyle={{ paddingTop: 4, paddingBottom: 32, paddingHorizontal: 16, gap: 16 }}
       refreshControl={<RefreshControl refreshing={history.isRefetching} onRefresh={() => void history.refetch()} tintColor={colors.foreground} />}
     >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Tap accessibilityRole="button" onPress={() => router.back()} style={{ paddingVertical: 8, paddingRight: 12 }}>
-          <Text size={14} tone="muted">
-            ← Volver
-          </Text>
-        </Tap>
-        <Text size={18} weight="bold" tracking={-0.3} align="right" style={{ flex: 1 }} accessibilityRole="header">
-          Historial
-        </Text>
-      </View>
+      <ScreenHeader root title="Movimientos" />
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        {arrow("‹", "Mes anterior", () => set({ mes: prevMonth }))}
+        {arrow("left", "Mes anterior", () => set({ mes: prevMonth }))}
         <Text weight="semibold">{formatMonth(`${data.month}-01`)}</Text>
-        {arrow("›", "Mes siguiente", data.month >= data.current ? undefined : () => set({ mes: nextMonth }))}
+        {arrow("right", "Mes siguiente", data.month >= data.current ? undefined : () => set({ mes: nextMonth }))}
       </View>
 
       <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 4, padding: 4, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>

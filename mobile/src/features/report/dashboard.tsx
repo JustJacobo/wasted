@@ -12,7 +12,16 @@ import { CategoryBars, CategoryDonut, DailyChart, PeriodNav, StatTiles } from ".
 type SendResult = { ok: true; to: string } | { ok: false; error: string };
 
 /** El dashboard: periodo, cifras y gráficos (src/app/reportes/report-view.tsx). */
-export function Dashboard({ today, bottomInset, onCategory }: { today: string; bottomInset: number; onCategory?: (id: string, month: string) => void }) {
+export function Dashboard({
+  today,
+  header,
+  onCategory,
+}: {
+  today: string;
+  /** Va arriba, dentro del desplazamiento (el título de la pestaña). */
+  header?: React.ReactNode;
+  onCategory?: (id: string, month: string) => void;
+}) {
   const { colors } = useTheme();
   const [period, setPeriod] = useState<{ kind: PeriodKind; anchor: string }>({ kind: "semana", anchor: today });
   const report = useQuery({
@@ -42,9 +51,10 @@ export function Dashboard({ today, bottomInset, onCategory }: { today: string; b
 
   return (
     <ScrollView
-      contentContainerStyle={{ padding: 16, paddingBottom: bottomInset, gap: 16 }}
+      contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 32, gap: 16 }}
       refreshControl={<RefreshControl refreshing={report.isRefetching} onRefresh={() => void report.refetch()} tintColor={colors.foreground} />}
     >
+      {header}
       {!data ? (
         <View style={{ paddingTop: 48, alignItems: "center" }}>
           {report.error ? <Text>{report.error.message}</Text> : <ActivityIndicator color={colors.foreground} />}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CaretLeftIcon, CaretRightIcon } from "phosphor-react-native";
 import { View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { formatDay, formatDayRange, formatMonth, formatShortDay, formatWeekdayLetter } from "@/lib/dates";
@@ -30,7 +31,7 @@ export function PeriodNav({
   const { colors } = useTheme();
   const isCurrent = range.end >= today;
   const label = kind === "mes" ? formatMonth(range.start) : formatDayRange(range.start, range.end);
-  const arrow = (text: string, a11y: string, onPress?: () => void) => (
+  const arrow = (direction: "left" | "right", a11y: string, onPress?: () => void) => (
     <Tap
       accessibilityRole="button"
       accessibilityLabel={a11y}
@@ -38,7 +39,7 @@ export function PeriodNav({
       onPress={onPress}
       style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center", opacity: onPress ? 1 : 0.2 }}
     >
-      <Text size={22}>{text}</Text>
+      {direction === "left" ? <CaretLeftIcon size={22} color={colors.foreground} /> : <CaretRightIcon size={22} color={colors.foreground} />}
     </Tap>
   );
 
@@ -60,7 +61,7 @@ export function PeriodNav({
         ))}
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        {arrow("‹", "Periodo anterior", () => onChange(kind, previousRange(kind, range).start))}
+        {arrow("left", "Periodo anterior", () => onChange(kind, previousRange(kind, range).start))}
         <View style={{ alignItems: "center" }}>
           <Text weight="semibold" accessibilityRole="header">
             {label}
@@ -71,7 +72,7 @@ export function PeriodNav({
             </Text>
           )}
         </View>
-        {arrow("›", "Periodo siguiente", isCurrent ? undefined : () => onChange(kind, nextRange(kind, range).start))}
+        {arrow("right", "Periodo siguiente", isCurrent ? undefined : () => onChange(kind, nextRange(kind, range).start))}
       </View>
     </View>
   );

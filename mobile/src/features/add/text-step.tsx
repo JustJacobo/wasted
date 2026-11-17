@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ArrowRightIcon } from "phosphor-react-native";
 import { TextInput, View } from "react-native";
 import { formatDay } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
@@ -104,9 +105,7 @@ export function TextStep({
           onPress={submit}
           style={{ width: 52, height: 52, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: colors.foreground }}
         >
-          <Text size={20} style={{ color: colors.background }}>
-            →
-          </Text>
+          <ArrowRightIcon size={22} weight="bold" color={colors.background} />
         </Tap>
       </View>
       <Text size={12} tone="muted" tabular numberOfLines={1} accessibilityLiveRegion="polite" style={{ minHeight: 16, paddingHorizontal: 4 }}>

@@ -1,4 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { ArrowLeftIcon } from "phosphor-react-native";
 import { useState } from "react";
 import { TextInput, View } from "react-native";
 import { addDays, formatShortDay } from "@/lib/dates";
@@ -80,7 +81,7 @@ export function CategoryStep({
     <View style={{ gap: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Tap accessibilityRole="button" accessibilityLabel="Volver al monto" onPress={onBack} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
-          <Text size={20}>←</Text>
+          <ArrowLeftIcon size={22} color={colors.foreground} />
         </Tap>
         <Text size={24} weight="bold" tabular tracking={-0.6} tone={type === "income" ? "accent" : "foreground"} numberOfLines={1} style={{ flex: 1 }}>
           {type === "income" ? "+" : "-"}

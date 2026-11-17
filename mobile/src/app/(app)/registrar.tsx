@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { KeyboardIcon, XIcon } from "phosphor-react-native";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
@@ -6,7 +7,7 @@ import { ScrollView, View } from "react-native";
 import Animated, { FadeIn, ReduceMotion } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { sortByUsage } from "@/lib/category-usage";
-import { chargeName, findCharge, matchingCharges, payableCharges, payDate } from "@/lib/recurring-suggest";
+import { chargeName, matchingCharges, payableCharges, payableForRule, payDate } from "@/lib/recurring-suggest";
 import type { TxType } from "@/lib/types";
 import type { UpcomingCharge } from "@/lib/week-plan";
 import { api, ApiError } from "@/core/api";
@@ -29,20 +30,48 @@ const enter = FadeIn.duration(200).reduceMotion(ReduceMotion.System);
 
 /**
  * La ventana de registro (hoja nativa): monto con el teclado, luego la
- * categoría, que guarda. El ⌨ abre el modo texto. Se arrastra hacia abajo o
+ * categoría, que guarda. El teclado abre el modo texto. Se arrastra hacia abajo o
  * con Atrás para cerrar (src/app/add/add-sheet.tsx).
  */
 export default function RegisterSheet() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ tipo?: string; recurrente?: string; ocurrencia?: string }>();
+  const params = useLocalSearchParams<{
+    tipo?: string;
+    recurrente?: string;
+    ocurrencia?: string;
+    dia?: string;
+    /** Desde el Plan, que muestra todo el mes: lo necesario para pagar una fecha que no está en los próximos 7 días. */
+    monto?: string;
+    nombre?: string;
+    categoria?: string;
+    tx?: string;
+  }>();
   const home = useQuery({ queryKey: ["home"], queryFn: () => api<HomeData>("home") });
 
-  // Desde "Próximos movimientos" (/registrar?recurrente=<regla>&ocurrencia=<fecha>) abre listo para marcarlo pagado.
-  // Normalmente el inicio ya trajo los datos; si no (un enlace en frío), se aplica cuando lleguen.
-  const startFrom = (data: HomeData | undefined) => (params.recurrente && data ? findCharge(data.upcoming, params.recurrente, params.ocurrencia) : null);
+  // Desde "Próximos movimientos" o el Plan (/registrar?recurrente=<regla>&ocurrencia=<fecha>) abre listo para
+  // marcarlo pagado. Normalmente el inicio ya trajo los datos; si no (un enlace en frío), se aplica cuando lleguen.
+  const fromPlan: UpcomingCharge | null =
+    params.recurrente && params.ocurrencia && Number(params.monto) > 0
+      ? {
+          ruleId: params.recurrente,
+          occurrence: params.ocurrencia,
+          day: params.dia ?? params.ocurrencia,
+          type: params.tipo === "ingreso" ? "income" : "expense",
+          amount: Number(params.monto),
+          description: params.nombre ?? "",
+          categoryId: params.categoria ?? null,
+          pending: !!params.tx,
+          txId: params.tx ?? null,
+        }
+      : null;
+  const startFrom = (data: HomeData | undefined) => {
+    if (!params.recurrente) return null;
+    const exact = data?.upcoming.find((c) => c.ruleId === params.recurrente && c.occurrence === params.ocurrencia);
+    return exact ?? fromPlan ?? (data ? payableForRule(data.upcoming, params.recurrente) : null);
+  };
   const [start] = useState(() => startFrom(home.data));
-  const [waiting, setWaiting] = useState(!!params.recurrente && !home.data);
+  const [waiting, setWaiting] = useState(!!params.recurrente && !start);
   const usable = (charge: UpcomingCharge | null) =>
     charge && home.data?.categories.some((c) => c.id === charge.categoryId && !c.archived) ? charge.categoryId : null;
 
@@ -145,14 +174,16 @@ export default function RegisterSheet() {
           onPress={() => setView(view === "text" ? "amount" : "text")}
           style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}
         >
-          <Text size={view === "text" ? 14 : 20} tone="muted" weight="medium">
-            {view === "text" ? "123" : "⌨"}
-          </Text>
+          {view === "text" ? (
+            <Text size={14} tone="muted" weight="medium">
+              123
+            </Text>
+          ) : (
+            <KeyboardIcon size={24} color={colors.muted} />
+          )}
         </Tap>
         <Tap accessibilityRole="button" accessibilityLabel="Cerrar" onPress={() => router.back()} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
-          <Text size={20} tone="muted">
-            ✕
-          </Text>
+          <XIcon size={22} color={colors.muted} />
         </Tap>
       </View>
 

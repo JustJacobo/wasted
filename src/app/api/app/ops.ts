@@ -37,6 +37,7 @@ import {
   getCategories,
   getGoals,
   getLoans,
+  getPlan,
   getMoneyOverview,
   getPending,
   getPendingCount,
@@ -150,6 +151,7 @@ export const OPS: Record<string, Op> = {
     return { today: todayIn(), recurring, categories };
   }),
   loans: op(Empty, async () => ({ today: todayIn(), ...(await getLoans()) })),
+  plan: op(Empty, () => getPlan(todayIn())),
   goals: op(Empty, () => getGoals()),
   csv: op(
     z.object({ todo: z.boolean().optional(), mes: z.string().optional(), tipo: z.string().optional(), cat: z.string().optional(), q: z.string().optional() }),
