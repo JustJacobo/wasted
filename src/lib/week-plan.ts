@@ -18,6 +18,10 @@ export interface UpcomingCharge {
   ruleId: string;
   /** Ya venció y espera en la bandeja: no cuenta hasta confirmarlo. */
   pending: boolean;
+  /** El movimiento pendiente (solo si `pending`): es el que se confirma al marcarlo pagado. */
+  txId: string | null;
+  /** La fecha de la serie. `day` puede ser hoy para lo vencido que el cron aún no generó. */
+  occurrence: string;
 }
 
 /** Un movimiento ya unido a un recurrente (`recurring_id`). */
@@ -30,6 +34,8 @@ export interface LinkedCharge {
   description: string;
   category_id: string | null;
   occurred_on: string;
+  /** Pago adelantado ("Marcar pagado" antes de la fecha): la fecha de la serie que cubre. */
+  paid_occurrence?: string | null;
 }
 
 /** Tope de fechas por regla, para que una diaria no llene la lista. */
@@ -57,6 +63,8 @@ export function upcomingCharges(
       categoryId: tx.category_id,
       ruleId: tx.recurring_id,
       pending: true,
+      txId: tx.id,
+      occurrence: tx.occurred_on,
     }));
 
   for (const rule of rules) {
@@ -64,7 +72,7 @@ export function upcomingCharges(
     const near = linked.filter((tx) => tx.recurring_id === rule.id);
     let day = rule.next_on;
     for (let i = 0; day <= until && i < MAX_PER_RULE; i++, day = nextAfter(rule.starts_on, rule, day)) {
-      if (near.some((tx) => Math.abs(daysBetween(day, tx.occurred_on)) <= linkWindow(rule))) continue;
+      if (near.some((tx) => tx.paid_occurrence === day || Math.abs(daysBetween(day, tx.occurred_on)) <= linkWindow(rule))) continue;
       items.push({
         // Lo vencido que el cron aún no generó se debe desde hoy.
         day: day < today ? today : day,
@@ -74,6 +82,8 @@ export function upcomingCharges(
         categoryId: rule.category_id,
         ruleId: rule.id,
         pending: false,
+        txId: null,
+        occurrence: day,
       });
     }
   }

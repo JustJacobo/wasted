@@ -87,8 +87,21 @@ export function HomeRows({
 
 const VISIBLE = 3;
 
-/** Los recurrentes de los próximos 7 días y los que esperan en la bandeja (upcoming-charges.tsx). */
-export function UpcomingList({ upcoming, categories, today }: { upcoming: UpcomingCharge[]; categories: Category[]; today: string }) {
+/**
+ * Los recurrentes de los próximos 7 días y los que esperan en la bandeja
+ * (upcoming-charges.tsx). Tocar uno abre la ventana de registro para marcarlo pagado.
+ */
+export function UpcomingList({
+  upcoming,
+  categories,
+  today,
+  onPay,
+}: {
+  upcoming: UpcomingCharge[];
+  categories: Category[];
+  today: string;
+  onPay?: (charge: UpcomingCharge) => void;
+}) {
   const { colors } = useTheme();
   if (upcoming.length === 0) return null;
   const byId = new Map(categories.map((c) => [c.id, c]));
@@ -110,7 +123,14 @@ export function UpcomingList({ upcoming, categories, today }: { upcoming: Upcomi
         const category = c.categoryId ? byId.get(c.categoryId) : undefined;
         return (
           <View key={`${c.ruleId}:${c.day}:${c.pending}`}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 4 }}>
+            <Tap
+              accessibilityRole={onPay ? "button" : "text"}
+              accessibilityHint={onPay ? "Marcar pagado" : undefined}
+              disabled={!onPay}
+              pressScale={0.99}
+              onPress={() => onPay?.(c)}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 4, opacity: 1 }}
+            >
               <CategoryIcon category={category} color={categoryColor(colors, category?.color)} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1}>{c.description || category?.name || "Recurrente"}</Text>
@@ -122,7 +142,7 @@ export function UpcomingList({ upcoming, categories, today }: { upcoming: Upcomi
                 {c.type === "income" ? "+" : "-"}
                 {formatCOP(c.amount)}
               </Text>
-            </View>
+            </Tap>
             <Divider />
           </View>
         );

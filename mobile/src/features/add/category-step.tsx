@@ -34,6 +34,8 @@ export function CategoryStep({
   onSubmit,
   pending,
   error,
+  payToggle,
+  paying,
 }: {
   type: TxType;
   amount: number;
@@ -49,6 +51,10 @@ export function CategoryStep({
   onSubmit: () => void;
   pending: boolean;
   error: string | null;
+  /** "Es el pago de Arriendo", si hay un recurrente que coincide. */
+  payToggle?: React.ReactNode;
+  /** El nombre del recurrente que se marca pagado al guardar. */
+  paying?: string | null;
 }) {
   const { colors } = useTheme();
   const yesterday = addDays(today, -1);
@@ -81,6 +87,8 @@ export function CategoryStep({
           {formatCOP(amount)}
         </Text>
       </View>
+
+      {payToggle}
 
       <View style={{ gap: 8 }}>
         <Text size={14} tone="muted" style={{ paddingHorizontal: 4 }}>
@@ -178,7 +186,15 @@ export function CategoryStep({
       )}
 
       <Button
-        label={pending ? "Guardando…" : selected ? `Agregar ${type === "income" ? "ingreso" : "gasto"} · ${selected.name}` : "Elige una categoría"}
+        label={
+          pending
+            ? "Guardando…"
+            : !selected
+              ? "Elige una categoría"
+              : paying
+                ? `Marcar pagado · ${paying}`
+                : `Agregar ${type === "income" ? "ingreso" : "gasto"} · ${selected.name}`
+        }
         variant={type === "income" ? "accent" : "primary"}
         height={56}
         disabled={!selected || pending}

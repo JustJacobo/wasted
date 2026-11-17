@@ -125,7 +125,14 @@ export default function HomeScreen() {
             onLoans={() => router.push("/prestamos")}
             onGoals={() => router.push("/metas")}
           />
-          <UpcomingList upcoming={data.upcoming} categories={data.categories} today={data.today} />
+          <UpcomingList
+            upcoming={data.upcoming}
+            categories={data.categories}
+            today={data.today}
+            onPay={(c) =>
+              router.push({ pathname: "/registrar", params: { tipo: c.type === "income" ? "ingreso" : "gasto", recurrente: c.ruleId, ocurrencia: c.occurrence } })
+            }
+          />
           <TransactionList transactions={data.transactions} categories={data.categories} today={data.today} />
           {data.transactions.length > 0 && (
             <Tap accessibilityRole="link" onPress={() => router.push("/movimientos")} style={{ marginTop: 16, paddingVertical: 12, alignItems: "center" }}>

@@ -109,7 +109,7 @@ export async function fetchUpcoming(
   // Los confirmados recientes sirven para no contar otra vez una fecha que ya se pagó.
   let linkedQuery = supabase
     .from("transactions")
-    .select("id, recurring_id, status, type, amount, description, category_id, occurred_on")
+    .select("id, recurring_id, status, type, amount, description, category_id, occurred_on, paid_occurrence:raw->>paidOccurrence")
     .not("recurring_id", "is", null)
     .or(`status.eq.pending,and(status.eq.confirmed,occurred_on.gte.${addDays(today, -7)})`);
   if (userId) {

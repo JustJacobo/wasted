@@ -14,6 +14,7 @@ export function AmountStep({
   onDigits,
   onNext,
   active,
+  due,
 }: {
   type: TxType;
   onType: (type: TxType) => void;
@@ -21,6 +22,8 @@ export function AmountStep({
   onDigits: (digits: string) => void;
   onNext: () => void;
   active: boolean;
+  /** "Vence pronto": las fichas de los recurrentes, o nada. */
+  due?: React.ReactNode;
 }) {
   // Teclado físico en computador: dígitos, Backspace y Enter.
   useEffect(() => {
@@ -60,6 +63,8 @@ export function AmountStep({
           </button>
         ))}
       </div>
+
+      {due}
 
       <output
         aria-label="Monto"

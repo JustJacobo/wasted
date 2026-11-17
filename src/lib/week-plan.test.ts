@@ -33,6 +33,8 @@ const charge = (changes: Partial<UpcomingCharge>): UpcomingCharge => ({
   categoryId: null,
   ruleId: "r1",
   pending: false,
+  txId: null,
+  occurrence: "2026-10-30",
   ...changes,
 });
 
@@ -53,6 +55,9 @@ describe("próximos cobros", () => {
     const daily = rule({ id: "d", every: 2, unit: "day", starts_on: "2026-10-20", next_on: "2026-10-26" });
     const days = upcomingCharges([daily], [], WED, "2026-11-01").map((i) => i.day);
     expect(days).toEqual([WED, WED, "2026-10-30", SUN]);
+    // La fecha real de la serie se conserva para marcarla pagada.
+    const occurrences = upcomingCharges([daily], [], WED, "2026-11-01").map((i) => i.occurrence);
+    expect(occurrences).toEqual(["2026-10-26", "2026-10-28", "2026-10-30", SUN]);
   });
 
   it("suma los pendientes de la bandeja y no repite la fecha que ya llegó por correo", () => {
@@ -62,7 +67,14 @@ describe("próximos cobros", () => {
     ];
     const items = upcomingCharges([rule({})], linked, WED, "2026-11-04");
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ day: "2026-10-29", pending: true, amount: 26900 });
+    expect(items[0]).toMatchObject({ day: "2026-10-29", pending: true, amount: 26900, txId: "t1", occurrence: "2026-10-29" });
+  });
+
+  it("un pago adelantado no deja contar la fecha que cubre aunque se haya pagado días antes", () => {
+    const linked: LinkedCharge[] = [
+      { id: "t1", recurring_id: "r1", status: "confirmed", type: "expense", amount: 26900, description: "Netflix", category_id: "c1", occurred_on: MON, paid_occurrence: "2026-10-30" },
+    ];
+    expect(upcomingCharges([rule({})], linked, WED, "2026-11-04")).toEqual([]);
   });
 
   it("un correo ya confirmado y unido también evita contar la fecha", () => {

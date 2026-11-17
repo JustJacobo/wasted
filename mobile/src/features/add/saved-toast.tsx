@@ -36,7 +36,7 @@ export function SavedToast({ feedback, categories }: { feedback: Feedback; categ
     );
   }
 
-  const { transaction, week, similar } = feedback;
+  const { transaction, week, similar, paid } = feedback;
   const options = categories.filter((c) => c.type === transaction.type && !c.archived);
   const status = budgetStatus(week);
   const warning = transaction.type === "expense" && (status.level === "warning" || status.level === "over") ? budgetMessage(status, week) : null;
@@ -46,9 +46,13 @@ export function SavedToast({ feedback, categories }: { feedback: Feedback; categ
 
   function undo() {
     showFeedback(null);
-    api("deleteTransaction", { id: transaction.id })
-      .catch(failed("No pude deshacer: el movimiento sigue registrado."))
-      .finally(refresh);
+    // Un recurrente marcado pagado vuelve a quedar por pagar (o a la bandeja), no solo se borra.
+    const reverted = paid
+      ? api<{ error?: string }>("undoRecurringPayment", { id: transaction.id }).then((r) => {
+          if (r.error) throw new Error(r.error);
+        })
+      : api("deleteTransaction", { id: transaction.id });
+    reverted.catch(failed("No pude deshacer: el movimiento sigue registrado.")).finally(refresh);
   }
 
   function changeCategory(categoryId: string) {
@@ -65,8 +69,16 @@ export function SavedToast({ feedback, categories }: { feedback: Feedback; categ
           <Text size={14} tone="accent">
             ✓
           </Text>{" "}
-          {transaction.type === "income" ? "Ingreso" : "Gasto"} <Text size={14} weight="semibold">{formatCOP(Number(transaction.amount))}</Text>
-          {transaction.description ? ` · ${transaction.description}` : ""}
+          {paid ? (
+            <>
+              {paid} pagado · <Text size={14} weight="semibold">{formatCOP(Number(transaction.amount))}</Text>
+            </>
+          ) : (
+            <>
+              {transaction.type === "income" ? "Ingreso" : "Gasto"} <Text size={14} weight="semibold">{formatCOP(Number(transaction.amount))}</Text>
+              {transaction.description ? ` · ${transaction.description}` : ""}
+            </>
+          )}
         </Text>
         <Tap accessibilityRole="button" onPress={undo} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 8 }}>
           <Text size={14} weight="medium" tone="danger">

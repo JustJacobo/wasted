@@ -4,10 +4,14 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { sortByUsage } from "@/lib/category-usage";
 import { todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
+import { chargeName, findCharge, matchingCharges, payableCharges, payDate } from "@/lib/recurring-suggest";
 import type { Category, Transaction, TxType, WeekBudget } from "@/lib/types";
-import { addTransaction, type Similar } from "../actions";
+import type { UpcomingCharge } from "@/lib/week-plan";
+import { addTransaction, payRecurring, type Similar } from "../actions";
 import { AmountStep } from "./amount-step";
 import { CategoryStep } from "./category-step";
+import type { PaymentPick } from "./pay-event";
+import { DueChips, PayToggle } from "./recurring";
 import { TextStep } from "./text-step";
 
 type View = "amount" | "category" | "text";
@@ -22,19 +26,24 @@ const ENTER_FROM = {
 export function AddSheet({
   open,
   initialType,
+  initialPick,
   categories,
   rules,
   usage,
+  upcoming,
   onClose,
   onSaved,
 }: {
   open: boolean;
   initialType: TxType;
+  /** Abre listo para marcar pagada esta fecha de un recurrente (Próximos movimientos, ?recurrente=). */
+  initialPick: PaymentPick | null;
   categories: Category[];
   rules: CategoryRule[];
   usage: { category_id: string | null }[];
+  upcoming: UpcomingCharge[];
   onClose: () => void;
-  onSaved: (transaction: Transaction, week: WeekBudget, similar?: Similar | null) => void;
+  onSaved: (transaction: Transaction, week: WeekBudget, similar?: Similar | null, paid?: string) => void;
 }) {
   const [view, setView] = useState<View>("amount");
   const [direction, setDirection] = useState<keyof typeof ENTER_FROM>("forward");
@@ -45,24 +54,36 @@ export function AddSheet({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** El recurrente que se marca pagado al guardar, o null para un registro normal. */
+  const [paying, setPaying] = useState<UpcomingCharge | null>(null);
   const [, startTransition] = useTransition();
 
-  // Cada vez que se abre, empieza de cero con el tipo elegido.
-  const [wasOpen, setWasOpen] = useState(open);
+  const usable = (charge: UpcomingCharge) =>
+    categories.some((c) => c.id === charge.categoryId) ? charge.categoryId : null;
+
+  // Cada vez que se abre, empieza de cero con el tipo elegido (o con el recurrente pedido).
+  const [wasOpen, setWasOpen] = useState(false);
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open) {
-      setView("amount");
+      const start = initialPick ? findCharge(upcoming, initialPick.ruleId, initialPick.occurrence) : null;
+      setView(start ? "category" : "amount");
       setDirection("forward");
-      setType(initialType);
-      setDigits("");
-      setDate(todayIn());
+      setType(start?.type ?? initialType);
+      setDigits(start ? String(start.amount) : "");
+      setDate(start ? payDate(start, todayIn()) : todayIn());
       setNote("");
-      setSelectedId(null);
+      setSelectedId(start ? usable(start) : null);
+      setPaying(start);
       setPending(false);
       setError(null);
     }
   }
+
+  const amount = Number(digits || 0);
+  const today = todayIn();
+  // Sin elegir una ficha, el que coincide con el monto escrito se ofrece apagado.
+  const suggestion = paying ?? matchingCharges(upcoming, type, amount)[0] ?? null;
 
   const options = useMemo(
     () => sortByUsage(categories.filter((c) => c.type === type), usage),
@@ -77,6 +98,24 @@ export function AddSheet({
   function changeType(next: TxType) {
     setType(next);
     setSelectedId(null);
+    setPaying(null);
+  }
+
+  /** Una ficha de "Vence pronto": monto y categoría del recurrente, listo para marcarlo pagado. */
+  function pick(charge: UpcomingCharge) {
+    setType(charge.type);
+    setDigits(String(charge.amount));
+    setDate(payDate(charge, today));
+    setSelectedId(usable(charge));
+    setPaying(charge);
+    go("category", "forward");
+  }
+
+  function togglePaying() {
+    if (paying) return setPaying(null);
+    if (!suggestion) return;
+    setPaying(suggestion);
+    if (!selectedId && options.some((c) => c.id === suggestion.categoryId)) setSelectedId(suggestion.categoryId);
   }
 
   function submit() {
@@ -84,15 +123,12 @@ export function AddSheet({
     setPending(true);
     setError(null);
     startTransition(async () => {
-      const result = await addTransaction({
-        type,
-        amount: Number(digits),
-        categoryId: selectedId,
-        description: note,
-        occurredOn: date,
-      });
+      const fields = { amount, categoryId: selectedId, description: note, occurredOn: date };
+      const result = paying
+        ? await payRecurring({ ...fields, ruleId: paying.ruleId, txId: paying.txId, occurrence: paying.occurrence })
+        : await addTransaction({ ...fields, type });
       setPending(false);
-      if (result.status === "ok") onSaved(result.transaction, result.week, result.similar);
+      if (result.status === "ok") onSaved(result.transaction, result.week, result.similar, result.paid);
       else if (result.status === "error") setError(result.error);
     });
   }
@@ -169,11 +205,12 @@ export function AddSheet({
               onDigits={setDigits}
               onNext={() => go("category", "forward")}
               active={open}
+              due={<DueChips charges={payableCharges(upcoming, type)} categories={categories} today={today} onPick={pick} />}
             />
           ) : (
             <CategoryStep
               type={type}
-              amount={Number(digits)}
+              amount={amount}
               categories={options}
               date={date}
               onDate={setDate}
@@ -185,6 +222,18 @@ export function AddSheet({
               onSubmit={submit}
               pending={pending}
               error={error}
+              paying={paying ? chargeName(paying, categories.find((c) => c.id === paying.categoryId)) : null}
+              payToggle={
+                suggestion && (
+                  <PayToggle
+                    charge={suggestion}
+                    category={categories.find((c) => c.id === suggestion.categoryId)}
+                    today={today}
+                    active={paying !== null}
+                    onToggle={togglePaying}
+                  />
+                )
+              }
             />
           )}
         </div>

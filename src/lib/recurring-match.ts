@@ -25,7 +25,7 @@ export interface Charge {
 }
 
 /** Diferencia de monto que todavía puede ser el mismo cobro (subió el precio). */
-const PRICE_TOLERANCE = 0.25;
+export const PRICE_TOLERANCE = 0.25;
 
 /**
  * Días de diferencia que se aceptan entre la fecha del recurrente y la del

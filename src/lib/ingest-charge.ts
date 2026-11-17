@@ -147,7 +147,16 @@ export async function ingestCharge(
     subject: charge.subject,
     body: charge.body,
   });
-  if (link?.strength === "same") {
+  if (link?.kind === "paid") {
+    // Ya se marcó pagado desde la ventana de registro: a la bandeja como posible repetido
+    // de ese pago. Nunca se une solo con algo registrado a mano.
+    status = "pending";
+    possibleDuplicateOf = link.payment.id;
+    if (link.strength === "same") {
+      categoryId = link.rule.category_id ?? categoryId;
+      description = link.rule.description || description;
+    }
+  } else if (link?.strength === "same") {
     status = "pending";
     categoryId = link.rule.category_id ?? categoryId;
     description = link.rule.description || description;
@@ -165,7 +174,7 @@ export async function ingestCharge(
     status = "pending";
     possibleDuplicateOf = link.placeholder.id;
   }
-  const recurringId = link?.strength === "same" ? link.rule.id : null;
+  const recurringId = link?.strength === "same" && link.kind !== "paid" ? link.rule.id : null;
   // Si resultó ser el cobro de un recurrente, ya tiene categoría: no hay nada que preguntar.
   if (categoryId) toClassify = false;
 

@@ -28,6 +28,8 @@ export interface ImportedCharge {
 export type ChargeLink =
   /** Ya hay un pendiente del recurrente para esa fecha. */
   | { kind: "pending"; strength: MatchStrength; rule: Recurring; placeholder: { id: string; raw: Raw } }
+  /** Esa fecha ya se marcó pagada desde la ventana de registro (`raw.paidOccurrence`), quizás días antes. */
+  | { kind: "paid"; strength: MatchStrength; rule: Recurring; payment: { id: string } }
   /** El correo llegó antes de que el recurrente venciera. */
   | { kind: "due"; strength: "same"; rule: Recurring };
 
@@ -72,6 +74,29 @@ export async function linkForCharge(
     const { id, raw, rule } = pending.item;
     return { kind: "pending", strength: pending.strength, rule: rule!, placeholder: { id, raw: raw as Raw } };
   }
+
+  // Pagado antes de tiempo con "Marcar pagado": el movimiento tiene la fecha en que se pagó,
+  // pero el cobro llega en la fecha de la serie que cubre.
+  const { data: payments } = await admin
+    .from("transactions")
+    .select(`id, paid_occurrence:raw->>paidOccurrence, rule:recurring_id(${RECURRING_COLUMNS})`)
+    .eq("user_id", userId)
+    .eq("status", "confirmed")
+    .eq("type", charge.type)
+    .not("recurring_id", "is", null)
+    .gte("raw->>paidOccurrence", from)
+    .lte("raw->>paidOccurrence", to);
+  const paid = bestMatch(
+    (payments ?? [])
+      .map((p) => ({ ...p, rule: p.rule as unknown as Recurring | null, paid_occurrence: p.paid_occurrence as string }))
+      .filter((p) => p.rule)
+      .map((p) => ({
+        item: p,
+        strength: matchCharge(p.rule!, p.paid_occurrence, c),
+        days: daysBetween(p.paid_occurrence, charge.occurredOn),
+      })),
+  );
+  if (paid) return { kind: "paid", strength: paid.strength, rule: paid.item.rule!, payment: { id: paid.item.id } };
 
   const { data: rules } = await admin
     .from("recurring")
@@ -128,7 +153,11 @@ export async function importedForOccurrence(
   );
 }
 
-/** ¿Esta fecha del recurrente ya tiene su cobro (del correo o registrado a mano)? */
+/**
+ * ¿Esta fecha del recurrente ya tiene su cobro (del correo o registrado a mano)?
+ * Un pago adelantado ("Marcar pagado") cuenta por la fecha que cubre aunque se
+ * haya pagado días antes.
+ */
 export async function alreadyLinked(
   admin: SupabaseClient,
   userId: string,
@@ -143,8 +172,7 @@ export async function alreadyLinked(
     .eq("recurring_id", rule.id)
     .neq("source", "recurring")
     .in("status", ["pending", "confirmed"])
-    .gte("occurred_on", addDays(day, -days))
-    .lte("occurred_on", addDays(day, days))
+    .or(`and(occurred_on.gte.${addDays(day, -days)},occurred_on.lte.${addDays(day, days)}),raw->>paidOccurrence.eq.${day}`)
     .limit(1);
   return Boolean(data?.length);
 }

@@ -3,7 +3,7 @@ import "server-only";
 import { after } from "next/server";
 import { classifyTransaction, listToClassify } from "@/lib/classify";
 import { z } from "zod";
-import { addTransaction, deleteTransaction, quickAdd, setCategory, updateTransaction } from "@/app/actions";
+import { addTransaction, deleteTransaction, payRecurring, quickAdd, setCategory, undoRecurringPayment, updateTransaction } from "@/app/actions";
 import {
   createApiToken,
   createTelegramLink,
@@ -167,6 +167,8 @@ export const OPS: Record<string, Op> = {
   // Movimientos
   quickAdd: op(z.object({ text: z.string().max(200) }), ({ text }) => quickAdd(text)),
   addTransaction: op(z.unknown(), (input) => addTransaction(input as Parameters<typeof addTransaction>[0])),
+  payRecurring: op(z.unknown(), (input) => payRecurring(input as Parameters<typeof payRecurring>[0])),
+  undoRecurringPayment: op(Id, ({ id }) => undoRecurringPayment(id)),
   deleteTransaction: op(Id, async ({ id }) => {
     await deleteTransaction(id);
     return {};

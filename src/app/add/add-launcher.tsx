@@ -5,9 +5,11 @@ import { balance, crossedLevel, weekBefore } from "@/lib/budget";
 import { startOfWeek, todayIn } from "@/lib/dates";
 import type { CategoryRule } from "@/lib/quick-add/categorize";
 import type { Category, Transaction, TxType, WeekBudget } from "@/lib/types";
-import { deleteTransaction, setCategory, type Similar } from "../actions";
+import type { UpcomingCharge } from "@/lib/week-plan";
+import { deleteTransaction, setCategory, undoRecurringPayment, type Similar } from "../actions";
 import { AddSheet } from "./add-sheet";
 import { pulseMecha } from "./mecha-pulse";
+import { onPayment, type PaymentPick } from "./pay-event";
 import { revealRow } from "./reveal-row";
 import { SavedToast, type Feedback } from "./saved-toast";
 import { WastedMoment } from "./wasted-moment";
@@ -35,17 +37,23 @@ export function AddLauncher({
   categories,
   rules,
   usage,
+  upcoming,
   initialType,
+  initialPick = null,
   startOpen = true,
 }: {
   categories: Category[];
   rules: CategoryRule[];
   usage: { category_id: string | null }[];
+  upcoming: UpcomingCharge[];
   initialType: TxType;
+  /** ?recurrente=<regla>&ocurrencia=<fecha>: abre listo para marcarlo pagado. */
+  initialPick?: PaymentPick | null;
   startOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(startOpen);
+  const [open, setOpen] = useState(startOpen || initialPick !== null);
   const [type, setType] = useState<TxType>(initialType);
+  const [pick, setPick] = useState<PaymentPick | null>(initialPick);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [wastedBy, setWastedBy] = useState<number | null>(null);
   const hideWasted = useCallback(() => setWastedBy(null), []);
@@ -94,12 +102,24 @@ export function AddLauncher({
 
   function openWith(next: TxType) {
     setType(next);
+    setPick(null);
     show(null);
     setOpen(true);
   }
 
-  function saved(transaction: Transaction, week: WeekBudget, similar?: Similar | null) {
-    show({ kind: "saved", transaction, week, similar });
+  // "Próximos movimientos": abre la ventana con ese recurrente listo para marcarlo pagado.
+  useEffect(
+    () =>
+      onPayment((next) => {
+        setPick(next);
+        setFeedback(null);
+        setOpen(true);
+      }),
+    [],
+  );
+
+  function saved(transaction: Transaction, week: WeekBudget, similar?: Similar | null, paid?: string) {
+    show({ kind: "saved", transaction, week, similar, paid });
     close();
     revealRow(transaction.id);
     pulseMecha();
@@ -119,8 +139,13 @@ export function AddLauncher({
   function undo() {
     if (feedback?.kind !== "saved") return;
     const { id } = feedback.transaction;
+    const paid = feedback.paid;
     show(null);
-    startTransition(() => deleteTransaction(id));
+    // Un recurrente marcado pagado vuelve a quedar por pagar (o a la bandeja), no solo se borra.
+    startTransition(async () => {
+      const result = paid ? await undoRecurringPayment(id) : (await deleteTransaction(id), {});
+      if (result.error) show({ kind: "error", message: "No pude deshacer: el movimiento sigue registrado." });
+    });
   }
 
   return (
@@ -159,9 +184,11 @@ export function AddLauncher({
       <AddSheet
         open={open}
         initialType={type}
+        initialPick={pick}
         categories={categories}
         rules={rules}
         usage={usage}
+        upcoming={upcoming}
         onClose={close}
         onSaved={saved}
       />

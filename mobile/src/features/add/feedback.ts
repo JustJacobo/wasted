@@ -4,7 +4,8 @@ import type { Similar } from "./types";
 
 /** Lo que muestra el inicio después de registrar: deshacer, cambiar categoría o el mensaje de un préstamo. */
 export type Feedback =
-  | { kind: "saved"; transaction: Transaction; week: WeekBudget; similar: Similar | null }
+  /** `paid`: el recurrente que quedó pagado (Deshacer lo devuelve como estaba). */
+  | { kind: "saved"; transaction: Transaction; week: WeekBudget; similar: Similar | null; paid?: string }
   | { kind: "moved"; message: string };
 
 const DISMISS_MS = 6_000;

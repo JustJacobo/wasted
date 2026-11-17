@@ -13,6 +13,8 @@ export type Feedback =
       week?: WeekBudget;
       /** Un movimiento igual que ya llegó del correo o es recurrente (posible repetido). */
       similar?: Similar | null;
+      /** El recurrente que quedó pagado (Deshacer lo devuelve como estaba). */
+      paid?: string;
     }
   | { kind: "error"; message: string };
 
@@ -39,7 +41,7 @@ export function SavedToast({
     );
   }
 
-  const { transaction, week, similar } = feedback;
+  const { transaction, week, similar, paid } = feedback;
   const options = categories.filter((c) => c.type === transaction.type);
   const status = week ? budgetStatus(week) : null;
   const warning =
@@ -52,9 +54,17 @@ export function SavedToast({
       <div className="flex items-center justify-between gap-3 px-1">
         <p className="tabular min-w-0 truncate text-sm" aria-live="polite">
           <span className="text-accent-ink">✓</span>{" "}
-          {transaction.type === "income" ? "Ingreso" : "Gasto"}{" "}
-          <strong>{formatCOP(Number(transaction.amount))}</strong>
-          {transaction.description && ` · ${transaction.description}`}
+          {paid ? (
+            <>
+              {paid} pagado · <strong>{formatCOP(Number(transaction.amount))}</strong>
+            </>
+          ) : (
+            <>
+              {transaction.type === "income" ? "Ingreso" : "Gasto"}{" "}
+              <strong>{formatCOP(Number(transaction.amount))}</strong>
+              {transaction.description && ` · ${transaction.description}`}
+            </>
+          )}
         </p>
         <button
           type="button"

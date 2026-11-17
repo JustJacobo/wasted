@@ -10,19 +10,22 @@ import { Text } from "@/ui/text";
 
 const KEYS: KeypadKey[] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "000", "0", "back"];
 
-/** Paso 1: el monto con el teclado propio (src/app/add/amount-step.tsx). */
+/** Paso 1: el monto con el teclado propio y lo que vence (src/app/add/amount-step.tsx). */
 export function AmountStep({
   type,
   onType,
   digits,
   onDigits,
   onNext,
+  due,
 }: {
   type: TxType;
   onType: (type: TxType) => void;
   digits: string;
   onDigits: (digits: string) => void;
   onNext: () => void;
+  /** "Vence pronto": las fichas de los recurrentes, o nada. */
+  due?: React.ReactNode;
 }) {
   const { colors } = useTheme();
   const amount = Number(digits || 0);
@@ -30,6 +33,7 @@ export function AmountStep({
   return (
     <View style={{ gap: 16 }}>
       <TypeSwitch type={type} onType={onType} />
+      {due}
 
       <Text
         accessibilityLabel={`Monto ${formatCOP(amount)}`}

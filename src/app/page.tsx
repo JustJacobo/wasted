@@ -38,6 +38,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const requested = z.iso.date().safeParse(params.fecha);
   const anchor = requested.success && requested.data <= today ? requested.data : today;
   const onDashboard = params.vista === "dashboard";
+  // ?recurrente=<regla>&ocurrencia=<fecha>: la ventana abre lista para marcarlo pagado.
+  const recurrente = z.uuid().safeParse(params.recurrente).data ?? null;
 
   const [{ name, userId, email, supabase }, summary, categories, rules, transactions, report, pendingCount, upcoming, money] =
     await Promise.all([
@@ -111,7 +113,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         categories={active(categories)}
         rules={rules}
         usage={transactions}
+        upcoming={upcoming}
         initialType={params.nuevo === "ingreso" ? "income" : "expense"}
+        initialPick={recurrente ? { ruleId: recurrente, occurrence: z.iso.date().safeParse(params.ocurrencia).data ?? null } : null}
         startOpen={!onDashboard}
       />
     </>

@@ -5,12 +5,14 @@ import { addDays, formatDay } from "@/lib/dates";
 import { formatCOP } from "@/lib/money";
 import type { Category } from "@/lib/types";
 import type { UpcomingCharge } from "@/lib/week-plan";
+import { PayButton } from "./add/pay-button";
 
 const VISIBLE = 3;
 
 /**
  * Los recurrentes de los próximos 7 días (y los vencidos que esperan en la
- * bandeja), para que no sorprendan. No aparece si no viene nada.
+ * bandeja), para que no sorprendan. Tocar uno abre la ventana de registro para
+ * marcarlo pagado. No aparece si no viene nada.
  */
 export function UpcomingCharges({
   upcoming,
@@ -38,9 +40,10 @@ export function UpcomingCharges({
           const category = c.categoryId ? byId.get(c.categoryId) : undefined;
           return (
             <li key={`${c.ruleId}:${c.day}:${c.pending}`}>
-              <Link
-                href={c.pending ? "/bandeja" : "/ajustes/recurrentes"}
-                className="-mx-1 flex items-center gap-3 px-1 py-3 active:bg-border/40"
+              <PayButton
+                ruleId={c.ruleId}
+                occurrence={c.occurrence}
+                className="-mx-1 flex w-[calc(100%+0.5rem)] items-center gap-3 px-1 py-3 text-left active:bg-border/40"
               >
                 <span className="flex shrink-0" style={{ color: categoryColorVar(category?.color) }}>
                   <CategoryIcon category={category} className="size-5 text-xl" />
@@ -55,7 +58,7 @@ export function UpcomingCharges({
                   {c.type === "income" ? "+" : "-"}
                   {formatCOP(c.amount)}
                 </span>
-              </Link>
+              </PayButton>
             </li>
           );
         })}
